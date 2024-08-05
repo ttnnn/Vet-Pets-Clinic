@@ -1,0 +1,89 @@
+.main-container {
+  display: flex;
+}
+
+.register-container {
+  flex: 1;
+  padding: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px; 
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  background-color: #ddd;
+  transition: background-color 0.3s;
+  text-align: center; 
+  border-radius: 10px;
+}
+
+.tab-button.active {
+  background-color: #6c63ff;
+  color: white;
+}
+
+
+h1 {
+  margin-bottom: 20px;
+  font-size: medium;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: medium;
+  padding-top: 30px;
+}
+
+.register-form {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.form-group:last-child {
+  margin-right: 0;
+}
+
+label {
+  margin-bottom: 5px;
+}
+
+input[type="text"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.submit-button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #6c63ff;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #5753d9;
+}
