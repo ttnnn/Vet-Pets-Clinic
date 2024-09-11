@@ -28,13 +28,13 @@
 
 .appointment-summary {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
 .summary-item {
   text-align: center;
-  width: 150px;
+  width: 200px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -83,8 +83,6 @@
   cursor: pointer;
   margin-left: 5px;
 }
-
-
 
 .appointment-categories {
   display: flex;
