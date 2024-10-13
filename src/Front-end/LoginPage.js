@@ -10,7 +10,9 @@ const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    if (email === 'user@email.com' && password === 'p@ssw0rd') {
+    //user@email.com 
+    //p@ssw0rd
+    if (email === '' && password === '') {
       localStorage.setItem('isAuthenticated', 'true'); // Save login status
       onLogin();
       navigate('/home');

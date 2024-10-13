@@ -436,12 +436,10 @@ const HomeDashboard = () => {
   const formattedDate = formatDate(currentDate);
 
   return (
-    <Container maxWidth="xl" sx={{ p: 0 }}>
-      <Grid container spacing={0}>
-        <Grid item xs={2} sx={{ padding: 2 }}>
-          <Sidebar />
-        </Grid>
-        <Grid item xs={10} sx={{ padding: 2 }}>
+
+    <Box display="flex" height="100vh" >
+      <Sidebar/>
+      <Box sx={{ flexGrow: 1, p: 3 }}>
           <Typography variant="h4" align="left" gutterBottom>{formattedDate}</Typography>
           <AppointmentSummary 
             totalAppointments={totalAppointments} 
@@ -472,9 +470,8 @@ const HomeDashboard = () => {
               onCancelAppointment={handleCancelAppointment}
             />
           )}
-        </Grid>
-      </Grid>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 

@@ -5,7 +5,6 @@ import {
   TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import Postpone from './PostponeAppointment'; 
 
 const api = 'http://localhost:8080';
 
@@ -40,52 +39,12 @@ function getComparator(order, orderBy) {
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
-const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
-
-const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments }) => {
+const QueueAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
   const [activeCategory, setActiveCategory] = useState('ทั้งหมด');
-  const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
-  const [selectedTypeService, setSelectedTypeService] = useState(null);
 
-  const handlePostponeClick = (appointmentId,typeService) => {
-    setSelectedAppointmentId(appointmentId);
-    setSelectedTypeService(typeService);
-    setOpenPostponeDialog(true);
-
-    console.log('appointment;',appointmentId)
-    console.log('typeService;',typeService)
-  };
-
-  const updateAppointments = () => {
-    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
-      .then((response) => setAppointments(response.data))
-      .catch((error) => console.error('Error fetching updated appointments:', error));
-  };
-
-  const handleApproveClick = (AppointmentID) => {
-    //เขียนกล่องมาดัก ก่อน อนุมัติ
-    try {
-      // Update the status to 'Approved' in the database
-      axios.put(`${api}/appointment/${AppointmentID}`, {
-        status: 'approved',
-        queue_status: 'รอรับบริการ'
-      });
-      alert('Appointment  successfully');
-      updateAppointments()
-    } catch (error) {
-      console.error('Failed to approve appointment:', error);
-    }
-  };
 
   const deleteAppointment = (AppointmentID) => {
     console.log("Deleting appointment with ID:", AppointmentID);
@@ -96,7 +55,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         alert('Appointment deleted successfully');
       })
       .catch((error) => {
-        console.log("Deleting :", AppointmentID);
         console.error('Error deleting appointment:', error);
         alert('Failed to delete the appointment');
       });
@@ -171,62 +129,61 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                   เวลา
                 </TableSortLabel>
               </TableCell>
+              <TableCell>เลขที่นัดหมาย</TableCell>
+              <TableCell>เวลา</TableCell>
               <TableCell>ชื่อสัตว์</TableCell>
               <TableCell>ชื่อเจ้าของ</TableCell>
               <TableCell>ประเภทนัดหมาย</TableCell>
-              <TableCell>นัดมา</TableCell>
-              <TableCell>รายละเอียด</TableCell>
-              <TableCell>สถานะ</TableCell>
+              <TableCell>รายละเอียดนัดหมาย</TableCell>
+              <TableCell>หมายเหตุ</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
               <TableRow key={index}>
-                <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
+                <TableCell>{appointment.appointment_id}</TableCell>
                 <TableCell>{appointment.appointment_time|| 'all-day'}</TableCell>
                 <TableCell>{appointment.pet_name}</TableCell>
                 <TableCell>{appointment.full_name}</TableCell>
                 <TableCell>{appointment.type_service}</TableCell>
                 <TableCell>{appointment.detail_service || '-'}</TableCell>
                 <TableCell>{appointment.reason || '-'}</TableCell>
-                <TableCell>{appointment.status}</TableCell>
                 
                 <TableCell>
-                  {appointment.status === 'waiting' && (
+                  {appointment.queue_status === 'รอรับบริการ' && (
+                    <>
                     <Button 
-                      variant="outlined" 
-                      color="secondary" 
-                      onClick={() => handleApproveClick(appointment.appointment_id)}
+                    variant="outlined" 
+                    color="secondary" 
+                  >
+                    ประวัติ
+                  </Button>
+                   <Button 
+                    variant="outlined" 
+                    color="secondary" 
+                    onClick={() => deleteAppointment(appointment.appointment_id)}
                     >
-                      อนุมัติ
-                    </Button>
+                    ยกเลิกนัด
+                    </Button>                  
+                    
+                    </>
+                    
                   )}
-                  {appointment.status ==='approved' &&(
+                  {appointment.queue_status ==='กำลังให้บริการ' &&(
                   <>
                     <Button 
                       variant="outlined" 
                       color="secondary" 
-                      onClick={() => deleteAppointment(appointment.appointment_id)}
                     >
-                    ยกเลิกนัด
+                    คืนคิว
                     </Button> 
                     <Button
                       variant="outlined" 
                       color="secondary" 
-                      onClick={() => handlePostponeClick(appointment.appointment_id, appointment.type_service)}
-                    >  เลื่อนนัด
+                    >  ส่งคิว
                     </Button> 
-                    {selectedAppointmentId && (
-                      <Postpone
-                        open={openPostponeDialog}
-                        handleClose={() => setOpenPostponeDialog(false)}
-                        appointmentId={selectedAppointmentId}
-                        TypeService= {selectedTypeService}
-                        updateAppointments={updateAppointments}
-                       />
-                     )}
-                    
+                  
                   </>                    
                   )}
                      
@@ -240,4 +197,4 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   );
 };
 
-export default TableAppointments;
+export default QueueAppointments;
