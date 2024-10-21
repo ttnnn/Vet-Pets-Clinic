@@ -14,6 +14,12 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
 
  console.log('appointment:',appointmentId)
  console.log('service:',TypeService)
+
+ const resetFields = () => {
+  setAppointmentDate('');
+  setAppointmentTime('');
+  setIsNoTime(false);
+};
   
   const handlePostpone = async () => {
     try {
@@ -44,8 +50,8 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       console.log("Formatted Time:", formatTime(appointmentTime));
 
       if (response.status === 200) {
-        alert('Appointment updated successfully');
-        updateAppointments(); // Refresh appointments (assuming this function exists)
+        updateAppointments(); 
+        resetFields(); // รีเซต
         handleClose();
       }
     } catch (error) {
@@ -56,7 +62,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={() => { resetFields(); handleClose(); }} maxWidth="md" fullWidth>
         <DialogTitle>เลือก วัน-เวลา นัดหมายใหม่</DialogTitle>
         <DialogContent dividers>
           {TypeService !== 'ฝากเลี้ยง' ? (
@@ -98,7 +104,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
           ) : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>ยกเลิก</Button>
+          <Button onClick={() => { resetFields(); handleClose(); }}>ยกเลิก</Button>
           <Button variant="contained" onClick={handlePostpone} className="submit-button">
             บันทึก
           </Button>

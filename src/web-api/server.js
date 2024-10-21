@@ -71,7 +71,7 @@ app.get('/appointments/booked-times', (req, res) => {
 });
 
 app.post('/create-owner-pet', (req, res) => {
-  console.log(req.body);
+  console.log("/create-owner-pet",req.body);
   const {
     owner: {
     first_name, 
@@ -169,6 +169,7 @@ app.post('/create-owner-pet', (req, res) => {
 });
 
 app.post('/pets', (req, res) => {
+  console.log("/pets",req)
   const { 
     owner_id, 
     pet_name,
@@ -273,7 +274,7 @@ app.put('/appointment/:id', (req, res) => {  //จัดการคิว
 });
 
 app.put('/postpone/appointment/:id', (req, res) => {  //จัดการคิว
-  console.log('id:',req.params )
+  console.log('/postpone/appointment/:id',req.params )
   const { id } = req.params;
   const { appointment_date , appointment_time} = req.body; // Expecting the status to be passed in the request body
   console.log('Updating appointment with ID:', id);

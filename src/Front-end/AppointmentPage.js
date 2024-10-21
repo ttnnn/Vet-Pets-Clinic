@@ -79,16 +79,28 @@ const AppointmentPage = () => {
   const filteredAppointments = appointments.filter((appointment) => {
     const appointmentDate = DateTime.fromISO(appointment.appointment_date);
     switch (filterType) {
+      case 'all':
+        return appointmentDate >= today;
       case 'today':
-        return appointmentDate.hasSame(today, 'day');
+        return appointmentDate.hasSame(today, 'day')  ;
       case 'tomorrow':
         return appointmentDate.hasSame(tomorrow, 'day');
       case 'this_month':
         return appointmentDate >= thisMonthStart && appointmentDate <= thisMonthEnd;
+      case 'this_pass'  :
+        return appointmentDate < today;
+
+        
       default:
         return true;
     }
   });
+
+  const updateAppointments = () => {
+    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
+      .then((response) => setAppointments(response.data))
+      .catch((error) => console.error('Error fetching updated appointments:', error));
+  };
 
   return (
     <Box display="flex" height="100vh">
@@ -104,8 +116,8 @@ const AppointmentPage = () => {
             variant="fullWidth"
             aria-label="full width tabs example"
           >
-            <StyledTab label="นัดหมายใหม่(รออนุมัติ)" />
-            <StyledTab label="สมุดนัดหมาย" />
+            <StyledTab onClick={updateAppointments} label="นัดหมายใหม่(รออนุมัติ)" />
+            <StyledTab onClick={updateAppointments} label="สมุดนัดหมาย" />
             <StyledTab label="เพิ่มการนัดหมาย" />
           </Tabs>
 
@@ -130,6 +142,7 @@ const AppointmentPage = () => {
                 <MenuItem value="today">คิวนัดหมายวันนี้</MenuItem>
                 <MenuItem value="tomorrow">คิวนัดหมายวันพรุ่งนี้</MenuItem>
                 <MenuItem value="this_month">คิวนัดหมายเดือนนี้</MenuItem>
+                <MenuItem value="this_pass">คิวนัดหมายที่ผ่านมาแล้ว</MenuItem>
               </Select>
             </Box>
           )}

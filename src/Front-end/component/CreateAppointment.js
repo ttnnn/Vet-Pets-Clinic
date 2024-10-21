@@ -61,8 +61,10 @@ const AddAppointment = () => {
   const [detailservice,setDetailService] = useState('') ;
   const [activeTab, setActiveTab] = useState(0);
   const [isNoTime, setIsNoTime] = useState(false); // Checkbox state
+  const [timePickerKey, setTimePickerKey] = useState(0);
   
-  const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
+  // const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
+  const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '') || (TypeService === 'ฝากเลี้ยง' && appointmentTime === null);
 
   useEffect(() => {
     const fetchOwners = async () => {
@@ -135,6 +137,7 @@ const AddAppointment = () => {
     setActiveTab(newValue);
   };
 
+  
   const createAppointment = async () => {
 
     if (!isFormValid) {
@@ -181,10 +184,10 @@ const AddAppointment = () => {
   
   
 
-
+      resetForm();
       setAlertSeverity('success');
       setAlertMessage('เพิ่มการนัดหมายสำเร็จ.');
-      resetForm();
+
       setTimeout(() => {
         setAlertMessage('');
       }, 2000);
@@ -199,18 +202,20 @@ const AddAppointment = () => {
       }, 2000);
     }
   };
+  
 
   const resetForm = () => {
     setSelectedOwnerId('');
     setSelectedPetId('');
     setTypeService('');
     setAppointmentDate(null);
-    setAppointmentTime('');
+    setAppointmentTime(null);
     setReason('');
     setCheckInDate('');
     setCheckOutDate('');
     setSelectedPersonnel(null);
     setDetailService('')
+    setTimePickerKey(timePickerKey + 1);
   };
   
   // Function to create a PetHotel entry
@@ -348,6 +353,7 @@ const AddAppointment = () => {
                 />
               </>
             )}
+              
 
               <TextField
                label="ประเภทสัตว์เลี้ยง"
@@ -382,7 +388,7 @@ const AddAppointment = () => {
           />
             <Autocomplete
               options={personnelList}
-              getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name}` : ''}
+              getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name} (${personnel.role}) ` : ''}
               onChange={(event, value) => setSelectedPersonnel(value || null)}
               value={selectedPersonnel ? personnelList.find(p => p.personnel_id === selectedPersonnel.personnel_id) : null}
               renderInput={(params) => (
@@ -447,6 +453,7 @@ const AddAppointment = () => {
 
         {!isNoTime && (<TimeSlotPicker //เช็คว่าได้เลือกcheckbox มั้ย และเรียกcomponent slottime ตามประเภทที่เลือก
           value={appointmentTime}
+          key={timePickerKey}
           onChange={setAppointmentTime}
           TypeService={TypeService} 
           selectedDate={appointmentDate}

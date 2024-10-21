@@ -229,14 +229,18 @@ const RegisterPage = () => {
       };
       console.log('data:',combinedData)
 
-      await axios.post(`${api}/create-owner-pet`, combinedData);
-      alert('Data saved successfully!');
-      setAlertSeverity('success');
-      setAlertMessage('ลงทะเบียนสำเร็จ')
-      resetForm();
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 2000);
+      if(combinedData.pets.length > 0){
+        await axios.post(`${api}/create-owner-pet`, combinedData);
+        alert('Data saved successfully!');
+        setAlertSeverity('success');
+        setAlertMessage('ลงทะเบียนสำเร็จ')
+        resetForm();
+        setTimeout(() => {
+          setAlertMessage('');
+        }, 2000);
+      }else{
+        alert("กรุณาเพิ่มสัตว์เลี้ยง")
+      }
 
     } catch (error) {
       console.error('Error saving data:', error);

@@ -2,7 +2,8 @@ import React, {  useState } from 'react';
 import axios from 'axios';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab
+  TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab,Dialog, DialogActions, 
+  DialogContent, DialogTitle,Typography ,Snackbar,Alert, AlertTitle
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
@@ -56,6 +57,13 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [selectedTypeService, setSelectedTypeService] = useState(null);
+  const [openDialog , setOpenDialog] = useState(false)
+  const [approveAppointmentId, setApproveAppointmentId] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [openCancelDialog, setOpenCancelDialog] = useState(false); // New state for cancel dialog
+  const [cancelAppointmentId, setCancelAppointmentId] = useState(null);
 
   const handlePostponeClick = (appointmentId,typeService) => {
     setSelectedAppointmentId(appointmentId);
@@ -72,28 +80,59 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       .catch((error) => console.error('Error fetching updated appointments:', error));
   };
 
+  //เปิดให้กดยืนยันการอนุมัติ
   const handleApproveClick = (AppointmentID) => {
-    //เขียนกล่องมาดัก ก่อน อนุมัติ
+    setApproveAppointmentId(AppointmentID);
+    setOpenDialog(true);  
+    setOpenCancelDialog(false);
+  };
+   //เปิดให้กดยืนยันยกเลิก
+  const handleCancelClick = (appointmentId) => {
+    setCancelAppointmentId(appointmentId);
+    setOpenCancelDialog(true); 
+    setOpenDialog(false);
+  };
+  //เปิดให้กดยืนยันยกเลิก
+  const handleConfirmCancel = () => {
+    deleteAppointment(cancelAppointmentId);
+    setOpenCancelDialog(false);
+    setOpenDialog(false);
+    updateAppointments()
+  };
+ //เปิดให้กดยืนยันการอนุมัติ
+  const handleConfirmApprove = () => {
     try {
       // Update the status to 'Approved' in the database
-      axios.put(`${api}/appointment/${AppointmentID}`, {
+      axios.put(`${api}/appointment/${approveAppointmentId}`, {
         status: 'approved',
         queue_status: 'รอรับบริการ'
       });
-      alert('Appointment  successfully');
       updateAppointments()
+      setSnackbarMessage(`การอนุมัตินัดหมายหมายเลข ${approveAppointmentId} เสร็จสิ้น!`);
+      setSnackbarSeverity('success'); 
+      setSnackbarOpen(true);
     } catch (error) {
       console.error('Failed to approve appointment:', error);
     }
-  };
+    setOpenDialog(false);
+    updateAppointments()
+  }; 
 
+  
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+  
+  
   const deleteAppointment = (AppointmentID) => {
     console.log("Deleting appointment with ID:", AppointmentID);
     axios.delete(`${api}/deleted/appointment/${AppointmentID}`)
       .then(() => {
         // Update the list of appointments after successful deletion
         setAppointments(appointments.filter(appt => appt.appointment_id !== AppointmentID));
-        alert('Appointment deleted successfully');
+        setSnackbarMessage(`การยกเลิกนัดหมายหมายเลข ${cancelAppointmentId} เสร็จสิ้น!`);
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
       })
       .catch((error) => {
         console.log("Deleting :", AppointmentID);
@@ -102,13 +141,19 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       });
   };
 
-  
-  
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
+  //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
+  const isAppointmentInPast = (appointmentDate) => {
+    const today = new Date(); // Current date
+    const appointmentDateObj = new Date(appointmentDate);
+    return appointmentDateObj < today; // Check if appointment date is in the past
+  };
+  
   
 
   const filteredAppointments = appointments.filter(appointment => {
@@ -202,12 +247,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                       อนุมัติ
                     </Button>
                   )}
-                  {appointment.status ==='approved' &&(
+                  {appointment.status ==='approved'  && !isAppointmentInPast(appointment.appointment_date) &&(
                   <>
                     <Button 
                       variant="outlined" 
                       color="secondary" 
-                      onClick={() => deleteAppointment(appointment.appointment_id)}
+                      onClick={() => handleCancelClick(appointment.appointment_id)}
                     >
                     ยกเลิกนัด
                     </Button> 
@@ -236,6 +281,35 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
           </TableBody>
         </Table>
       </TableContainer>
+       {/* Confirmation Dialog */}
+        <Dialog open={openDialog} onClose={handleDialogClose}>
+          <DialogTitle>ยืนยันการอนุมัติ</DialogTitle>
+          <DialogContent>
+            <Typography>คุณแน่ใจหรือไม่ว่าต้องการอนุมัตินัดหมายหมายเลข {approveAppointmentId} นี้?</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
+            <Button onClick={handleConfirmApprove} color="primary">ยืนยัน</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)}>
+        <DialogTitle>ยืนยันการยกเลิกนัดหมาย</DialogTitle>
+        <DialogContent>
+          <Typography>คุณแน่ใจหรือไม่ว่าต้องการยกเลิกนัดหมายหมายเลข {cancelAppointmentId} นี้?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCancelDialog(false)} color="error">ยกเลิก</Button>
+          <Button onClick={handleConfirmCancel} color="primary">ยืนยัน</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbarOpen} autoHideDuration={5000} onClose={() => setSnackbarOpen(false)}>
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          <AlertTitle>{snackbarSeverity === 'success' ? 'สำเร็จ' : 'ข้อผิดพลาด'}</AlertTitle>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };
