@@ -8,6 +8,7 @@ import AppointmentPage from './Front-end/AppointmentPage';
 import FinancePage from './Front-end/FinancePage';
 import CategoryPage from './Front-end/CategoryPage';
 import LoginPage from './Front-end/LoginPage';
+import PetProfilePage from './Front-end/ProfilePage';
 
 
 const theme = createTheme();
@@ -68,6 +69,9 @@ function App() {
               path="/dashboard" 
               element={isAuthenticated ? <RegisterPage /> : <Navigate to="/login" />} 
             />
+            <Route 
+              path="/pet-profile"
+               element={<PetProfilePage />} />
             <Route 
               path="*" 
               element={<Navigate to="/login" />} 

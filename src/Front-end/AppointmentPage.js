@@ -149,20 +149,20 @@ const AppointmentPage = () => {
 
           {activeTab === 0 && (
             <TableAppointments
-              appointments={filteredAppointments.filter(appt => appt.status === 'waiting')}
+              appointments={filteredAppointments.filter(appt => appt.status === 'รออนุมัติ')}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               setAppointments={setAppointments}
-              statusFilter="waiting"
+              statusFilter="รออนุมัติ"
             />
           )}
           {activeTab === 1 && (
             <TableAppointments
-              appointments={filteredAppointments.filter(appt => appt.status === 'approved')}
+              appointments={filteredAppointments.filter(appt => appt.status === 'อนุมัติ')}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               setAppointments={setAppointments}
-              statusFilter="approved"
+              statusFilter="อนุมัติ"
             />
           )}
           {activeTab === 2 && <AddAppointment />}

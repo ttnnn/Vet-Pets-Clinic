@@ -12,7 +12,7 @@ const Sidebar = () => {
     { text: 'การนัดหมาย',  path: '/appointment' },
     { text: 'หมวดหมู่บริการ',  path: '/category' },
     { text: 'การเงิน', path: '/finance' },
-    { text: 'Dashboard',  path: '/dashboard' },
+    { text: 'สถิติการใช้บริการ',  path: '/dashboard' },
   ];
 
   return (

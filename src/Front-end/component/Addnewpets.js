@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Button, TextField, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions,  ToggleButtonGroup, ToggleButton, MenuItem
     , Autocomplete,Checkbox,FormControlLabel
    } from '@mui/material';
@@ -7,127 +7,145 @@ import { DogBreed, CatBreed } from './Breeds';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+
+dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 const api = 'http://localhost:8080'
-const PetDialog = ({ open, handleClose, selectedOwnerId, setPets }) => {
-    const [petName , setPetName] = useState('')
-    const [petColor , setPetColor] = useState('')
-    const [petSpecies ,setPetSpecies] = useState('')
-    const [petBreed , setPetBreed] = useState('')
-    const [petSpayed ,setPetSpayed] = useState(false)
-    const [petMicrochip , setMicrochip] = useState('')
-    const [birthDate, setBirthDate] = useState('');
-    const [age, setAge] = useState('');
-    const [imagePreview, setImagePreview] = useState(null);
-    const [gender, setGender] = useState('male');
-    const [alertMessage, setAlertMessage] = useState(''); 
-    const [alertSeverity, setAlertSeverity] = useState('success'); 
+const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petId, isEditMode }) => {
+  const [petName , setPetName] = useState('');
+  const [petColor , setPetColor] = useState('');
+  const [petSpecies , setPetSpecies] = useState('');
+  const [petBreed , setPetBreed] = useState('');
+  const [petSpayed , setPetSpayed] = useState(false);
+  const [petMicrochip , setMicrochip] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [age, setAge] = useState({});
+  const [imagePreview, setImagePreview] = useState(null);
+  const [gender, setGender] = useState('male');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
+  const [imageFile, setImageFile] = useState(null);
+  // Populate the form fields with existing pet data when editing
+  // const Images = `http://localhost:8080${petData.ImageUrl}`
+  
+  const Images = petData?.ImageUrl ? `http://localhost:8080${petData.ImageUrl}` : null;
+  useEffect(() => {
+      if (petData) {
+          setPetName(petData.pet_name || '');
+          setPetColor(petData.pet_color || '');
+          setPetSpecies(petData.pet_species || '');
+          setPetBreed(petData.pet_breed || '');
+          setPetSpayed(petData.SpayedNeutered || false);
+          setMicrochip(petData.MicrochipNumber || '');
+          setBirthDate(petData.pet_birthday ? dayjs(petData.pet_birthday) : '');
+          setGender(petData.pet_gender || 'male');
+          setImagePreview(Images || null); // Use existing image URL if available
+          if (petData.pet_birthday) calculateAge(dayjs(petData.pet_birthday));
+      } else {
+          clearPetForm();
+      }
+  }, [petData,Images]);
+  
 
-    const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-
-    const handleImageUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
+  const handleImageUpload = (event) => {
+      const file = event.target.files[0];
+      if (file) {
+          setImageFile(file);
           const reader = new FileReader();
           reader.onloadend = () => {
-            setImagePreview(reader.result);
+              setImagePreview(reader.result);
           };
           reader.readAsDataURL(file);
-        }
-      };
-    const handleBirthDateChange = (newDate) => {
-        setBirthDate(newDate);
-        calculateAge(newDate);
-      };
-    
-    const handleGenderChange = (event, newGender) => {
-        if (newGender !== null) {
-          setGender(newGender);
-        }
-      };
-
-    const calculateAge = (date) => {
-        const today = new Date();
-        const birthDate = new Date(date);
-        let years = today.getFullYear() - birthDate.getFullYear();
-        let months = today.getMonth() - birthDate.getMonth();
-        let days = today.getDate() - birthDate.getDate();
-      
-        if (days < 0) {
-          months--;
-          days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-        }
-      
-        if (months < 0) {
-          years--;
-          months += 12;
-        }
-        setAge({ years, months,days });
-      };
-
-      const clearPetForm = () => {
-        setPetName('');
-        setPetColor('');
-        setPetBreed('');
-        setGender('');
-        setBirthDate(null);
-        setAge({ years: '', months: '', days: '' });
-        setPetSpayed(false);
-        setMicrochip('');
-        setPetSpecies('');
-      };
-
-    
-
-    const handleSavePet = () => {
-    const petData = {
-        owner_id: selectedOwnerId,
-        pet_name: petName,
-        pet_color: petColor,
-        pet_breed: petBreed,
-        pet_gender: gender,
-        pet_birthday: birthDate ? formatDate(birthDate) : '', 
-        pet_age: age.years,
-        SpayedNeutered: petSpayed ? 1 : 0,
-        MicrochipNumber: petMicrochip,
-        pet_species: petSpecies,
-      };
-
-    axios.post(`${api}/pets`, petData)
-      .then(response => {
-        console.log('Pet added successfully:', response.data);
-        // Fetch updated pets list after successful save
-        axios.get(`${api}/pets?owner_id=${selectedOwnerId}`)
-          .then(response => {
-            setPets(response.data);
-          });
-        handleClose();
-        clearPetForm()
-        setAlertSeverity('success');
-        setAlertMessage('ลงทะเบียนสำเร็จ')
-        setTimeout(() => {
-            setAlertMessage('');
-          }, 2000);
-      })
-      .catch(error => {
-        console.error('Error adding pet:', error);
-        setAlertSeverity('success');
-        setAlertMessage('กรุณากรอกข้อมูลให้ครบถ้วน')
-        setTimeout(() => {
-            setAlertMessage('');
-        }, 2000);
-      });
+      }
   };
 
+  const handleBirthDateChange = (newDate) => {
+      setBirthDate(newDate);
+      calculateAge(newDate);
+  };
+
+  const handleGenderChange = (event, newGender) => {
+      if (newGender !== null) {
+          setGender(newGender);
+      }
+  };
+
+  const calculateAge = (date) => {
+      if (!date) return;
+      const today = dayjs();
+      const birthDay = dayjs(date);
+      const years = today.diff(birthDay, 'year');
+      const months = today.diff(birthDay.add(years, 'year'), 'month');
+      const days = today.diff(birthDay.add(years, 'year').add(months, 'month'), 'day');
+      setAge({ years, months, days });
+  };
+
+  const clearPetForm = () => {
+      setPetName('');
+      setPetColor('');
+      setPetBreed('');
+      setGender('male');
+      setBirthDate(null);
+      setAge({ years: '', months: '', days: '' });
+      setPetSpayed(false);
+      setMicrochip('');
+      setPetSpecies('');
+      setImagePreview(null);
+  };
+
+  const handleSavePet = async () => {
+      const formData = new FormData();
+      formData.append("owner_id", selectedOwnerId);
+      formData.append("pet_name", petName);
+      formData.append("pet_color", petColor);
+      formData.append("pet_breed", petBreed);
+      formData.append("pet_gender", gender);
+      formData.append("pet_birthday", birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "");
+      formData.append("pet_age", age.years);
+      formData.append("SpayedNeutered", petSpayed ? 1 : 0);
+      formData.append("MicrochipNumber", petMicrochip);
+      formData.append("pet_species", petSpecies);
+      if (imageFile) {
+          formData.append("image", imageFile);
+      }
+
+      try {
+          const url = isEditMode ? `${api}/pets/${petId}` : `${api}/pets`;
+
+          const response = isEditMode 
+            ? await axios.put(url, formData, { headers: { "Content-Type": "multipart/form-data" } }) 
+            : await axios.post(url, formData, { headers: { "Content-Type": "multipart/form-data" } });
+
+       if (response.status === 200) {
+          const petsResponse = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
+          setPets(petsResponse.data);
+          handleClose();
+          clearPetForm();
+          setAlertSeverity("success");
+          setAlertMessage("ลงทะเบียนสำเร็จ");
+          setTimeout(() => {
+              setAlertMessage("");
+          }, 2000);}else {
+            // จัดการเมื่อ response ไม่สำเร็จ
+            throw new Error("Failed to save pet data");
+        }
+
+      } catch (error) {
+          setAlertSeverity("error");
+          setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
+          setTimeout(() => {
+              setAlertMessage("");
+          }, 2000);
+      }
+  };
+
+  
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>เพิ่มประวัติสัตว์เลี้ยงใหม่</DialogTitle>
+    <DialogTitle>{isEditMode ? 'แก้ไขข้อมูลสัตว์เลี้ยง' : 'เพิ่มสัตว์เลี้ยง'}</DialogTitle>
       <DialogContent dividers>
   <Box
     component="form"

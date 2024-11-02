@@ -8,6 +8,8 @@ import TimeSlotPicker from './TimeSlot';
 import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
+import dayjs from 'dayjs';
+
 
 
 const api = 'http://localhost:8080';
@@ -64,7 +66,8 @@ const AddAppointment = () => {
   const [timePickerKey, setTimePickerKey] = useState(0);
   
   // const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
-  const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '') || (TypeService === 'ฝากเลี้ยง' && appointmentTime === null);
+  
+
 
   useEffect(() => {
     const fetchOwners = async () => {
@@ -126,7 +129,7 @@ const AddAppointment = () => {
     };
     petSpecies && fetchPetCages();
   }, [petSpecies]);
-
+  
 
 
   const handlePetChange = (event, value) => {
@@ -140,30 +143,36 @@ const AddAppointment = () => {
   
   const createAppointment = async () => {
 
-    if (!isFormValid) {
+    if (!selectedOwnerId || !selectedPetId || !TypeService || !appointmentDate || 
+      (!isNoTime && !appointmentTime) || (TypeService === 'ฝากเลี้ยง' && (!checkInDate || !checkOutDate || !selectedCage))) {
       setAlertSeverity('error');
-      setAlertMessage('Please select a time slot or check the "No Time" option.');
+      setAlertMessage('กรุณากรอกข้อมูลให้ครบถ้วน!');
       return;
-    }
+  }
 
     try {
       let appointmentData = {
         owner_id: selectedOwnerId,
         pet_id: selectedPetId,
         type_service: TypeService,
-        status: 'approved',
+        status: 'รออนุมัติ', //ถ้าจองโดยลูกค้าจะเป็น รออนุมัติ
+        queue_status:'รอรับบริการ',
+        
+
         personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null, 
         
       };
   
       // If TypeService is not 'ฝากเลี้ยง', include AppointmentDate, AppointmentTime, and Reason
       if ( TypeService !== 'ฝากเลี้ยง') {
-        const formattedDate = appointmentDate ? appointmentDate.toLocaleDateString('en-TH').split('T')[0] : null;
+        // const formattedDate = appointmentDate ? appointmentDate.toLocaleDateString('en-TH').split('T')[0] : null;
         const formattedTime = appointmentTime ? (() => {
           const [startTime] = appointmentTime.split(' - ');
           const [hours, minutes] = startTime.split(':');
           return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
         })() : null;
+        const formattedDate = appointmentDate ? dayjs(appointmentDate).format('YYYY-MM-DD') : null;
+
         console.log("Formatted Date:", formattedDate);
        console.log("Formatted Time:", formattedTime);
       
@@ -224,8 +233,8 @@ const AddAppointment = () => {
       const petHotelData = {
         appointment_id: appointmentID,
         pet_id: selectedPetId,
-        entry_date: checkInDate ? checkInDate.toLocaleDateString('en-TH').split('T')[0] : '',
-        exit_date: checkOutDate ? checkOutDate.toLocaleDateString('en-TH').split('T')[0] : '',
+        entry_date: checkInDate ? dayjs(checkInDate).format('YYYY-MM-DD') : '',
+        exit_date: checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : '',
         num_day: numDays,
         status: '', 
         pet_cage_id : selectedCage
@@ -266,6 +275,12 @@ const AddAppointment = () => {
                 variant="outlined" 
                 fullWidth
                 onChange={(e) => setSearchOwner(e.target.value)} />}
+            getOptionSelected={(option, value) => option.owner_id === value.owner_id}  
+            renderOption={(props, option) => (
+              <li {...props} key={option.owner_id}> {/* Set unique key here */}
+                {`${option.first_name} ${option.last_name}`}
+              </li>
+            )}
           />
           <Autocomplete
             options={pets}
@@ -288,6 +303,7 @@ const AddAppointment = () => {
               onChange={(e) => {
                 console.log(e.target.value); // Debug to check if the value is correct
                 setTypeService(e.target.value);
+                setIsNoTime(false);
               }}
               label="ประเภทการนัดหมาย"
             >

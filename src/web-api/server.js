@@ -3,6 +3,8 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const { generateAppointmentID } = require('./IdGenerator.js');
 require('dotenv').config();
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 // Middleware
@@ -28,11 +30,54 @@ app.get('/', function (req, res) {
   res.send('Hello World');
 });
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+      cb(null, path.join(__dirname, '../../public/Images')); // save images in the 'uploads' folder
+  },
+  filename: (req, file, cb) => {
+      cb(null, file.fieldname+"_"+Date.now()+ path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
+app.post('/uploads',(req,res) =>{
+  console.log(req.file)
+});
+
+app.put('/pets/:id', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const { 
+      owner_id, 
+      pet_name,
+      pet_color,
+      pet_breed,
+      pet_gender, 
+      pet_birthday, 
+      SpayedNeutered, 
+      MicrochipNumber, 
+      pet_species 
+  } = req.body;
+
+  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
+
+  try {
+      // สมมติว่าคุณใช้ MySQL
+      const result = db.query(
+        'UPDATE pets SET owner_id = ?, pet_name = ?, pet_color = ?, pet_breed = ?, pet_gender = ?, pet_birthday = ?, SpayedNeutered = ?, MicrochipNumber = ?, pet_species = ?, ImageUrl = ? WHERE pet_id = ?',
+        [owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, SpayedNeutered, MicrochipNumber, pet_species, ImageUrl, id]
+      );
+
+      res.status(200).json({ message: 'Pet updated successfully' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error updating pet' });
+  }
+});
 
 // Search for owners
 app.get('/owners', (req, res) => {
     const searchQuery = req.query.search || ''; // Receive search query
-    const query = `SELECT owner_id, first_name,last_name,phone_number FROM owner  WHERE CONCAT(first_name, ' ', last_name) LIKE ?`;
+    const query = `SELECT * FROM owner  WHERE CONCAT(first_name, ' ', last_name) LIKE ?`;
     
     db.query(query, [`%${searchQuery}%`], (err, results) => {
       if (err) {
@@ -46,6 +91,7 @@ app.get('/owners', (req, res) => {
 
 // Fetch booked time slots for a specific date and service type
 app.get('/appointments/booked-times', (req, res) => {
+  console.log("/appointments/booked-times",req.body);
   const { date, type_service } = req.query;
 
   if (!date || !type_service) {
@@ -90,14 +136,6 @@ app.post('/create-owner-pet', (req, res) => {
 
   const register_time = new Date();
 
-  const convertDateFormat = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   // Insert into owner table
   const ownerQuery = `
     INSERT INTO owner (
@@ -138,12 +176,10 @@ app.post('/create-owner-pet', (req, res) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       // Prepare promises for multiple pet inserts
-      const petPromises = pets.map((pet) => {
-        const formattedPetBirthday = convertDateFormat(pet.pet_birthday);
-        console.log('formatt:',formattedPetBirthday)
+      const petPromises = pets.map((pet) => {  
         return new Promise((resolve, reject) => {
           db.query(petQuery, 
-            [owner_id, pet.pet_name, pet.pet_color, pet.pet_breed, pet.pet_gender, formattedPetBirthday, pet.pet_age, pet.SpayedNeutered, pet.MicrochipNumber, pet.pet_species], 
+            [owner_id, pet.pet_name, pet.pet_color, pet.pet_breed, pet.pet_gender, pet.pet_birthday, pet.pet_age, pet.SpayedNeutered, pet.MicrochipNumber, pet.pet_species], 
             (err, petResults) => {
               if (err) {
                 reject(err);
@@ -168,8 +204,10 @@ app.post('/create-owner-pet', (req, res) => {
   );
 });
 
-app.post('/pets', (req, res) => {
-  console.log("/pets",req)
+app.post('/pets', upload.single('image'), async  (req, res) => {
+  console.log("/pets", req.body); // เพิ่มการพิมพ์ข้อมูลในคอนโซล
+  console.log("Uploaded file:", req.file); // พิมพ์ข้อมูลไฟล์ที่อัปโหลด
+
   const { 
     owner_id, 
     pet_name,
@@ -181,18 +219,12 @@ app.post('/pets', (req, res) => {
     SpayedNeutered, 
     MicrochipNumber, 
     pet_species } = req.body;
-  
-  const sql = 'INSERT INTO pets (owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, pet_age, SpayedNeutered, MicrochipNumber, pet_species) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  const convertDateFormat = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-  const formattedPetBirthday = convertDateFormat(pet_birthday);
+    const ImageUrl =  req.file ? `/public/Images/${req.file.filename}` : null;
 
-  db.query(sql, [owner_id, pet_name, pet_color, pet_breed, pet_gender, formattedPetBirthday, pet_age, SpayedNeutered, MicrochipNumber, pet_species], (err, result) => {
+  
+  const sql = 'INSERT INTO pets (owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, pet_age, SpayedNeutered, MicrochipNumber, pet_species,ImageUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+  db.query(sql, [owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, pet_age, SpayedNeutered, MicrochipNumber, pet_species, ImageUrl], (err, result) => {
     if (err) {
       return res.status(500).send(err);
     }
@@ -352,44 +384,10 @@ app.get('/pethotel',(req, res)=>{
   });
 })
 
-
 app.post('/create-appointment', (req, res) => {
-  const { owner_id, pet_id, type_service,personnel_id,detail_service, appointment_date, appointment_time, reason } = req.body;
-  let appointmentStatus = 'waiting';
-  
-  // Function to format date to 'YYYY-MM-DD'
-  const formatDateToMySQL = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const { owner_id, pet_id, type_service, personnel_id, detail_service, appointment_date, appointment_time, reason, status,queue_status } = req.body;
 
   try {
-    // Validate and format AppointmentDate
-    let formattedDate = null;
-    if (appointment_date) {
-      const date = new Date(appointment_date);
-      if (!isNaN(date.getTime())) {
-        formattedDate = formatDateToMySQL(date); // Format date as 'YYYY-MM-DD'
-      } else {
-        throw new Error('Invalid date format');
-      }
-    }
-
-    // Validate and format AppointmentTime
-    let formattedTime = null;
-    if (appointment_time) {
-      const timePattern = /^\d{2}:\d{2}:\d{2}$/; // Expect 'HH:MM:SS'
-      if (timePattern.test(appointment_time)) {
-        formattedTime = appointment_time; // Already in 'HH:MM:SS' format
-      } else {
-        throw new Error('Invalid time format');
-      }
-    }
-
-
     // Generate appointment ID and insert into the database
     generateAppointmentID(db, type_service, (err, newAppointmentID) => {
       if (err) {
@@ -398,11 +396,11 @@ app.post('/create-appointment', (req, res) => {
       }
 
       const insertQuery = `
-        INSERT INTO appointment (appointment_id, owner_id, pet_id,personnel_id, detail_service,type_service, appointment_date, appointment_time, reason, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO appointment (appointment_id, owner_id, pet_id, personnel_id, detail_service, type_service, appointment_date, appointment_time, reason, status,queue_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)
       `;
 
-      db.query(insertQuery, [newAppointmentID, owner_id, pet_id, personnel_id,detail_service, type_service, formattedDate, formattedTime, reason, appointmentStatus], (err, result) => {
+      db.query(insertQuery, [newAppointmentID, owner_id, pet_id, personnel_id, detail_service, type_service, appointment_date, appointment_time, reason, status,queue_status], (err, result) => {
         if (err) {
           console.error('Error creating appointment:', err);
           return res.status(500).json({ error: 'Database error' });
@@ -413,8 +411,8 @@ app.post('/create-appointment', (req, res) => {
     });
 
   } catch (error) {
-    console.error('Date/Time format error:', error.message);
-    return res.status(400).json({ error: 'Invalid date or time format' });
+    console.error('Unexpected error:', error.message);
+    return res.status(500).json({ error: 'An unexpected error occurred' });
   }
 });
 
@@ -422,23 +420,23 @@ app.post('/create-appointment', (req, res) => {
 app.post('/create-pet-hotel', (req, res) => {
   const { appointment_id, pet_id, entry_date, exit_date,num_day, pet_cage_id } = req.body;
   const petHotelStatus = '';
-
-  const formatDateForDatabase = (dateString) => { 
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const formattedEntryDate = formatDateForDatabase(entry_date);
-  const formattedExitDate = formatDateForDatabase(exit_date);
+// 
+  // const formatDateForDatabase = (dateString) => { 
+    // const date = new Date(dateString);
+    // const year = date.getFullYear();
+    // const month = String(date.getMonth() + 1).padStart(2, '0');
+    // const day = String(date.getDate()).padStart(2, '0');
+    // return `${year}-${month}-${day}`;
+  // };
+// 
+  // const formattedEntryDate = formatDateForDatabase(entry_date);
+  // const formattedExitDate = formatDateForDatabase(exit_date);
   const insertPetHotelQuery = `
     INSERT INTO petshotel (appointment_id, pet_id, entry_date, exit_date,num_day, status,pet_cage_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(insertPetHotelQuery, [appointment_id, pet_id, formattedEntryDate, formattedExitDate ,num_day, petHotelStatus,pet_cage_id], (err, result) => {
+  db.query(insertPetHotelQuery, [appointment_id, pet_id, entry_date, exit_date ,num_day, petHotelStatus,pet_cage_id], (err, result) => {
     if (err) {
       console.error('Error creating pet hotel entry:', err);
       return res.status(500).json({ error: 'Database error in creating pet hotel entry' });
@@ -478,6 +476,9 @@ app.delete('/deleted/appointment/:appointment_id', (req, res) => {
     return res.status(200).json({ message: 'Appointment deleted successfully' });
   });
 });
+
+app.use('/public', express.static(path.join(__dirname, '../../public')));
+
 
 app.listen(8080, function () {
   console.log('Node app is running on port 8080' );

@@ -7,6 +7,11 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+
+dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+
 
 const api = 'http://localhost:8080';
 
@@ -42,13 +47,8 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
+  return dayjs(dateString).format('DD/MM/YYYY'); // Use day.js for formatting
+};
 
 const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments }) => {
   const [order, setOrder] = useState('asc');
@@ -102,15 +102,17 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
  //เปิดให้กดยืนยันการอนุมัติ
   const handleConfirmApprove = () => {
     try {
-      // Update the status to 'Approved' in the database
+      // Update the status to 'อนุมัติ' in the database
       axios.put(`${api}/appointment/${approveAppointmentId}`, {
-        status: 'approved',
+        status: 'อนุมัติ',
         queue_status: 'รอรับบริการ'
-      });
-      updateAppointments()
-      setSnackbarMessage(`การอนุมัตินัดหมายหมายเลข ${approveAppointmentId} เสร็จสิ้น!`);
-      setSnackbarSeverity('success'); 
-      setSnackbarOpen(true);
+      }).then(()=>{
+        updateAppointments()
+        setSnackbarMessage(`การอนุมัตินัดหมายหมายเลข ${approveAppointmentId} เสร็จสิ้น!`);
+        setSnackbarSeverity('success'); 
+        setSnackbarOpen(true);
+      })
+      
     } catch (error) {
       console.error('Failed to approve appointment:', error);
     }
@@ -149,10 +151,11 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   };
   //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
   const isAppointmentInPast = (appointmentDate) => {
-    const today = new Date(); // Current date
-    const appointmentDateObj = new Date(appointmentDate);
-    return appointmentDateObj < today; // Check if appointment date is in the past
-  };
+    const today = dayjs();// Current date
+    const appointmentDateObj = dayjs(appointmentDate);
+    return appointmentDateObj.isBefore(today);
+     // Check if appointment date is in the past
+  }
   
   
 
@@ -238,7 +241,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                 <TableCell>{appointment.status}</TableCell>
                 
                 <TableCell>
-                  {appointment.status === 'waiting' && (
+                  {appointment.status === 'รออนุมัติ' && (
                     <Button 
                       variant="outlined" 
                       color="secondary" 
@@ -247,7 +250,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                       อนุมัติ
                     </Button>
                   )}
-                  {appointment.status ==='approved'  && !isAppointmentInPast(appointment.appointment_date) &&(
+                  {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date) &&(
                   <>
                     <Button 
                       variant="outlined" 

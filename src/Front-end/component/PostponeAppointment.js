@@ -5,6 +5,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
 import TimeSlotPicker from './TimeSlot';   // Import TimeSlotPicker component
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+
+dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+
 
 const api = 'http://localhost:8080'
 const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments }) => {
@@ -27,17 +32,11 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         alert('Please select both a date and time.');
         return;
       }
-      const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
+      const formatDate = (date) => dayjs(date).format('YYYY-MM-DD'); // Format date
       const formatTime = (time) => {
         if (!time) return null;
         const [startTime] = time.split(' - ');
-        const [hours, minutes] = startTime.split(':');
-        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+        return dayjs(startTime, 'HH:mm').format('HH:mm:ss'); // Format time
       };
 
       // API call to update the appointment

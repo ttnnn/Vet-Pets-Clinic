@@ -4,6 +4,8 @@ import {
   Box, Typography, Autocomplete, TextField, Button
 } from '@mui/material';
 import PetDialog from './Addnewpets';
+import { useNavigate } from 'react-router-dom'; 
+
 
 const api = 'http://localhost:8080'; // Replace with your actual API base URL
 
@@ -12,6 +14,7 @@ const RegisterSearch = () => {
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
   const [pets, setPets] = useState([]);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch owners when component mounts
@@ -33,6 +36,7 @@ const RegisterSearch = () => {
     }
   }, [selectedOwnerId]);
 
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>ข้อมูลลูกค้า</Typography>
@@ -53,7 +57,12 @@ const RegisterSearch = () => {
             margin="normal"
           />
         )}
+        
         sx={{ width: '100%' }}
+        renderOption={(props, option) => (
+          <li {...props} key={option.owner_id}> {/* Set unique key here */}
+            {`${option.first_name} ${option.last_name}`}
+          </li>)}
       />
       <Autocomplete
         options={owners}
@@ -71,6 +80,10 @@ const RegisterSearch = () => {
         />
       )}
       sx={{ width: '100%' }}
+      renderOption={(props, option) => (
+        <li {...props} key={option.owner_id}> {/* Set unique key here */}
+          {`${option.phone_number}`}
+        </li>)}
     />
     </Box>
       
@@ -95,18 +108,39 @@ const RegisterSearch = () => {
             handleClose={() => setOpen(false)}
             selectedOwnerId={selectedOwnerId}
             setPets={setPets}
+            isEditMode={false}
         />
           <Box >
-            {pets.map((pet,index) => (
+            {pets.map((pet) => (
             <>
-              <Box key={index} 
+              <Box key={pet.pet_id} 
               sx={{
                 backgroundColor: '#ffffff', // สีพื้นหลังสำหรับแต่ละกล่อง
                 padding: 2,
                 borderRadius: 2,
                 mt: 2, // ระยะห่างระหว่างกล่อง
                 boxShadow: 1, // เงาของกล่อง
+               
+               
               }}>
+                
+                 {pet.ImageUrl && (
+                  <Box
+                  sx={{
+                    mr:2,
+                    borderRadius: '8px', // กรอบมน
+                    overflow: 'hidden', // ป้องกันรูปภาพล้นกรอบ
+                    
+                  }}
+                >
+                    <img 
+                      src={`http://localhost:8080${pet.ImageUrl}`} 
+                      alt={pet.pet_name} 
+                      style={{ width: 100, height: 100 }} 
+                    />
+                  </Box>
+                )}
+                
                 <Typography variant="h6">{pet.pet_name}</Typography>
                 <Typography>พันธุ์: {pet.pet_breed}</Typography>
                 <Typography>ประเภท: {pet.pet_species}</Typography>
@@ -122,7 +156,14 @@ const RegisterSearch = () => {
                         display: 'flex', 
                         alignItems: 'center', 
                         borderRadius: 1, // มุมมน
-                    }}>
+                    }}
+                    onClick={()=>{
+                      const owner = owners.find(owner => owner.owner_id === selectedOwnerId); // ค้นหาข้อมูลเจ้าของ
+                      navigate('/pet-profile', { state: { pet, owner } }); // ส่งข้อมูลสัตว์เลี้ยงและเจ้าของ
+                    }}
+                    
+                    
+                    >
                     โปรไฟล์
                 </Button>
                 </Box>

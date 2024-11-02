@@ -18,6 +18,11 @@ import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import RegisterSearch from './component/RegisterSearch';
 import { DogBreed, CatBreed } from './component/Breeds';
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+
+dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+
 
 const api = 'http://localhost:8080';
 
@@ -68,12 +73,6 @@ const RegisterPage = () => {
   const [alertMessage, setAlertMessage] = useState(''); 
   const [alertSeverity, setAlertSeverity] = useState('success'); 
 
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
     
   const handleSavePet = () => {
     const petData = {
@@ -81,13 +80,13 @@ const RegisterPage = () => {
       pet_color: petColor,
       pet_breed: petBreed,
       pet_gender: gender,
-      pet_birthday: birthDate ? formatDate(birthDate) : '', 
+      pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : '',
       pet_age: age.years,
       SpayedNeutered: petSpayed ? 1 : 0,
       MicrochipNumber: petMicrochip,
       pet_species: petSpecies,
     };
-  
+  //ตอนเช็ควนลูปแก้ไขข้อมูลสัตว์เลี้ยงแต่ละตัว
     if (editIndex !== null) {
       console.log("Updating pet at index:", editIndex, "with data:", petData);
       setPets((prevPets) => prevPets.map((pet, i) => (i === editIndex ? petData : pet)));
@@ -117,7 +116,7 @@ const RegisterPage = () => {
     setPetColor(pet.pet_color);
     setPetBreed(pet.pet_breed);
     setGender(pet.pet_gender);
-    setBirthDate(pet.pet_birthday ? new Date(pet.pet_birthday) : null);
+    setBirthDate(pet.pet_birthday ? dayjs(pet.pet_birthday).toDate() : null);
     setAge({ years: pet.pet_age, months: '', days: '' }); // แก้ไขได้ถ้าคำนวณอายุในรูปแบบนี้
     setPetSpayed(pet.SpayedNeutered);
     setMicrochip(pet.MicrochipNumber);
@@ -161,22 +160,13 @@ const RegisterPage = () => {
   };
 
   const calculateAge = (date) => {
-    const today = new Date();
-    const birthDate = new Date(date);
-    let years = today.getFullYear() - birthDate.getFullYear();
-    let months = today.getMonth() - birthDate.getMonth();
-    let days = today.getDate() - birthDate.getDate();
-  
-    if (days < 0) {
-      months--;
-      days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-    }
-  
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    setAge({ years, months,days });
+    if (!date) return;
+    const today = dayjs();
+    const birthDay = dayjs(date);
+    const years = today.diff(birthDay, 'year');
+    const months = today.diff(birthDay.add(years, 'year'), 'month');
+    const days = today.diff(birthDay.add(years, 'year').add(months, 'month'), 'day');
+    setAge({ years, months, days });
   };
   
 
