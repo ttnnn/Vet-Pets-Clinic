@@ -161,8 +161,6 @@ const RegisterSearch = () => {
                       const owner = owners.find(owner => owner.owner_id === selectedOwnerId); // ค้นหาข้อมูลเจ้าของ
                       navigate('/pet-profile', { state: { pet, owner } }); // ส่งข้อมูลสัตว์เลี้ยงและเจ้าของ
                     }}
-                    
-                    
                     >
                     โปรไฟล์
                 </Button>

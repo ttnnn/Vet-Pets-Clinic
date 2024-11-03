@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, Avatar, Divider, Tab, Tabs,IconButton, Button  } from '@mui/material';
+import { Box, Typography, Card, CardContent, Avatar, Divider, Tab, Tabs,IconButton, Button ,Snackbar ,Dialog,DialogTitle, DialogContent, DialogActions} from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import Sidebar from './Sidebar';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import PetDialog from './component/Addnewpets';
+import EditPetDialog from './component/EditPetDialog';
+import EditOwnerDialog from './component/EditOwnerDialog';
+import axios from 'axios';
+import EditIcon from '@mui/icons-material/Edit';
+import DiagnosisForm from './component/Diagnosisform';
 
+
+
+const api = 'http://localhost:8080'
 const PetProfilePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { pet, owner } = location.state; // pet and owner data from route state
+  // const { pet, owner } = location.state; // pet and owner data from route state
+  const { pet: initialPet, owner: initialOwner } = location.state; // Get initial data from route state
+  const [pet, setPet] = useState(initialPet);
+  const [owner, setOwner] = useState(initialOwner);
   const [age, setAge] = useState('');
   const [activeTab, setActiveTab] = useState(0);
-  const [open, setOpen] = useState(false);
+  const [editPetOpen, setEditPetOpen] = useState(false);
+  const [editOwnerOpen, setEditOwnerOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [editImageOpen, setEditImageOpen] = useState(false);
+
 
   console.log("ownerId",owner.owner_id);
   useEffect(() => {
@@ -42,6 +56,57 @@ const PetProfilePage = () => {
   const spayedNeuteredStatus = pet.SpayedNeutered === 0 ? "ไม่ได้ทำหมัน" : "ทำหมัน";
   const formatDate = (dateString) => dayjs(dateString).locale('th').format('D MMMM YYYY');
 
+  
+  
+  const handleImageUpload = async (newImage) => {
+    const formData = new FormData();
+    formData.append('image', newImage);
+
+    try {
+        const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.status === 200) {
+            setSnackbarOpen(true);
+            const updatedPetData = response.data;
+            setPet((prevPet) => ({
+                ...prevPet,
+                imageUrl: updatedPetData.imageUrl, // Update the image URL
+            }));
+        }
+    } catch (error) {
+        console.error('Error uploading image:', error);
+    }
+};
+// Update handler
+const handleUpdate = async (updatedData, type) => {
+  const endpoint = type === 'pet' ? `/pets/${pet.pet_id}` : `/owners/${owner.owner_id}`;
+
+  try {
+    const response = await axios.put(`${api}${endpoint}`, updatedData, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.status === 200) {
+      setSnackbarOpen(true);
+      // Update state with new data
+      if (type === 'pet') {
+        setPet({ ...pet, ...updatedData }); // Update pet state with new data
+      } else {
+        setOwner({ ...owner, ...updatedData }); // Update owner state with new data
+      }
+    } else {
+      console.error('Failed to update data', response.data);
+    }
+  } catch (error) {
+    console.error('Error:', error.response ? error.response.data : error.message);
+  }
+};
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -60,13 +125,31 @@ const PetProfilePage = () => {
         {/* Profile Content Section */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           {/* Profile Picture */}
-          <Box>
+          <Box sx={{ position: 'relative' }}>
             <Avatar
               alt={pet.pet_name}
               src={`http://localhost:8080${pet.ImageUrl}`}
-              sx={{ width: 180, height: 180 }}
+              sx={{ width: 250, height: 335 }}
               variant="rounded"
             />
+            <IconButton
+            onClick={() => setEditImageOpen(true)}
+            sx={{
+              position: 'absolute',
+              bottom: 2,
+              right: 2,
+              backgroundColor: '#f0f0f0', 
+              color: 'black', 
+              '&:hover': {
+                backgroundColor: '#e0e0e0', 
+              },
+              width: 40, 
+              height: 40, 
+              borderRadius: '10%', 
+            }}
+          >
+            <EditIcon />
+          </IconButton>
           </Box>
 
           {/* Profile Info Container */}
@@ -85,20 +168,14 @@ const PetProfilePage = () => {
                 <Typography variant="body1">วันเกิด: {formatDate(pet.pet_birthday)}</Typography>
                 <Typography variant="body1">อายุ: {age.years} ปี {age.months} เดือน {age.days} วัน</Typography>
               </CardContent>
-              <button onClick={() => setOpen(true)} > แก้ไข </button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', padding: 1 }}>
+                 <IconButton onClick={() => setEditPetOpen(true)}><EditIcon/></IconButton>
+             </Box>
             </Card>
     
             
-            <PetDialog
-                open={open}
-                handleClose={() => setOpen(false)}
-                selectedOwnerId={owner.owner_id}  // Renamed prop to ownerId
-                petId={pet.pet_id} 
-                petData={pet} 
-                isEditMode={true}
-            />
             {/* Owner Information Block */}
-            <Card sx={{ flex: 1 }}>
+            <Card sx={{ flex: 1 ,position: 'relative' }}>
               <CardContent>
                 <Typography variant="h5" gutterBottom>ข้อมูลเจ้าของ</Typography>
                 <Divider sx={{ mb: 2 }} />
@@ -111,8 +188,9 @@ const PetProfilePage = () => {
                   ที่อยู่: {owner.address} {owner.province} {owner.postal_code}
                 </Typography>
               </CardContent>
-             <button> แก้ไข </button>
-             
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'absolute', bottom: 8, right: 8 }}>
+                 <IconButton onClick={() => setEditOwnerOpen(true)}><EditIcon/></IconButton>
+             </Box>
             </Card>
           </Box>
         </Box>
@@ -127,11 +205,37 @@ const PetProfilePage = () => {
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
             <Tab label="แก้ไขประวัติการรักษา" />
-            <Tab label="ประวัติการรักษา" />
             <Tab label="บันทึกการรักษา" />
+            <Tab label="ประวัติการรักษา" />
             <Tab label="ประวัติการรับวัคซีน" />
+            <Tab label="ประวัติการอาบน้ำตัดขน" />
+            <Tab label="ประวัติการฝากเลี้ยง" />
           </Tabs>
         </Box>
+
+        {activeTab === 0 && (
+          <DiagnosisForm></DiagnosisForm>
+        ) 
+          
+        }
+        <EditPetDialog open={editPetOpen} onClose={() => setEditPetOpen(false)} pet={pet} onSave={(data) => handleUpdate(data, 'pet')} />
+        <EditOwnerDialog open={editOwnerOpen} onClose={() => setEditOwnerOpen(false)} owner={owner} onSave={(data) => handleUpdate(data, 'owner')} />
+
+        <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar} message="Data updated successfully!" />
+        <Dialog open={editImageOpen} onClose={() => setEditImageOpen(false)}>
+                  <DialogTitle>อัปโหลดรูปภาพสัตว์เลี้ยง</DialogTitle>
+                  <DialogContent>
+                      <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => handleImageUpload(e.target.files[0])} 
+                      />
+                  </DialogContent>
+                  <DialogActions>
+                      <Button onClick={() => setEditImageOpen(false)}>ยกเลิก</Button>
+                      <Button onClick={() => setEditImageOpen(false)}>บันทึก</Button>
+                  </DialogActions>
+              </Dialog>
       </Box>
     </Box>
   );

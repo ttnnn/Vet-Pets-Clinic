@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, TextField, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions,  ToggleButtonGroup, ToggleButton, MenuItem
     , Autocomplete,Checkbox,FormControlLabel
    } from '@mui/material';
@@ -13,7 +13,7 @@ import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 const api = 'http://localhost:8080'
-const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petId, isEditMode }) => {
+const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   const [petName , setPetName] = useState('');
   const [petColor , setPetColor] = useState('');
   const [petSpecies , setPetSpecies] = useState('');
@@ -28,26 +28,7 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petI
   const [alertSeverity, setAlertSeverity] = useState('success');
   const [imageFile, setImageFile] = useState(null);
   // Populate the form fields with existing pet data when editing
-  // const Images = `http://localhost:8080${petData.ImageUrl}`
-  
-  const Images = petData?.ImageUrl ? `http://localhost:8080${petData.ImageUrl}` : null;
-  useEffect(() => {
-      if (petData) {
-          setPetName(petData.pet_name || '');
-          setPetColor(petData.pet_color || '');
-          setPetSpecies(petData.pet_species || '');
-          setPetBreed(petData.pet_breed || '');
-          setPetSpayed(petData.SpayedNeutered || false);
-          setMicrochip(petData.MicrochipNumber || '');
-          setBirthDate(petData.pet_birthday ? dayjs(petData.pet_birthday) : '');
-          setGender(petData.pet_gender || 'male');
-          setImagePreview(Images || null); // Use existing image URL if available
-          if (petData.pet_birthday) calculateAge(dayjs(petData.pet_birthday));
-      } else {
-          clearPetForm();
-      }
-  }, [petData,Images]);
-  
+  // const Images = `http://localhost:8080${petData.ImageUrl}
 
   const handleImageUpload = (event) => {
       const file = event.target.files[0];
@@ -96,6 +77,14 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petI
   };
 
   const handleSavePet = async () => {
+    if (!petName || !petSpecies || !petBreed || !birthDate) {
+      setAlertSeverity("error");
+      setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
+      setTimeout(() => {
+        setAlertMessage("");
+      }, 2000);
+      return;
+    }
       const formData = new FormData();
       formData.append("owner_id", selectedOwnerId);
       formData.append("pet_name", petName);
@@ -112,11 +101,7 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petI
       }
 
       try {
-          const url = isEditMode ? `${api}/pets/${petId}` : `${api}/pets`;
-
-          const response = isEditMode 
-            ? await axios.put(url, formData, { headers: { "Content-Type": "multipart/form-data" } }) 
-            : await axios.post(url, formData, { headers: { "Content-Type": "multipart/form-data" } });
+          const response =  await axios.post(`${api}/pets`, formData, { headers: { "Content-Type": "multipart/form-data" } });
 
        if (response.status === 200) {
           const petsResponse = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
@@ -145,8 +130,13 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets, petData , petI
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
     <Dialog open={open} onClose={handleClose}>
-    <DialogTitle>{isEditMode ? 'แก้ไขข้อมูลสัตว์เลี้ยง' : 'เพิ่มสัตว์เลี้ยง'}</DialogTitle>
+    <DialogTitle>เพิ่มสัตว์เลี้ยง</DialogTitle>
       <DialogContent dividers>
+      {alertMessage && (
+            <Typography color={alertSeverity === "error" ? "error" : "success"} variant="subtitle1" sx={{ mb: 2 }}>
+              {alertMessage}
+            </Typography>
+          )}
   <Box
     component="form"
     sx={{

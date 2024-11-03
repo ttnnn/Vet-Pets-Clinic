@@ -44,7 +44,7 @@ app.post('/uploads',(req,res) =>{
   console.log(req.file)
 });
 
-app.put('/pets/:id', upload.single('image'), async (req, res) => {
+app.put('/pets/:id', async (req, res) => {
   const { id } = req.params;
   const { 
       owner_id, 
@@ -58,19 +58,65 @@ app.put('/pets/:id', upload.single('image'), async (req, res) => {
       pet_species 
   } = req.body;
 
-  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
 
   try {
       // สมมติว่าคุณใช้ MySQL
       const result = db.query(
-        'UPDATE pets SET owner_id = ?, pet_name = ?, pet_color = ?, pet_breed = ?, pet_gender = ?, pet_birthday = ?, SpayedNeutered = ?, MicrochipNumber = ?, pet_species = ?, ImageUrl = ? WHERE pet_id = ?',
-        [owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, SpayedNeutered, MicrochipNumber, pet_species, ImageUrl, id]
+        'UPDATE pets SET owner_id = ?, pet_name = ?, pet_color = ?, pet_breed = ?, pet_gender = ?, pet_birthday = ?, SpayedNeutered = ?, MicrochipNumber = ?, pet_species = ? WHERE pet_id = ?',
+        [owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, SpayedNeutered, MicrochipNumber, pet_species,  id]
       );
 
       res.status(200).json({ message: 'Pet updated successfully' });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error updating pet' });
+  }
+});
+
+
+app.put('/pets/:id/image', upload.single('image'), (req, res) => {
+  const { id } = req.params;
+  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
+
+  db.query(
+      'UPDATE pets SET ImageUrl = ? WHERE pet_id = ?',
+      [ImageUrl, id],
+      (err, result) => {
+          if (err) return res.status(500).json({ message: 'Error updating pet image' });
+          if (result.affectedRows === 0) return res.status(404).json({ message: 'Pet not found' });
+          res.status(200).json({ message: 'Pet image updated successfully' });
+      }
+  );
+});
+
+
+
+
+app.put('/owners/:id', (req, res) => {
+  const { id } = req.params; // Move this line up to avoid referencing id before it's declared.
+  console.log('Updating owner:', id);
+  console.log(req.body);
+  
+  const {
+    first_name,
+    last_name,
+    phone_number,
+    phone_emergency,
+    address,
+    province,
+    postal_code,
+  } = req.body;
+
+  try {
+    db.query(
+      'UPDATE owner SET first_name = ?, last_name = ?, phone_number = ?, phone_emergency = ?, address = ?, province = ?, postal_code = ? WHERE owner_id = ?',
+      [first_name, last_name, phone_number, phone_emergency, address, province, postal_code, id]
+    );
+
+    res.status(200).json({ message: 'Owner updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating owner' });
   }
 });
 
@@ -203,7 +249,6 @@ app.post('/create-owner-pet', (req, res) => {
     }
   );
 });
-
 app.post('/pets', upload.single('image'), async  (req, res) => {
   console.log("/pets", req.body); // เพิ่มการพิมพ์ข้อมูลในคอนโซล
   console.log("Uploaded file:", req.file); // พิมพ์ข้อมูลไฟล์ที่อัปโหลด
