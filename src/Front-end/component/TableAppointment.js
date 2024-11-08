@@ -2,7 +2,8 @@ import React, {  useState } from 'react';
 import axios from 'axios';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab,Dialog, DialogActions, 
+  TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab,
+  Dialog, DialogActions, 
   DialogContent, DialogTitle,Typography ,Snackbar,Alert, AlertTitle
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -117,7 +118,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       console.error('Failed to approve appointment:', error);
     }
     setOpenDialog(false);
-    updateAppointments()
   }; 
 
   
@@ -128,10 +128,13 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   
   const deleteAppointment = (AppointmentID) => {
     console.log("Deleting appointment with ID:", AppointmentID);
-    axios.delete(`${api}/deleted/appointment/${AppointmentID}`)
+    axios.put(`${api}/appointment/${AppointmentID}`,{
+       status: 'ยกเลิกนัด',
+       queue_status: 'ยกเลิกนัด'
+    })
       .then(() => {
         // Update the list of appointments after successful deletion
-        setAppointments(appointments.filter(appt => appt.appointment_id !== AppointmentID));
+        updateAppointments()
         setSnackbarMessage(`การยกเลิกนัดหมายหมายเลข ${cancelAppointmentId} เสร็จสิ้น!`);
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
@@ -139,7 +142,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       .catch((error) => {
         console.log("Deleting :", AppointmentID);
         console.error('Error deleting appointment:', error);
-        alert('Failed to delete the appointment');
+        setSnackbarSeverity('error');
       });
   };
 
@@ -154,21 +157,25 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     const today = dayjs();// Current date
     const appointmentDateObj = dayjs(appointmentDate);
     return appointmentDateObj.isBefore(today);
-     // Check if appointment date is in the past
   }
   
   
 
   const filteredAppointments = appointments.filter(appointment => {
-    const categoryMatch = activeCategory === 'ทั้งหมด' || appointment.type_service === activeCategory;
+    // console.log('Active category:', activeCategory);
+    console.log('Comparing:', appointment.type_service, 'with', activeCategory);
+    console.log('Appointment type_service:', appointment.type_service);
+    const categoryMatch = activeCategory === 'ทั้งหมด' || appointment.type_service.trim() === activeCategory.trim();
     const searchMatch = 
       appointment.pet_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appointment.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
      
     return categoryMatch && searchMatch  ;
   });
-  // console.log(filteredAppointments)
-  // console.log('Rendered appointments:', appointments);
+ 
+ 
+  console.log(filteredAppointments)
+  console.log('Rendered appointments:', appointments);
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -232,7 +239,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
             {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
               <TableRow key={index}>
                 <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
-                <TableCell>{appointment.appointment_time|| 'all-day'}</TableCell>
+                <TableCell>{appointment.appointment_time|| 'ตลอดทั้งวัน'}</TableCell>
                 <TableCell>{appointment.pet_name}</TableCell>
                 <TableCell>{appointment.full_name}</TableCell>
                 <TableCell>{appointment.type_service}</TableCell>
@@ -241,15 +248,29 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                 <TableCell>{appointment.status}</TableCell>
                 
                 <TableCell>
-                  {appointment.status === 'รออนุมัติ' && (
-                    <Button 
-                      variant="outlined" 
-                      color="secondary" 
-                      onClick={() => handleApproveClick(appointment.appointment_id)}
-                    >
-                      อนุมัติ
-                    </Button>
-                  )}
+                {appointment.status === 'รออนุมัติ' ? (
+                    new Date() <= new Date(appointment.appointment_date) ? (
+                      <Button 
+                        variant="outlined" 
+                        color="secondary" 
+                        onClick={() => handleApproveClick(appointment.appointment_id)}
+                      >
+                        อนุมัติ
+                      </Button>
+                    ) : (
+                      <Box 
+                        bgcolor="error.main" 
+                        color="white" 
+                        p={1} 
+                        borderRadius={1}
+                      >
+                        <Typography variant="body2">
+                          เลยกำหนดเวลานัดหมายแล้ว
+                        </Typography>
+                      </Box>
+                    )
+                  ) : null}
+
                   {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date) &&(
                   <>
                     <Button 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Typography, Paper, MenuItem, Select, FormControl, InputLabel, TextField, Autocomplete,Tabs, Tab,Checkbox, FormControlLabel} from '@mui/material';
+import { Box, Button, Typography, Paper, MenuItem, Select, FormControl, InputLabel, TextField, Autocomplete,
+  Tabs, Tab,Checkbox, FormControlLabel,Snackbar  ,Dialog, DialogActions, 
+  DialogContent, DialogTitle,} from '@mui/material';
 import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -64,7 +66,7 @@ const AddAppointment = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [isNoTime, setIsNoTime] = useState(false); // Checkbox state
   const [timePickerKey, setTimePickerKey] = useState(0);
-  
+  const [openDialog , setOpenDialog] = useState(false)
   // const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
   
 
@@ -139,77 +141,74 @@ const AddAppointment = () => {
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
-
-  
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+    
   const createAppointment = async () => {
-
-    if (!selectedOwnerId || !selectedPetId || !TypeService || !appointmentDate || 
-      (!isNoTime && !appointmentTime) || (TypeService === 'ฝากเลี้ยง' && (!checkInDate || !checkOutDate || !selectedCage))) {
-      setAlertSeverity('error');
-      setAlertMessage('กรุณากรอกข้อมูลให้ครบถ้วน!');
-      return;
-  }
-
     try {
       let appointmentData = {
         owner_id: selectedOwnerId,
         pet_id: selectedPetId,
         type_service: TypeService,
-        status: 'รออนุมัติ', //ถ้าจองโดยลูกค้าจะเป็น รออนุมัติ
-        queue_status:'รอรับบริการ',
-        
-
-        personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null, 
-        
+        status: 'รออนุมัติ',
+        queue_status: 'รอรับบริการ',
+        personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null,
       };
   
-      // If TypeService is not 'ฝากเลี้ยง', include AppointmentDate, AppointmentTime, and Reason
-      if ( TypeService !== 'ฝากเลี้ยง') {
-        // const formattedDate = appointmentDate ? appointmentDate.toLocaleDateString('en-TH').split('T')[0] : null;
-        const formattedTime = appointmentTime ? (() => {
-          const [startTime] = appointmentTime.split(' - ');
-          const [hours, minutes] = startTime.split(':');
-          return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
-        })() : null;
+      // เพิ่มข้อมูลวันและเวลาถ้าเป็นประเภทอื่นที่ไม่ใช่ 'ฝากเลี้ยง'
+      if (TypeService !== 'ฝากเลี้ยง') {
+        const formattedTime = appointmentTime ? formatTime(appointmentTime) : null;
         const formattedDate = appointmentDate ? dayjs(appointmentDate).format('YYYY-MM-DD') : null;
-
-        console.log("Formatted Date:", formattedDate);
-       console.log("Formatted Time:", formattedTime);
-      
   
         appointmentData = {
           ...appointmentData,
           appointment_date: formattedDate,
           appointment_time: formattedTime,
           reason: reason || null,
-          detail_service : detailservice || null
+          detail_service: detailservice || null,
+        };
+      } else {
+        // กรณีเป็น "ฝากเลี้ยง" ให้เพิ่มข้อมูลการจองกรง
+        appointmentData = {
+          ...appointmentData,
+          start_date: checkInDate ? dayjs(checkInDate).format('YYYY-MM-DD') : '',
+          end_date: checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : '',
+          pet_cage_id: selectedCage,
+          detail_service: activeTab === 0 ? 'ค้างคืน' : 'ระหว่างวัน',
         };
       }
-      
   
-      // Create appointmen
-      const { data } = await axios.post(`${api}/create-appointment`, appointmentData);
-      if (TypeService === 'ฝากเลี้ยง') await createPetHotelEntry(data.AppointmentID);
+      // ส่งข้อมูลไปยัง API
+      const { data: appointmentResponse } = await axios.post(`${api}/create-appointment`, appointmentData);
   
+      // ตรวจสอบการตอบกลับ
+      console.log('Appointment Response:', appointmentResponse);
+      if (appointmentResponse.error) {
+        setAlertSeverity('error');
+        setAlertMessage(appointmentResponse.error);
+      } else {
+        resetForm();
+        setAlertSeverity('success');
+        setAlertMessage('เพิ่มการนัดหมายสำเร็จ.');
+      }
   
-
-      resetForm();
-      setAlertSeverity('success');
-      setAlertMessage('เพิ่มการนัดหมายสำเร็จ.');
-
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 2000);
-
+      setTimeout(() => setAlertMessage(''), 2000);
+  
     } catch (error) {
       console.error('Error creating appointment:', error);
       setAlertSeverity('error');
       setAlertMessage('กรุณาตรวจสอบการนัดหมายใหม่.');
-
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 2000);
+      setTimeout(() => setAlertMessage(''), 2000);
     }
+    setOpenDialog(false);
+  };
+  
+  // Helper function สำหรับการจัดรูปแบบเวลา
+  const formatTime = (time) => {
+    const [startTime] = time.split(' - ');
+    const [hours, minutes] = startTime.split(':');
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
   };
   
 
@@ -227,30 +226,6 @@ const AddAppointment = () => {
     setTimePickerKey(timePickerKey + 1);
   };
   
-  // Function to create a PetHotel entry
-  const createPetHotelEntry = async (appointmentID) => {
-      const numDays = checkInDate && checkOutDate ? Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) : 0;
-      const petHotelData = {
-        appointment_id: appointmentID,
-        pet_id: selectedPetId,
-        entry_date: checkInDate ? dayjs(checkInDate).format('YYYY-MM-DD') : '',
-        exit_date: checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : '',
-        num_day: numDays,
-        status: '', 
-        pet_cage_id : selectedCage
-      };
-
-  
-      // Create PetHotel entry
-    try {
-      await axios.post(`${api}/create-pet-hotel`, petHotelData);
-      // alert("PetHotel entry created successfully!");
-    } catch (error) {
-      console.error('Error creating PetHotel entry:', error);
-      alert('Failed to create PetHotel entry.');
-    }
-  };
-  
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
@@ -263,6 +238,12 @@ const AddAppointment = () => {
             {alertMessage}
           </Alert>
         )}
+        <Snackbar open={!!alertMessage} autoHideDuration={6000} onClose={() => setAlertMessage('')}>
+        <Alert onClose={() => setAlertMessage('')} severity={alertSeverity}>
+          {alertMessage}
+        </Alert>
+        </Snackbar>
+
         <Box display="flex" flexDirection="column" gap={2}>
           <Autocomplete
             options={owners}
@@ -338,7 +319,7 @@ const AddAppointment = () => {
                   label="Check-in Date"
                   value={checkInDate}
                   onChange={(newDate) => setCheckInDate(newDate)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  renderInput={(params) => <TextField {...params} fullWidth  />}
                   disablePast
                   views={['year', 'month', 'day']}
                 />
@@ -362,7 +343,10 @@ const AddAppointment = () => {
                 <DatePicker 
                   label="เลือกวันที่"
                   value={appointmentDate}
-                  onChange={(newDate) => setAppointmentDate(newDate)}
+                  onChange={(newDate) => {
+                    setCheckInDate(newDate);
+                    setCheckOutDate(newDate);
+                  }}
                   renderInput={(params) => <TextField {...params} fullWidth />}
                   disablePast
                   views={['year', 'month', 'day']}
@@ -383,7 +367,7 @@ const AddAppointment = () => {
           
             <Autocomplete
               options={petCages}
-              getOptionLabel={(cage) => `${cage.pet_cage_id} ${cage.note || ''} ${cage.status_cage || ''}`.trim()}
+              getOptionLabel={(cage) => cage.pet_cage_id}
               onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
               renderInput={(params) => (
             <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />
@@ -407,6 +391,7 @@ const AddAppointment = () => {
               getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name} (${personnel.role}) ` : ''}
               onChange={(event, value) => setSelectedPersonnel(value || null)}
               value={selectedPersonnel ? personnelList.find(p => p.personnel_id === selectedPersonnel.personnel_id) : null}
+              isOptionEqualToValue={(option, value) => option.personnel_id === value?.personnel_id}
               renderInput={(params) => (
             <TextField {...params} label="ผู้บันทึก" variant="outlined" fullWidth />
             )}
@@ -485,11 +470,23 @@ const AddAppointment = () => {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
-          <Button variant="contained" color="primary" onClick={createAppointment}>
+          <Button variant="contained" color="primary" onClick={() => setOpenDialog(true)}>
             บันทึกการนัดหมาย
           </Button>
         </Box>
       </Paper>
+      <Dialog open={openDialog} onClose={handleDialogClose}>
+
+    <DialogTitle>ยืนยันการจองนัดหมาย</DialogTitle>
+    <DialogContent>
+    <Typography>คุณแน่ใจหรือไม่ว่าต้องการจองนัดหมายนี้</Typography>
+
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
+      <Button onClick={createAppointment} color="primary">ยืนยัน</Button>
+    </DialogActions>
+  </Dialog>
     </LocalizationProvider>
   );
 };

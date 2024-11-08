@@ -5,7 +5,7 @@ import axios from 'axios';
 import TableAppointments from './component/TableAppointment';
 import { styled } from '@mui/material/styles';
 import AddAppointment from './component/CreateAppointment';
-import { DateTime } from 'luxon'; // For handling dates
+import { DateTime } from 'luxon';
 
 const api = 'http://localhost:8080';
 
@@ -19,88 +19,82 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     opacity: 1,
   },
   '&.Mui-selected': {
-    color: 'purple', // Change the text color for the selected tab
-    backgroundColor: 'rgba(128, 0, 128, 0.2)', // Optional: background color when selected
+    color: 'purple',
+    backgroundColor: 'rgba(128, 0, 128, 0.2)',
     fontWeight: theme.typography.fontWeightMedium,
   },
   '&.Mui-focusVisible': {
     backgroundColor: 'rgba(100, 95, 228, 0.32)',
   },
   '& .MuiTabs-indicator': {
-    backgroundColor: 'purple', // Change the color of the tab indicator
+    backgroundColor: 'purple',
   },
 }));
 
 const AppointmentPage = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [appointments, setAppointments] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all'); // State for dropdown filter
+  const [filterType, setFilterType] = useState('all');
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    updateAppointments(); // ดึงข้อมูลใหม่เมื่อเปลี่ยนแท็บ
   };
 
   const handleFilterChange = (event) => {
     setFilterType(event.target.value);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const appointmentsResponse = await axios.get(`${api}/appointment`);
-        const petHotelResponse = await axios.get(`${api}/pethotel`); // Fetch PetHotel data
-        const updatedAppointments = appointmentsResponse.data.map((appointment) => {
-          if (appointment.type_service === 'ฝากเลี้ยง') {
-            const relatedPetHotel = petHotelResponse.data.find(
-              (petshotel) => petshotel.appointment_id === appointment.appointment_id
-            );
-            if (relatedPetHotel) {
-              return { ...appointment, appointment_date: relatedPetHotel.entry_date };
-            }
-          }
-          return appointment;
-        });
-        setAppointments(updatedAppointments);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
+  const updateAppointments = async () => {
+    try {
+      const appointmentsResponse = await axios.get(`${api}/appointment`);
+      setAppointments(appointmentsResponse.data);
+    } catch (error) {
+      console.error('Error fetching updated appointments:', error);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    updateAppointments();
   }, []);
 
-  // Filter appointments based on selected filter type
-  const today = DateTime.now().startOf('day');
-  const tomorrow = today.plus({ days: 1 });
-  const thisMonthStart = today.startOf('month');
-  const thisMonthEnd = today.endOf('month');
+  useEffect(() => {
+    const today = DateTime.now().startOf('day');
+    const tomorrow = today.plus({ days: 1 });
+    const thisMonthStart = today.startOf('month');
+    const thisMonthEnd = today.endOf('month');
 
-  const filteredAppointments = appointments.filter((appointment) => {
-    const appointmentDate = DateTime.fromISO(appointment.appointment_date);
-    switch (filterType) {
-      case 'all':
-        return appointmentDate >= today;
-      case 'today':
-        return appointmentDate.hasSame(today, 'day')  ;
-      case 'tomorrow':
-        return appointmentDate.hasSame(tomorrow, 'day');
-      case 'this_month':
-        return appointmentDate >= thisMonthStart && appointmentDate <= thisMonthEnd;
-      case 'this_pass'  :
-        return appointmentDate < today;
+    const filterData = () => {
+      return appointments.filter((appointment) => {
+        const appointmentDate = DateTime.fromISO(appointment.appointment_date);
 
-        
-      default:
-        return true;
-    }
-  });
+        // แสดงข้อมูลตามแท็บและประเภทฟิลเตอร์ที่เลือก
+        if (activeTab === 0 && appointment.status !== 'รออนุมัติ') return false;
+        if (activeTab === 1 && !['อนุมัติ', 'ยกเลิกนัด'].includes(appointment.status)) return false;
 
-  const updateAppointments = () => {
-    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
-      .then((response) => setAppointments(response.data))
-      .catch((error) => console.error('Error fetching updated appointments:', error));
-  };
+        switch (filterType) {
+          case 'all':
+            return appointmentDate >= today;
+          case 'today':
+            return appointmentDate.hasSame(today, 'day');
+          case 'tomorrow':
+            return appointmentDate.hasSame(tomorrow, 'day');
+          case 'this_month':
+            return appointmentDate >= thisMonthStart && appointmentDate <= thisMonthEnd;
+          case 'this_pass':
+            return appointmentDate < today;
+          case 'cancel':
+            return appointment.status === 'ยกเลิกนัด';
+          default:
+            return true;
+        }
+      });
+    };
+
+    setFilteredAppointments(filterData());
+  }, [appointments, filterType, activeTab]);
 
   return (
     <Box display="flex" height="100vh">
@@ -116,22 +110,19 @@ const AppointmentPage = () => {
             variant="fullWidth"
             aria-label="full width tabs example"
           >
-            <StyledTab onClick={updateAppointments} label="นัดหมายใหม่(รออนุมัติ)" />
-            <StyledTab onClick={updateAppointments} label="สมุดนัดหมาย" />
+            <StyledTab label="นัดหมายใหม่(รออนุมัติ)" />
+            <StyledTab label="สมุดนัดหมาย" />
             <StyledTab label="เพิ่มการนัดหมาย" />
           </Tabs>
 
-          {/* Dropdown for filtering by appointment date */}
           {activeTab !== 2 && (
-            <Box  sx={{
-              width: '40%',  // กำหนดความกว้างเป็น 80% ของ container
-              height: '100px',  // กำหนดความสูงเป็น 400px
-              marginLeft: 'auto',  // ตั้งให้กล่องยึดขอบด้านขวา
-              padding: 3,  // การเว้นระยะในกล่อง
+            <Box sx={{
+              width: '40%',
+              height: '100px',
+              marginLeft: 'auto',
+              padding: 3,
               borderRadius: '10px',
-              
-            }}
-          >
+            }}>
               <Select
                 value={filterType}
                 onChange={handleFilterChange}
@@ -143,26 +134,25 @@ const AppointmentPage = () => {
                 <MenuItem value="tomorrow">คิวนัดหมายวันพรุ่งนี้</MenuItem>
                 <MenuItem value="this_month">คิวนัดหมายเดือนนี้</MenuItem>
                 <MenuItem value="this_pass">คิวนัดหมายที่ผ่านมาแล้ว</MenuItem>
+                <MenuItem value="cancel">คิวนัดหมายที่ยกเลิก</MenuItem>
               </Select>
             </Box>
           )}
 
           {activeTab === 0 && (
             <TableAppointments
-              appointments={filteredAppointments.filter(appt => appt.status === 'รออนุมัติ')}
+              setAppointments={setAppointments} 
+              appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              setAppointments={setAppointments}
-              statusFilter="รออนุมัติ"
             />
           )}
           {activeTab === 1 && (
             <TableAppointments
-              appointments={filteredAppointments.filter(appt => appt.status === 'อนุมัติ')}
+              setAppointments={setAppointments} 
+              appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              setAppointments={setAppointments}
-              statusFilter="อนุมัติ"
             />
           )}
           {activeTab === 2 && <AddAppointment />}

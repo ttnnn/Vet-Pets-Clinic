@@ -36,8 +36,8 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       const formatTime = (time) => {
         if (!time) return null;
         const [startTime] = time.split(' - ');
-        return dayjs(startTime, 'HH:mm').format('HH:mm:ss'); // Format time
-      };
+        const [hours, minutes] = startTime.split(':');
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;}
 
       // API call to update the appointment
       const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
