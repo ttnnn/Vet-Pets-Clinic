@@ -81,15 +81,15 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   }, [TypeService, selectedDate, getStepMinutes, onTimeSelect]);
 
   const handleTimeSelect = (time) => {
-    if (time === selectedTime) {
+    if (time === selectedTime) {  //ถ้าคลิกช่วงเวลาเดิม selectedTime จะถูกตั้งค่าเป็น null เพื่อยกเลิกการเลือก
       setSelectedTime(null);
       onTimeSelect(null);
     } else {
-      setSelectedTime(time);
+      setSelectedTime(time); //เซตเวลาที่เลือก
       onTimeSelect(time);
     }
   };
-
+  //ตรวจสอบว่าช่วงเวลานั้น ๆ ถูกจองหรือไม่  includes จะเป็นการเช็คว่า array นั้นมีค่าที่เราต้องการมั้ย
   const isBooked = (time) => {
     const startTime = time.split(' - ')[0];
     const formattedStartTime = startTime + ':00';
@@ -102,7 +102,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
         timeSlots.map((time, index) => (
           <Button
             key={index}
-            onClick={() => handleTimeSelect(time)}
+            onClick={() => handleTimeSelect(time)} //เซตเวลาที่กดเลือก
             style={{
               margin: '5px',
               backgroundColor: selectedTime === time ? '#87CEFA' : (isBooked(time) ? 'lightgray' : 'white'),
@@ -113,10 +113,10 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
               color: isBooked(time) ? 'darkgray' : 'black',
               fontWeight: isBooked(time) ? 'normal' : 'bold',
             }}
-            disabled={isBooked(time)}
+            disabled={isBooked(time)} //ช่วงเวลาที่ถูกจองแล้ว ปิดการใช้งานปุ่ม
           >
-            {time}
-          </Button>
+            {time} 
+          </Button> //ช่วงเวลา TimeSlot ที่สร้างขึ้น
         ))
       ) : (
         ''

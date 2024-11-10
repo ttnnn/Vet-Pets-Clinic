@@ -217,8 +217,7 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
             fullWidth 
         />
     )}
-    freeSolo // Allow custom input
-    // Optional: limit the height of the dropdown
+    freeSolo //พิมพ์และเลือกข้อความที่ไม่ได้อยู่ในรายการตัวเลือกที่มีอยู่ใน options ได้ 
     sx={{ 
         '& .MuiAutocomplete-listbox': {
             maxHeight: '200px', 
@@ -226,7 +225,6 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
         }
     }}
     isOptionEqualToValue={(option, value) => option === value} // Ensure correct matching
-    // Optional: if you want to keep the selected value in the input box
     getOptionLabel={(option) => option} // Use the option as the label
 />
     

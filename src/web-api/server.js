@@ -73,7 +73,6 @@ app.put('/pets/:id', async (req, res) => {
   }
 });
 
-
 app.put('/pets/:id/image', upload.single('image'), (req, res) => {
   const { id } = req.params;
   const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
@@ -88,9 +87,6 @@ app.put('/pets/:id/image', upload.single('image'), (req, res) => {
       }
   );
 });
-
-
-
 
 app.put('/owners/:id', (req, res) => {
   const { id } = req.params; // Move this line up to avoid referencing id before it's declared.
@@ -249,6 +245,7 @@ app.post('/create-owner-pet', (req, res) => {
     }
   );
 });
+
 app.post('/pets', upload.single('image'), async  (req, res) => {
   console.log("/pets", req.body); // เพิ่มการพิมพ์ข้อมูลในคอนโซล
   console.log("Uploaded file:", req.file); // พิมพ์ข้อมูลไฟล์ที่อัปโหลด
@@ -276,8 +273,48 @@ app.post('/pets', upload.single('image'), async  (req, res) => {
     res.status(201).send({ message: 'Pet added successfully', petId: result.insertId });
   });
 });
+app.put('/postpone/hotels/:id', (req, res) => {
+  console.log('/postpone/hotels/:id', req.params);
+  const { id } = req.params;
+  const { start_date, end_date, pet_cage_id, num_day, personnel_id } = req.body;
 
-// Fetch pets by owner_id
+  if (!start_date && !end_date && !pet_cage_id && !personnel_id) {
+    return res.status(400).send({ message: 'appointment_date and appointment_time are required' });
+  }
+
+  // Query to update both pethotel and appointment tables
+  const query = `
+    UPDATE petshotel
+    JOIN appointment ON petshotel.appointment_id = appointment.appointment_id
+    SET 
+      petshotel.start_date = ?, 
+      petshotel.end_date = ?, 
+      petshotel.num_day = ?, 
+      petshotel.pet_cage_id = ?, 
+      appointment.personnel_id = ?, 
+      appointment.appointment_date = ?
+    WHERE petshotel.appointment_id = ?
+  `;
+
+  db.query(
+    query, 
+    [start_date, end_date, num_day, pet_cage_id, personnel_id, start_date, id], 
+    (err, result) => {
+      if (err) { 
+        console.error('Failed to update appointment status:', err);
+        return res.status(500).send({ message: 'Database error' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).send({ message: 'Appointment not found' });
+      }
+
+      return res.send({ message: 'Appointment status updated successfully' });
+    }
+  );
+});
+
+
 app.get('/pets', (req, res) => {
   const ownerId = req.query.owner_id;
   const query = `SELECT * FROM pets WHERE owner_id = ?`;
@@ -291,6 +328,21 @@ app.get('/pets', (req, res) => {
           return res.status(404).json({ message: 'No pets found for this owner' });
       }
       res.json(results);
+  });
+});
+app.get('/pets/:pet_id', (req, res) => {
+  const pet_id = req.params.pet_id; // ดึง pet_id จาก req.params
+  const query = `SELECT * FROM pets WHERE pet_id = ?`;
+
+  db.query(query, [pet_id], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No pets found with this pet ID' });
+    }
+    res.json(results[0]); // ส่งผลลัพธ์เป็น object แทน array
   });
 });
 
@@ -307,41 +359,6 @@ app.get('/personnel', (req, res) => {
       res.json(results);
     });
 });
-app.get('/petcage', (req, res) => {
-  const petSpecies = req.query.pet_species;
-  const query = `SELECT * FROM petcage WHERE pet_species = ? `;
-
-  db.query(query,[petSpecies], (err, results) => {
-    if (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    res.json(results);
-  });
-});
-
-// app.post('/reserveCage', (req, res) => { 
-  // const { pet_cage_id, start_date, end_date } = req.body;
-// 
-  // Check if the cage is available for the selected dates
-  // const checkAvailabilityQuery = `
-    // SELECT * FROM petshotel 
-    // WHERE pet_cage_id = ? 
-      // AND ((? BETWEEN start_date AND end_date) 
-      // OR (? BETWEEN start_date AND end_date))
-  // `;
-// 
-  // db.query(checkAvailabilityQuery, [pet_cage_id, start_date, end_date], (err, result) => {
-    // if (err) return res.status(500).json({ error: err.message });
-// 
-    // if (result.length > 0) {
-      // return res.status(400).json({ message: 'Cage is already reserved for the selected date and time.' });
-    // }
-// 
-    // });
-  // });
-
 
 app.put('/appointment/:id', (req, res) => {  //จัดการคิว
   
@@ -382,7 +399,7 @@ app.put('/postpone/appointment/:id', (req, res) => {  //จัดการคิ
   const query = `UPDATE appointment SET appointment_date = ? , appointment_time = ? WHERE appointment_id = ?`;
 
   db.query(query, [appointment_date , appointment_time, id], (err, result) => {
-    if (err) {
+    if (err) { 
       console.error('Failed to update appointment status:', err);
       return res.status(500).send({ message: 'Database error' });
     }
@@ -395,7 +412,6 @@ app.put('/postpone/appointment/:id', (req, res) => {  //จัดการคิ
   });
 });
 
-
 app.get('/appointment',(req, res)=>{
   const query = `
   select 
@@ -404,6 +420,7 @@ app.get('/appointment',(req, res)=>{
       appointment.appointment_date ,
       appointment.appointment_time,
       pets.pet_name,
+      pets.pet_id,
       CONCAT(owner.first_name, ' ',owner.last_name) AS full_name,
       appointment.type_service,
       appointment.reason,
@@ -452,7 +469,6 @@ app.post('/create-appointment',  async (req, res) => {
   const {
     pet_id,
     type_service,
-    appointment_date,
     start_date,
     end_date,
     pet_cage_id
@@ -475,7 +491,7 @@ app.post('/create-appointment',  async (req, res) => {
         }
           await createAppointment(newAppointmentID, req.body, res);
         // หากกรงว่าง ทำการสร้างการจอง PetHotel
-        createPetHotelEntry(newAppointmentID, pet_id, start_date, end_date, pet_cage_id, appointment_date, res);
+        createPetHotelEntry(newAppointmentID, pet_id, start_date, end_date, pet_cage_id, res);
       });
     } else {
       // สำหรับประเภทบริการอื่น ๆ สร้างการนัดหมายทันที
@@ -564,6 +580,32 @@ function createAppointment(newAppointmentID, data, res) {
     res.json({ message: 'Appointment created successfully!', AppointmentID: newAppointmentID });
   });
 }
+
+app.get('/available-cages', (req, res) => {
+  const { start_date, end_date } = req.query;
+  const petSpecies = req.query.pet_species;
+
+  const query = `
+    SELECT p.pet_cage_id, p.cage_capacity, COUNT(ph.pet_cage_id) AS reservedCount
+    FROM petcage p
+    LEFT JOIN petshotel ph ON p.pet_cage_id = ph.pet_cage_id 
+      AND ((? BETWEEN ph.start_date AND ph.end_date) 
+      OR (? BETWEEN ph.start_date AND ph.end_date))
+    WHERE p.pet_species = ?
+    GROUP BY p.pet_cage_id, p.cage_capacity
+    HAVING reservedCount < p.cage_capacity OR reservedCount IS NULL
+  `;
+
+  db.query(query, [start_date, end_date,petSpecies], (err, results) => {
+    if (err) {
+      console.error('Error fetching available cages:', err);
+      return res.status(500).json({ error: 'Database error fetching available cages' });
+    }
+    
+    res.json(results);
+  });
+});
+
 
 app.use('/public', express.static(path.join(__dirname, '../../public')));
 

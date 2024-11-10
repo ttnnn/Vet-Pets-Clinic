@@ -1,72 +1,87 @@
 import React, { useState } from 'react';
-import { Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, Box, FormControlLabel } from '@mui/material';
+import {
+  Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
+  Checkbox, Box, FormControlLabel,Typography,Snackbar
+} from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
-import TimeSlotPicker from './TimeSlot';   // Import TimeSlotPicker component
+import TimeSlotPicker from './TimeSlot'; // Import TimeSlotPicker component
 import dayjs from 'dayjs';
-import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+import 'dayjs/locale/th'; // Import Thai locale for dayjs
 
-dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+dayjs.locale('th'); // Set dayjs to use Thai locale
+
+const api = 'http://localhost:8080';
 
 
-const api = 'http://localhost:8080'
 const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments }) => {
   const [appointmentDate, setAppointmentDate] = useState(null);
   const [appointmentTime, setAppointmentTime] = useState(null);
-  const [isNoTime, setIsNoTime] = useState(false); // Checkbox state for time selection
+  const [isNoTime, setIsNoTime] = useState(false);
+  const [openDialog , setOpenDialog] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
- console.log('appointment:',appointmentId)
- console.log('service:',TypeService)
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+  console.log('typeservice' , TypeService )
+  const resetFields = () => {
+    setAppointmentDate('');
+    setAppointmentTime('');
+    setIsNoTime(false);
+  };
 
- const resetFields = () => {
-  setAppointmentDate('');
-  setAppointmentTime('');
-  setIsNoTime(false);
-};
-  
   const handlePostpone = async () => {
     try {
       if (!appointmentDate || (!appointmentTime && !isNoTime)) {
-        alert('Please select both a date and time.');
+        alert('Please fill all required fields.');
         return;
       }
-      const formatDate = (date) => dayjs(date).format('YYYY-MM-DD'); // Format date
+
+      const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
       const formatTime = (time) => {
         if (!time) return null;
         const [startTime] = time.split(' - ');
         const [hours, minutes] = startTime.split(':');
-        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;}
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+      };
 
-      // API call to update the appointment
       const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
         appointment_date: formatDate(appointmentDate),
-        appointment_time: isNoTime ? null : formatTime(appointmentTime), // Send null for time if 'no time' is selected
+        appointment_time: isNoTime ? null : formatTime(appointmentTime),
       });
-      
-      console.log("Formatted Date:", formatDate(appointmentDate));
-      console.log("Formatted Time:", formatTime(appointmentTime));
 
       if (response.status === 200) {
-        updateAppointments(); 
-        resetFields(); // รีเซต
-        handleClose();
+        setSnackbarOpen(true);
+        updateAppointments(); // Update appointments after successful postponement
+        resetFields();
+        handleClose(); 
       }
     } catch (error) {
       console.error('Failed to update appointment:', error);
       alert('Failed to update appointment');
     }
+    setOpenDialog(false);
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog open={open} onClose={() => { resetFields(); handleClose(); }} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={() => { resetFields(); handleClose(); }} maxWidth="md" fullWidth
+        BackdropProps={{
+          style: { backgroundColor: 'rgba(0, 0, 0, 0.1)' } // ตั้งค่าโปร่งแสงของพื้นหลัง
+        }}
+      PaperProps={{
+          sx: { boxShadow: 'none' } // ปิดเงาของ Dialog
+        }}>
         <DialogTitle>เลือก วัน-เวลา นัดหมายใหม่</DialogTitle>
         <DialogContent dividers>
           {TypeService !== 'ฝากเลี้ยง' ? (
             <>
-              {/* Date Picker */}
               <DatePicker
                 label="เลือกวันที่"
                 value={appointmentDate}
@@ -75,8 +90,6 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                 disablePast
                 views={['year', 'month', 'day']}
               />
-
-              {/* Checkbox for No Time selection */}
               <Box>
                 <FormControlLabel
                   control={
@@ -84,31 +97,40 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                       checked={isNoTime}
                       onChange={(e) => {
                         setIsNoTime(e.target.checked);
-                        setAppointmentTime(e.target.checked ? null : ''); // Reset time when no time is selected
+                        setAppointmentTime(e.target.checked ? null : '');
                       }}
                     />
                   }
                   label="ไม่ระบุเวลา"
                 />
               </Box>
-
               {!isNoTime && (
                 <TimeSlotPicker
                   TypeService={TypeService}
                   selectedDate={appointmentDate}
-                  onTimeSelect={setAppointmentTime} // Update appointmentTime when a time slot is selected
+                  onTimeSelect={setAppointmentTime}
                 />
               )}
             </>
-          ) : null}
+          ) : '' }
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { resetFields(); handleClose(); }}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handlePostpone} className="submit-button">
-            บันทึก
-          </Button>
+          <Button onClick={() => setOpenDialog(true)} color="primary">ยืนยัน</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar} message="Data updated successfully!" />
+      <Dialog open={openDialog} onClose={handleDialogClose}>
+        <DialogTitle>ยืนยันการเลื่อนนัดหมาย</DialogTitle>
+        <DialogContent>
+        <Typography>คุณแน่ใจหรือไม่ว่าต้องการเลื่อนนัดหมายนี้</Typography>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
+            <Button onClick={handlePostpone} color="primary">ยืนยัน</Button>
+        </DialogActions>
+    </Dialog>
     </LocalizationProvider>
   );
 };

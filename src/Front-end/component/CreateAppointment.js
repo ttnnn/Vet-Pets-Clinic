@@ -121,16 +121,23 @@ const AddAppointment = () => {
   }, [selectedOwnerId]);
 
   useEffect(() => {
-    const fetchPetCages = async () => {
-      try {
-        const response = await axios.get(`${api}/petcage?pet_species=${petSpecies}`);
-        setPetCages(response.data);
-      } catch (error) {
-        console.error('Error fetching pet cages:', error);
+    const fetchAvailableCages = async () => {
+      const formattedCheckInDate = checkInDate ? dayjs(checkInDate).format('YYYY-MM-DD') : null;
+      const formattedCheckOutDate = checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : null;
+      if (formattedCheckInDate && formattedCheckOutDate) {
+        try {
+          const response = await axios.get(
+            `${api}/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
+          );
+          setPetCages(response.data);  // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
+        } catch (error) {
+          console.error('Error fetching available cages:', error);
+        }
       }
     };
-    petSpecies && fetchPetCages();
-  }, [petSpecies]);
+    fetchAvailableCages();
+  
+  }, [checkInDate, checkOutDate ,petSpecies]);
   
 
 
@@ -147,6 +154,18 @@ const AddAppointment = () => {
     
   const createAppointment = async () => {
     try {
+      if(TypeService !== 'ฝากเลี้ยง'){
+        if (!appointmentDate || (!appointmentTime && !isNoTime)) {
+          alert('Please fill all required fields.');
+          return;
+        }
+      }else {
+        if (!checkInDate || !checkOutDate || !petCages ) {
+          alert('Please fill all required fields.');
+          return;
+        }
+      }
+
       let appointmentData = {
         owner_id: selectedOwnerId,
         pet_id: selectedPetId,
@@ -224,6 +243,7 @@ const AddAppointment = () => {
     setSelectedPersonnel(null);
     setDetailService('')
     setTimePickerKey(timePickerKey + 1);
+    setIsNoTime(false)
   };
   
 
@@ -256,8 +276,8 @@ const AddAppointment = () => {
                 variant="outlined" 
                 fullWidth
                 onChange={(e) => setSearchOwner(e.target.value)} />}
-            getOptionSelected={(option, value) => option.owner_id === value.owner_id}  
-            renderOption={(props, option) => (
+                getOptionSelected={(option, value) => option.owner_id === value.owner_id}  
+                renderOption={(props, option) => (
               <li {...props} key={option.owner_id}> {/* Set unique key here */}
                 {`${option.first_name} ${option.last_name}`}
               </li>
@@ -342,7 +362,7 @@ const AddAppointment = () => {
                 {/* Daytime Booking (ระหว่างวัน) */}
                 <DatePicker 
                   label="เลือกวันที่"
-                  value={appointmentDate}
+                  value={checkInDate}
                   onChange={(newDate) => {
                     setCheckInDate(newDate);
                     setCheckOutDate(newDate);
@@ -364,28 +384,14 @@ const AddAppointment = () => {
               fullWidth
             />
               
-          
             <Autocomplete
-              options={petCages}
-              getOptionLabel={(cage) => cage.pet_cage_id}
-              onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
-              renderInput={(params) => (
-            <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />
+            options={petCages}
+            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reservedCount || 0)}  (${cage.cage_capacity}) `}
+            onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
+            renderInput={(params) => (
+              <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />
             )}
-            renderOption={(props, cage) => (
-              <li {...props}>
-                {`${cage.pet_cage_id} ${cage.note || ''} `}
-                <span style={{
-                  backgroundColor: cage.status_cage === 'เต็ม' ? '#ffcccc' : '#ccffcc', // สีพื้นหลัง
-                  padding: '2px 4px', // การเว้นระยะ
-                  borderRadius: '4px', // มุมมน
-                  marginLeft: '10px'
-                }}>
-                  {cage.status_cage}
-                </span>
-              </li>
-            )}
-          />
+            />
             <Autocomplete
               options={personnelList}
               getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name} (${personnel.role}) ` : ''}
@@ -438,20 +444,19 @@ const AddAppointment = () => {
         <TextField {...params} label="พบสัตวแพทย์" variant="outlined" fullWidth />
       )}
       />
-        <Box>
+          </>
+        )}
+         <Box>
         <FormControlLabel control={
-             <Checkbox  
-             checked={isNoTime}  
-             onChange={(e) => {
+              <Checkbox  
+              checked={isNoTime}  
+              onChange={(e) => {
               setIsNoTime(e.target.checked);
               setAppointmentTime(e.target.checked ? null : ''); // Set to null when checked
             }}/>}
               label="ไม่ระบุเวลา"
         />
-          </Box>
-          </>
-        )}
-
+        </Box>
         {!isNoTime && (<TimeSlotPicker //เช็คว่าได้เลือกcheckbox มั้ย และเรียกcomponent slottime ตามประเภทที่เลือก
           value={appointmentTime}
           key={timePickerKey}

@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
+import PostponeHotel from './PostponeHotel';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
@@ -58,22 +59,26 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [selectedTypeService, setSelectedTypeService] = useState(null);
-  const [openDialog , setOpenDialog] = useState(false)
+  const [selectedPetId, setSelectedPetId] = useState(null); // State for pet_id
+  const [openDialog , setOpenDialog] = useState(false);
   const [approveAppointmentId, setApproveAppointmentId] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const [openCancelDialog, setOpenCancelDialog] = useState(false); // New state for cancel dialog
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelAppointmentId, setCancelAppointmentId] = useState(null);
 
-  const handlePostponeClick = (appointmentId,typeService) => {
+  const handlePostponeClick = (appointmentId, typeService, petId) => {
     setSelectedAppointmentId(appointmentId);
     setSelectedTypeService(typeService);
+    setSelectedPetId(petId); // Store pet_id
     setOpenPostponeDialog(true);
 
-    console.log('appointment;',appointmentId)
-    console.log('typeService;',typeService)
+    console.log('appointment:', appointmentId);
+    console.log('typeService:', typeService);
+    console.log('petId:', petId);
   };
+
 
   const updateAppointments = () => {
     axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
@@ -163,8 +168,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
   const filteredAppointments = appointments.filter(appointment => {
     // console.log('Active category:', activeCategory);
-    console.log('Comparing:', appointment.type_service, 'with', activeCategory);
-    console.log('Appointment type_service:', appointment.type_service);
     const categoryMatch = activeCategory === 'ทั้งหมด' || appointment.type_service.trim() === activeCategory.trim();
     const searchMatch = 
       appointment.pet_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -174,8 +177,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   });
  
  
-  console.log(filteredAppointments)
-  console.log('Rendered appointments:', appointments);
+  // console.log(filteredAppointments)
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -283,19 +285,29 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                     <Button
                       variant="outlined" 
                       color="secondary" 
-                      onClick={() => handlePostponeClick(appointment.appointment_id, appointment.type_service)}
+                      onClick={() => handlePostponeClick(appointment.appointment_id, appointment.type_service,  appointment.pet_id )}
                     >  เลื่อนนัด
                     </Button> 
                     {selectedAppointmentId && (
-                      <Postpone
-                        open={openPostponeDialog}
-                        handleClose={() => setOpenPostponeDialog(false)}
-                        appointmentId={selectedAppointmentId}
-                        TypeService= {selectedTypeService}
-                        updateAppointments={updateAppointments}
-                       />
-                     )}
-                    
+                      selectedTypeService === 'ฝากเลี้ยง' ? (
+                        <PostponeHotel
+                          open={openPostponeDialog}
+                          handleClose={() => setOpenPostponeDialog(false)}
+                          appointmentId={selectedAppointmentId}
+                          petId={selectedPetId} // Pass petId
+                          updateAppointments={updateAppointments}
+                          
+                        />
+                      ) : (
+                        <Postpone
+                          open={openPostponeDialog}
+                          handleClose={() => setOpenPostponeDialog(false)}
+                          appointmentId={selectedAppointmentId}
+                          TypeService={selectedTypeService}
+                          updateAppointments={updateAppointments}
+                        />
+                      )
+                    )}    
                   </>                    
                   )}
                      
