@@ -1,26 +1,53 @@
-import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import React, { useState ,useEffect} from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,Autocomplete } from '@mui/material';
+import dayjs from 'dayjs';
+import { DogBreed, CatBreed } from './Breeds';
+import 'dayjs/locale/th'; // Import Thai locale for dayjs
+
+dayjs.locale('th'); // Set dayjs to use Thai locale
 
 const EditPetDialog = ({ open, onClose, pet, onSave }) => {
+  const formattedDate = pet.pet_birthday ? dayjs(pet.pet_birthday).format('YYYY-MM-DD') : '';
   const [formData, setFormData] = useState({
+    owner_id : pet.owner_id,
     pet_name: pet.pet_name,
     pet_gender: pet.pet_gender,
     pet_species: pet.pet_species,
     pet_color: pet.pet_color,
-    pet_breed: pet.pet_breed,
-    SpayedNeutered: pet.SpayedNeutered,
-    pet_birthday: pet.pet_birthday,
-  });
+    spayed_neutered: pet.spayed_neutered,
+    microchip_number:pet.microchip_number    ,
+    pet_birthday: formattedDate,
+    otherPetSpecies: pet.pet_species === "อื่นๆ" ? pet.pet_species : "",
+  }
+);
+console.log("pet_birthday", formData.pet_birthday);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   const handleSave = () => {
-    onSave(formData);
-    onClose();
+    const petData = {
+      ...formData,
+      pet_species: formData.pet_species === "อื่นๆ" ? formData.otherPetSpecies : formData.pet_species,
+    };
+    onSave(petData);  // ส่งข้อมูลให้ onSave
+    onClose();        // ปิด dialog
   };
+  useEffect(() => {
+    // ทำให้ formData อัพเดตตาม pet ใหม่ทุกครั้งเมื่อเปิด Dialog
+    setFormData({
+      owner_id: pet.owner_id,
+      pet_name: pet.pet_name,
+      pet_gender: pet.pet_gender,
+      pet_species: pet.pet_species,
+      pet_color: pet.pet_color,
+      spayed_neutered: pet.spayed_neutered,
+      microchip_number: pet.microchip_number,
+      pet_birthday: formattedDate,
+      otherPetSpecies: pet.pet_species === "อื่นๆ" ? pet.pet_species : "",
+    });
+  }, [pet,formattedDate]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -50,6 +77,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
           fullWidth
           margin="dense"
         />
+        
         <TextField
           label="สี/ตำหนิ"
           name="pet_color"
@@ -58,27 +86,67 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
           fullWidth
           margin="dense"
         />
-        <TextField
-          label="พันธุ์"
-          name="pet_breed"
-          value={formData.pet_breed}
-          onChange={handleChange}
-          fullWidth
-          margin="dense"
-        />
+         {formData.pet_species === "อื่นๆ" ? (
+            <TextField
+              label="กรุณาระบุประเภทสัตว์เลี้ยง"
+              value={formData.otherPetSpecies}
+              fullWidth
+              required
+              onChange={handleChange}
+              sx={{ mb: 2 }}
+            />
+          ) : (
+            <Autocomplete
+            options={formData.pet_species === "แมว" ? CatBreed : formData.pet_species === "สุนัข" ? DogBreed : []}
+              value={formData.petBreed}
+              onChange={(event, newValue) => {
+                setFormData((prev) => ({ ...prev, pet_breed: newValue }));
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="พันธุ์ของสัตว์เลี้ยง" 
+                  variant="outlined" 
+                  required
+                  fullWidth 
+                />
+              )}
+              freeSolo // Allow custom input
+              sx={{ 
+                '& .MuiAutocomplete-listbox': {
+                  maxHeight: '200px', 
+                  overflowY: 'auto',
+                }
+              }}
+              isOptionEqualToValue={(option, value) => option === value}
+              getOptionLabel={(option) => option}
+            />
+          )}
+
+    
+
         <TextField
           label="ทำหมัน"
-          name="SpayedNeutered"
-          value={formData.SpayedNeutered}
+          name="spayed_neutered"
+          value={formData.spayed_neutered}
           onChange={handleChange}
           fullWidth
           margin="dense"
           select
           SelectProps={{ native: true }}
         >
-          <option value={1}>ทำหมัน</option>
-          <option value={0}>ไม่ได้ทำหมัน</option>
+          <option value={true}>ทำหมัน</option>
+          <option value={false}>ไม่ได้ทำหมัน</option>
         </TextField>
+        <TextField
+          label="microchipNumber"
+          name="microchip"
+          value={formData.microchip_number}
+          onChange={handleChange}
+          fullWidth
+          margin="dense"
+        />
+ 
         <TextField
           label="วันเกิด"
           name="pet_birthday"

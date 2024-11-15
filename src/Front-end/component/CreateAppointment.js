@@ -87,12 +87,14 @@ const AddAppointment = () => {
     const fetchPersonnel = async () => {
       try {
         const response = await axios.get(`${api}/personnel`);
+        console.log('response',response)
         setPersonnelList(response.data);
       } catch (error) {
         console.error('Error fetching personnel:', error);
       }
     };
     fetchPersonnel();
+ 
   }, []);
 
   useEffect(() => {
@@ -129,7 +131,8 @@ const AddAppointment = () => {
           const response = await axios.get(
             `${api}/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
           );
-          setPetCages(response.data);  // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
+          setPetCages(response.data); 
+          console.log('cage' , response.data) // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
         } catch (error) {
           console.error('Error fetching available cages:', error);
         }
@@ -173,6 +176,7 @@ const AddAppointment = () => {
         status: 'รออนุมัติ',
         queue_status: 'รอรับบริการ',
         personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null,
+        
       };
   
       // เพิ่มข้อมูลวันและเวลาถ้าเป็นประเภทอื่นที่ไม่ใช่ 'ฝากเลี้ยง'
@@ -185,7 +189,7 @@ const AddAppointment = () => {
           appointment_date: formattedDate,
           appointment_time: formattedTime,
           reason: reason || null,
-          detail_service: detailservice || null,
+          detail_service: detailservice || isNoTime === true ? 'Walk-in' : 'นัดหมาย',
         };
       } else {
         // กรณีเป็น "ฝากเลี้ยง" ให้เพิ่มข้อมูลการจองกรง
@@ -386,7 +390,7 @@ const AddAppointment = () => {
               
             <Autocomplete
             options={petCages}
-            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reservedCount || 0)}  (${cage.cage_capacity}) `}
+            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)}  (${cage.cage_capacity}) `}
             onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
             renderInput={(params) => (
               <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />

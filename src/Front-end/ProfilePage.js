@@ -27,12 +27,16 @@ const PetProfilePage = () => {
   const [editOwnerOpen, setEditOwnerOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [editImageOpen, setEditImageOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  console.log('pet' , pet)
 
 
   console.log("ownerId",owner.owner_id);
   useEffect(() => {
     calculateAge(pet.pet_birthday); // Calculate pet's age on load
   }, [pet.pet_birthday]);
+
 
   const calculateAge = (date) => {
     if (!date) return;
@@ -53,34 +57,58 @@ const PetProfilePage = () => {
   const handleBack =()=>{
     navigate('/register')
   }
-  const spayedNeuteredStatus = pet.SpayedNeutered === 0 ? "ไม่ได้ทำหมัน" : "ทำหมัน";
+  const spayedNeuteredStatus = pet.spayed_neutered === false ? "ไม่ได้ทำหมัน" : "ทำหมัน";
   const formatDate = (dateString) => dayjs(dateString).locale('th').format('D MMMM YYYY');
 
-  
-  
-  const handleImageUpload = async (newImage) => {
-    const formData = new FormData();
-    formData.append('image', newImage);
 
-    try {
-        const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (response.status === 200) {
-            setSnackbarOpen(true);
-            const updatedPetData = response.data;
-            setPet((prevPet) => ({
-                ...prevPet,
-                imageUrl: updatedPetData.imageUrl, // Update the image URL
-            }));
-        }
-    } catch (error) {
-        console.error('Error uploading image:', error);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
     }
-};
+  };
+  // Handle file selection
+  const handleImageSave = async () => {
+    if (!selectedImage) return; // Ensure an image is selected
+  
+    const formData = new FormData();
+    formData.append('image', selectedImage);
+  
+    try {
+      const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+  
+      if (response.status === 200) {
+        setSnackbarOpen(true); // Notify success
+        const updatedPetData = response.data;
+        setPet((prevPet) => ({
+          ...prevPet,
+          image_url: updatedPetData.image_url, // Update image URL
+        }));
+        setEditImageOpen(false); // Close the dialog
+        setSelectedImage(null); // Reset the temp state.
+        
+        await fetchUpdatedPetData();
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  };
+  const fetchUpdatedPetData = async () => {
+    try {
+      const response = await axios.get(`${api}/pets/${pet.pet_id}`);
+      if (response.status === 200) {
+        setPet(response.data); // Update pet data in state
+      }
+    } catch (error) {
+      console.error('Error fetching updated pet data:', error);
+    }
+  };
+
 // Update handler
 const handleUpdate = async (updatedData, type) => {
+  console.log(updatedData) 
   const endpoint = type === 'pet' ? `/pets/${pet.pet_id}` : `/owners/${owner.owner_id}`;
 
   try {
@@ -126,18 +154,33 @@ const handleUpdate = async (updatedData, type) => {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           {/* Profile Picture */}
           <Box sx={{ position: 'relative' }}>
+          <Box
+            sx={{
+              mr:2,
+              borderRadius: '8px', // กรอบมน
+              overflow: 'hidden', // ป้องกันรูปภาพล้นกรอบ
+              width: 300, // กำหนดความกว้างของกรอบ
+              height: 365, // กำหนดความสูงของกรอบ
+            
+            }}
+          >
             <Avatar
               alt={pet.pet_name}
-              src={`http://localhost:8080${pet.ImageUrl}`}
-              sx={{ width: 250, height: 335 }}
+              src={`http://localhost:8080${pet.image_url}`}
+              sx={{ width: '100%', // ให้รูปขยายเต็มกรอบ
+                height: '100%', // ให้รูปสูงเต็มกรอบ
+                objectFit: 'cover', // ปรับให้เต็มกรอบโดยไม่บิดเบี้ยว
+                borderRadius: '8px', }}
               variant="rounded"
+              
             />
+            </Box>
             <IconButton
             onClick={() => setEditImageOpen(true)}
             sx={{
               position: 'absolute',
               bottom: 2,
-              right: 2,
+              right: 18,
               backgroundColor: '#f0f0f0', 
               color: 'black', 
               '&:hover': {
@@ -165,6 +208,7 @@ const handleUpdate = async (updatedData, type) => {
                 <Typography variant="body1">สี/ตำหนิ: {pet.pet_color}</Typography>
                 <Typography variant="body1">พันธุ์: {pet.pet_breed}</Typography>
                 <Typography variant="body1">ข้อมูลอื่นๆ: {spayedNeuteredStatus}</Typography>
+                <Typography variant="body1">MicrochipNumber: {pet.microchip_number}</Typography>
                 <Typography variant="body1">วันเกิด: {formatDate(pet.pet_birthday)}</Typography>
                 <Typography variant="body1">อายุ: {age.years} ปี {age.months} เดือน {age.days} วัน</Typography>
               </CardContent>
@@ -228,12 +272,12 @@ const handleUpdate = async (updatedData, type) => {
                       <input 
                           type="file" 
                           accept="image/*" 
-                          onChange={(e) => handleImageUpload(e.target.files[0])} 
+                           onChange={handleFileChange}
                       />
                   </DialogContent>
                   <DialogActions>
                       <Button onClick={() => setEditImageOpen(false)}>ยกเลิก</Button>
-                      <Button onClick={() => setEditImageOpen(false)}>บันทึก</Button>
+                      <Button onClick={handleImageSave}    disabled={!selectedImage} color="primary">บันทึก</Button>
                   </DialogActions>
               </Dialog>
       </Box>

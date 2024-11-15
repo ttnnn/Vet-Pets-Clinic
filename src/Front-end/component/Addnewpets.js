@@ -92,8 +92,7 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
       formData.append("pet_breed", petBreed);
       formData.append("pet_gender", gender);
       formData.append("pet_birthday", birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "");
-      formData.append("pet_age", age.years);
-      formData.append("SpayedNeutered", petSpayed ? 1 : 0);
+      formData.append("spayed_neutered", petSpayed ? true : false);
       formData.append("MicrochipNumber", petMicrochip);
       formData.append("pet_species", petSpecies);
       if (imageFile) {

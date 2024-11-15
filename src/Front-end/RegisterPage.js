@@ -52,7 +52,6 @@ const RegisterPage = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [open, setOpen] = useState(false);
   const [gender, setGender] = useState('male');
-  const [imagePreview, setImagePreview] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [age, setAge] = useState('');
@@ -72,19 +71,19 @@ const RegisterPage = () => {
   const [editIndex, setEditIndex] = useState(null);
   const [alertMessage, setAlertMessage] = useState(''); 
   const [alertSeverity, setAlertSeverity] = useState('success'); 
+  const[otherPetSpecies,setOtherPetSpecies] = useState('')
 
     
   const handleSavePet = () => {
     const petData = {
       pet_name: petName,
       pet_color: petColor,
-      pet_breed: petBreed,
+      pet_breed: petBreed ,
       pet_gender: gender,
       pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : '',
-      pet_age: age.years,
-      SpayedNeutered: petSpayed ? 1 : 0,
-      MicrochipNumber: petMicrochip,
-      pet_species: petSpecies,
+      spayed_neutered: petSpayed ,
+      microchip_number: petMicrochip,
+      pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
     };
   //ตอนเช็ควนลูปแก้ไขข้อมูลสัตว์เลี้ยงแต่ละตัว
     if (editIndex !== null) {
@@ -117,9 +116,9 @@ const RegisterPage = () => {
     setPetBreed(pet.pet_breed);
     setGender(pet.pet_gender);
     setBirthDate(pet.pet_birthday ? dayjs(pet.pet_birthday).toDate() : null);
-    setAge({ years: pet.pet_age, months: '', days: '' }); // แก้ไขได้ถ้าคำนวณอายุในรูปแบบนี้
-    setPetSpayed(pet.SpayedNeutered);
-    setMicrochip(pet.MicrochipNumber);
+    setAge({ years: age.years, months: age.months, days: age.days }); // แก้ไขได้ถ้าคำนวณอายุในรูปแบบนี้
+    setPetSpayed(pet.spayed_neutered);
+    setMicrochip(pet.microchip_number);
     setPetSpecies(pet.pet_species);
     setEditIndex(index); // เก็บ index ของสัตว์เลี้ยงที่จะแก้ไข
     setOpen(true);
@@ -130,8 +129,6 @@ const RegisterPage = () => {
     setOpen(false);
     clearPetForm()
     setEditIndex(null);
-    setImagePreview(null);  // Clear image preview when closing
-
   };
   const handleDeletePet = (index) => {
     setPets((prevPets) => prevPets.filter((_, i) => i !== index)); // Remove pet at index
@@ -143,16 +140,16 @@ const RegisterPage = () => {
     }
   };
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // const handleImageUpload = (event) => {
+    // const file = event.target.files[0];
+    // if (file) {
+      // const reader = new FileReader();
+      // reader.onloadend = () => {
+        // setImagePreview(reader.result);
+      // };
+      // reader.readAsDataURL(file);
+    // }
+  // };
 
   const handleBirthDateChange = (newDate) => {
     setBirthDate(newDate);
@@ -171,7 +168,6 @@ const RegisterPage = () => {
   
 
   const resetForm = () => {
-    setImagePreview(null);
     setFirstName('');
     setLastNameOwner('');
     setPhoneNumber('');
@@ -234,7 +230,7 @@ const RegisterPage = () => {
 
     } catch (error) {
       console.error('Error saving data:', error);
-      setAlertSeverity('success');
+      setAlertSeverity('error');
       setAlertMessage('กรุณากรอกข้อมูลให้ครบถ้วน')
 
       setTimeout(() => {
@@ -483,38 +479,6 @@ const RegisterPage = () => {
               gap: 2,
             }}
           >
-            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <label htmlFor="image-upload">
-                <Button
-                  component="span"
-                  variant="contained"
-                  className="upload-button"  // ใช้ className เพื่อใช้สไตล์ที่กำหนดใน CSS
-                >
-                  {imagePreview ? (
-                    <Box
-                      component="img"
-                      src={imagePreview}
-                      alt="Pet"
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                      }}
-                    />
-                  ) : (
-                    <Typography className="upload-button-text">อัพโหลดรูปภาพ</Typography>
-                  )}
-                </Button>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  hidden
-                />
-              </label>
-            </Box>
             <Box sx={{ flex: 2 }}>
               <TextField
                 label="ชื่อสัตว์เลี้ยง"
@@ -541,34 +505,43 @@ const RegisterPage = () => {
               <MenuItem value="อื่นๆ">อื่นๆ</MenuItem>
             </TextField>
 
-            <Autocomplete
-            options={petSpecies === "แมว" ? CatBreed : DogBreed}
-            value={petBreed}
-            onChange={(event, newValue) => {
-                setPetBreed(newValue);
-            }}
-            renderInput={(params) => (
-                <TextField 
+            {petSpecies === "อื่นๆ" ? (
+              <TextField
+                label="กรุณาระบุประเภทสัตว์เลี้ยง"
+                value={otherPetSpecies}
+                fullWidth
+                required
+                onChange={(e) => setOtherPetSpecies(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+            ) : (
+              <Autocomplete
+                options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
+                value={petBreed}
+                onChange={(event, newValue) => {
+                  setPetBreed(newValue);
+                }}
+                renderInput={(params) => (
+                  <TextField 
                     {...params} 
                     label="พันธุ์ของสัตว์เลี้ยง" 
                     variant="outlined" 
                     required
                     fullWidth 
-                />
-            )}
-            freeSolo // Allow custom input
-            // Optional: limit the height of the dropdown
-            sx={{ 
-                '& .MuiAutocomplete-listbox': {
+                  />
+                )}
+                freeSolo // Allow custom input
+                sx={{ 
+                  '& .MuiAutocomplete-listbox': {
                     maxHeight: '200px', 
-                    overflowY: 'auto' ,
-                }
-            }}
-            isOptionEqualToValue={(option, value) => option === value} // Ensure correct matching
-            // Optional: if you want to keep the selected value in the input box
-            getOptionLabel={(option) => option} // Use the option as the label
-        />
-            
+                    overflowY: 'auto',
+                  }
+                }}
+                isOptionEqualToValue={(option, value) => option === value}
+                getOptionLabel={(option) => option}
+              />
+            )}
+
               <TextField
                 label="สี/ตำหนิ"
                 value={petColor}
@@ -627,10 +600,10 @@ const RegisterPage = () => {
                 sx={{ mt: 3 }}
               >
                 <ToggleButton value="male"  >
-                  <Typography>♂</Typography>
+                  <Typography>♂ male </Typography>
                 </ToggleButton>
                 <ToggleButton value="female">
-                  <Typography>♀</Typography>
+                  <Typography>♀ female </Typography>
                 </ToggleButton>
               </ToggleButtonGroup>
 

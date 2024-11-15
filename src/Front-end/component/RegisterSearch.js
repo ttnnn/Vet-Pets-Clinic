@@ -29,6 +29,7 @@ const RegisterSearch = () => {
       axios.get(`${api}/pets?owner_id=${selectedOwnerId}`)
         .then(response => {
           setPets(response.data);
+          console.log('setPets' ,response.data)
         })
         .catch(error => console.error('Error fetching pets:', error));
     } else {
@@ -65,7 +66,7 @@ const RegisterSearch = () => {
           </li>)}
       />
       <Autocomplete
-        options={owners}
+        options={owners} 
         getOptionLabel={(owner) => `${owner.phone_number}` } // Assuming full_name is the field to display
         onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
         value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) : null}
@@ -124,19 +125,26 @@ const RegisterSearch = () => {
                
               }}>
                 
-                 {pet.ImageUrl && (
+                 {pet.image_url && (
                   <Box
                   sx={{
                     mr:2,
                     borderRadius: '8px', // กรอบมน
                     overflow: 'hidden', // ป้องกันรูปภาพล้นกรอบ
+                    width: 150, // กำหนดความกว้างของกรอบ
+                    height: 150, // กำหนดความสูงของกรอบ
                     
                   }}
                 >
                     <img 
-                      src={`http://localhost:8080${pet.ImageUrl}`} 
+                      src={`http://localhost:8080${pet.image_url}`} 
                       alt={pet.pet_name} 
-                      style={{ width: 100, height: 100 }} 
+                      style={{
+                        width: '100%', // ให้รูปขยายเต็มกรอบ
+                        height: '100%', // ให้รูปสูงเต็มกรอบ
+                        objectFit: 'cover', // ปรับให้เต็มกรอบโดยไม่บิดเบี้ยว
+                        borderRadius: '8px', // เพิ่มมุมโค้ง
+                      }}
                     />
                   </Box>
                 )}
