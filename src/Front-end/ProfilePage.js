@@ -10,6 +10,7 @@ import EditOwnerDialog from './component/EditOwnerDialog';
 import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
 import DiagnosisForm from './component/Diagnosisform';
+import TableHistory from './component/Tablehistory';
 
 
 
@@ -28,6 +29,10 @@ const PetProfilePage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [editImageOpen, setEditImageOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  
 
   console.log('pet' , pet)
 
@@ -52,14 +57,37 @@ const PetProfilePage = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    updateAppointments();
   };
  
   const handleBack =()=>{
-    navigate('/register')
+    navigate('/register', { state: { searchQuery, activeTab: 1 } });
   }
+
+  // const handleBack = () => {
+    // const ownerName = owner.owner_id; // ชื่อเจ้าของ
+    // const ownerPhone = owner.phone_number; // ชื่อเจ้าของ
+    // navigate('/register', { 
+      // state: { 
+        // searchQuery, 
+        // activeTab: 1, 
+        // ownerName, 
+        // ownerPhone 
+      // } 
+    // });
+  // };
+  
   const spayedNeuteredStatus = pet.spayed_neutered === false ? "ไม่ได้ทำหมัน" : "ทำหมัน";
   const formatDate = (dateString) => dayjs(dateString).locale('th').format('D MMMM YYYY');
 
+  const updateAppointments = async () => {
+    try {
+      const appointmentsResponse = await axios.get(`${api}/appointment`);
+      setAppointments(appointmentsResponse.data);
+    } catch (error) {
+      console.error('Error fetching updated appointments:', error);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -119,10 +147,11 @@ const handleUpdate = async (updatedData, type) => {
     if (response.status === 200) {
       setSnackbarOpen(true);
       // Update state with new data
+      const updatedResponse = await axios.get(`${api}${endpoint}`);
       if (type === 'pet') {
-        setPet({ ...pet, ...updatedData }); // Update pet state with new data
+        setPet(updatedResponse.data);  // Update pet state with new data
       } else {
-        setOwner({ ...owner, ...updatedData }); // Update owner state with new data
+        setOwner(updatedResponse.data); // Update owner state with new data
       }
     } else {
       console.error('Failed to update data', response.data);
@@ -134,6 +163,12 @@ const handleUpdate = async (updatedData, type) => {
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
+  };
+  const tabToTypeServiceMap = {
+    2: 'ตรวจรักษา', // "ประวัติการรักษา"
+    3: 'วัคซีน', // "ประวัติการรับวัคซีน"
+    4: 'อาบน้ำ-ตัดขน', // "ประวัติการอาบน้ำตัดขน"
+    5: 'ฝากเลี้ยง', // "ประวัติการฝากเลี้ยง"
   };
   return (
     <Box sx={{ display: 'flex' }}>
@@ -256,12 +291,24 @@ const handleUpdate = async (updatedData, type) => {
             <Tab label="ประวัติการฝากเลี้ยง" />
           </Tabs>
         </Box>
+        {/* {tabContent[activeTab]} */}
 
-        {activeTab === 0 && (
-          <DiagnosisForm></DiagnosisForm>
-        ) 
-          
-        }
+        {activeTab === 0 &&
+         <DiagnosisForm 
+           petId={pet.pet_id}
+          //  appointmentId={appointment_id} 
+        />}
+         {activeTab >= 2 && (
+         <TableHistory
+          appointments={appointments}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          activeTabLabel={tabToTypeServiceMap[activeTab]} // Pass the corresponding type_service
+          selectedPetId={pet.pet_id}
+        />
+      )}
+
+
         <EditPetDialog open={editPetOpen} onClose={() => setEditPetOpen(false)} pet={pet} onSave={(data) => handleUpdate(data, 'pet')} />
         <EditOwnerDialog open={editOwnerOpen} onClose={() => setEditOwnerOpen(false)} owner={owner} onSave={(data) => handleUpdate(data, 'owner')} />
 

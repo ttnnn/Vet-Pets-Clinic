@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect  } from 'react';
+import {  useLocation } from 'react-router-dom';
 import { Button, TextField, Typography, Box, Paper, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ToggleButtonGroup, ToggleButton, MenuItem
   , Autocomplete
  } from '@mui/material';
@@ -72,8 +73,29 @@ const RegisterPage = () => {
   const [alertMessage, setAlertMessage] = useState(''); 
   const [alertSeverity, setAlertSeverity] = useState('success'); 
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
+  // const [ownerName, setOwnerName] = useState('');
+  // const [ownerPhone, setOwnerPhone] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
-    
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.searchQuery) {
+        setSearchQuery(location.state.searchQuery);
+      }
+      if (location.state.activeTab !== undefined) {
+        setActiveTab(location.state.activeTab);
+      }
+      // if (location.state.ownerName) {
+        // setOwnerName(location.state.ownerName);
+      // }
+      // if (location.state.ownerPhone) {
+        // setOwnerPhone(location.state.ownerPhone);
+      // }
+    }
+  }, [location.state]);
+  
+  
   const handleSavePet = () => {
     const petData = {
       pet_name: petName,
@@ -444,7 +466,12 @@ const RegisterPage = () => {
                   ค้นหาข้อมูลลูกค้า
                 </Typography>
                 <Box component="form" noValidate autoComplete="off" className="search-form">
-                  <RegisterSearch/>
+                  <RegisterSearch 
+                    // searchQuery={searchQuery} 
+                    // activeTab={activeTab} 
+                    // ownerName={ownerName} 
+                    // ownerPhone={ownerPhone} 
+                  />
                 </Box>
               </Box>
             )}

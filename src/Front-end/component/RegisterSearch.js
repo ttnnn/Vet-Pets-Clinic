@@ -183,7 +183,7 @@ const RegisterSearch = () => {
 
       {selectedOwnerId && pets.length === 0 && (
         <Typography variant="h6" color="textSecondary" style={{ marginTop: '20px' }}>
-          No pets found for the selected owner.
+          ไม่พบข้อมูลการลงทะเบียน
         </Typography>
       )}
     </Box>

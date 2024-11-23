@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+const api = 'http://localhost:8080';
 
 const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
   const [formData, setFormData] = useState({
@@ -17,10 +18,25 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    onSave(formData);
-    onClose();
+  const handleSave = async () => {
+  
+    try {
+      const response = await fetch(`${api}/owners/${owner.owner_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        console.log('Data updated successfully');
+        onSave(formData);// ส่งข้อมูลกลับไปยัง parent
+        onClose(); // ปิด dialog
+      } else {
+        console.error('Failed to update data');
+      }
+    } catch (error) {
+      console.error('Error updating data:', error);
+    }
   };
+  
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

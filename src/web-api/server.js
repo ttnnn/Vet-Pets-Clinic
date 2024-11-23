@@ -344,6 +344,101 @@ app.put('/postpone/hotels/:id', async (req, res) => {
 });
 
 
+app.post('/treatment/diagnosis', async (req, res) => {
+  const { medicalData, diagnosisData, physicalData } = req.body;
+
+  if (!medicalData || !diagnosisData || !physicalData) {
+    return res.status(400).json({ message: 'Missing required data' });
+  }
+
+  const client = await pool.connect(); // Get a database client
+
+  try {
+    await client.query('BEGIN'); // Start transaction
+
+    // Insert into the diagnosis table
+    const diagnosisQuery = `
+      INSERT INTO diagnosis (diag_cc, diag_ht, diag_pe, diag_majorproblem, diag_dx, diag_tentative, diag_final, diag_treatment, diag_client, diag_note)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING diagnosis_id 
+    `;
+    const diagnosisValues = [
+      diagnosisData.diag_cc,
+      diagnosisData.diag_ht,
+      diagnosisData.diag_pe,
+      diagnosisData.diag_majorproblem,
+      diagnosisData.diag_dx,
+      diagnosisData.diag_tentative,
+      diagnosisData.diag_final,
+      diagnosisData.diag_treatment,
+      diagnosisData.diag_client,
+      diagnosisData.diag_note,
+    ];
+    const diagnosisResult = await client.query(diagnosisQuery, diagnosisValues);
+    const diagnosisId = diagnosisResult.rows[0].diagnosis_id;
+
+    // Insert into the physical table
+    const physicalQuery = `
+      INSERT INTO physicalcheckexam (
+        phy_general, phy_integumentary, phy_musculo_skeletal, phy_circulatory, phy_respiratory,
+        phy_digestive, phy_genito_urinary, phy_eyes, phy_ears, phy_neural_system,
+        phy_lymph_nodes, phy_mucous_membranes, phy_dental
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING physical_check_id
+    `;
+    const physicalValues = [
+      physicalData.phy_general,
+      physicalData.phy_integumentary,
+      physicalData.phy_musculo_skeletal,
+      physicalData.phy_circulatory,
+      physicalData.phy_respiratory,
+      physicalData.phy_digestive,
+      physicalData.phy_genito_urinary,
+      physicalData.phy_eyes,
+      physicalData.phy_ears,
+      physicalData.phy_neural_system,
+      physicalData.phy_lymph_nodes,
+      physicalData.phy_mucous_membranes,
+      physicalData.phy_dental,
+    ];
+    const physicalResult = await client.query(physicalQuery, physicalValues);
+    const physicalId = physicalResult.rows[0].physical_check_id;
+
+    // Insert into the medical table
+    const medicalQuery = `
+      INSERT INTO medicalrecord (pet_id, rec_temperature, personnel_id, rec_pressure, rec_heartrate, rec_weight, rec_time, diagnosis_id, physical_check_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8 ,$9) RETURNING med_id
+    `;
+    const medicalValues = [
+      medicalData.pet_id,
+      medicalData.rec_temperature,
+      medicalData.personnel_id,
+      medicalData.rec_pressure,
+      medicalData.rec_heartrate,
+      medicalData.rec_weight,
+      medicalData.rec_time,
+      diagnosisId,
+      physicalId
+    ];
+    const medicalResult = await client.query(medicalQuery, medicalValues);
+
+    await client.query('COMMIT'); // Commit transaction
+    res.status(201).json({
+      message: 'Records saved successfully',
+      medicalId: medicalResult.rows[0].med_id,
+    });
+  } catch (error) {
+    await client.query('ROLLBACK'); // Rollback transaction on error
+    console.error('Error during transaction:', error);
+    res.status(500).json({ message: 'Failed to save records', error: error.message });
+  } finally {
+    client.release(); // Release the client back to the pool
+  }
+});
+
+
+
+
+
 // Get pets by owner ID
 app.get('/pets', async (req, res) => {
   const ownerId = req.query.owner_id;
@@ -396,24 +491,37 @@ app.get('/personnel', async (req, res) => {
 });
 
 // Update appointment status
-app.put('/appointment/:id', async (req, res) => {  // Handle appointment queue
+app.put('/appointment/:id', async (req, res) => {  
   const { id } = req.params;
-  const { status, queue_status } = req.body; // Expecting the status and queue_status to be passed in the request body
+  const { status, queue_status } = req.body;  // Expecting status and queue_status to be passed in the request body
+
   console.log('Updating appointment with ID:', id);
-  console.log('Updating appointment queue:', queue_status);
-
-  if (!status) {
-    return res.status(400).send({ message: 'Status is required' });
-  }
-
-  const query = `
-    UPDATE appointment 
-    SET status = $1, queue_status = $2 
-    WHERE appointment_id = $3
-  `;
+  console.log('Received status:', status, 'queue_status:', queue_status);
 
   try {
-    const result = await pool.query(query, [status, queue_status, id]);
+    // Fetch current values for status and queue_status from the database
+    const currentQuery = 'SELECT status, queue_status FROM appointment WHERE appointment_id = $1';
+    const currentResult = await pool.query(currentQuery, [id]);
+
+    if (currentResult.rowCount === 0) {
+      return res.status(404).send({ message: 'Appointment not found' });
+    }
+
+    const currentStatus = currentResult.rows[0].status;
+    const currentQueueStatus = currentResult.rows[0].queue_status;
+
+    // Use the provided values, or retain the current ones if not provided
+    const newStatus = status || currentStatus;
+    const newQueueStatus = queue_status || currentQueueStatus;
+
+    const updateQuery = `
+      UPDATE appointment 
+      SET status = $1, queue_status = $2 
+      WHERE appointment_id = $3
+    `;
+
+    // Perform the update with either the new or existing values
+    const result = await pool.query(updateQuery, [newStatus, newQueueStatus, id]);
 
     if (result.rowCount === 0) {
       return res.status(404).send({ message: 'Appointment not found' });
@@ -425,6 +533,7 @@ app.put('/appointment/:id', async (req, res) => {  // Handle appointment queue
     return res.status(500).send({ message: 'Database error' });
   }
 });
+
 
 app.put('/postpone/appointment/:id', async (req, res) => {  
   const { id } = req.params;
@@ -471,7 +580,8 @@ app.get('/appointment', async (req, res) => {
       owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
       appointment.type_service,
       appointment.reason,
-      appointment.detail_service
+      appointment.detail_service,
+      appointment.queue_status
     FROM appointment
     JOIN pets ON appointment.pet_id = pets.pet_id
     JOIN owner ON appointment.owner_id = owner.owner_id

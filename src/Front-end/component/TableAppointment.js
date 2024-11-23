@@ -51,7 +51,6 @@ function getComparator(order, orderBy) {
 const formatDate = (dateString) => {
   return dayjs(dateString).format('DD/MM/YYYY'); // Use day.js for formatting
 };
-
 const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
@@ -79,7 +78,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     console.log('petId:', petId);
   };
 
-
+  const formatTime = (timeString) => {
+    // แยกเวลาออกจากรูปแบบ 'HH:mm:ss+ZZ' และแสดงแค่ 'HH:mm'
+    const time = timeString.split(':');  // แยกเป็น [ '16', '00', '00+07' ]
+    return `${time[0]}:${time[1]}`;  // คืนค่าแค่ '16:00'
+  };
+  
   const updateAppointments = () => {
     axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
       .then((response) => setAppointments(response.data))
@@ -135,7 +139,8 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     console.log("Deleting appointment with ID:", AppointmentID);
     axios.put(`${api}/appointment/${AppointmentID}`,{
        status: 'ยกเลิกนัด',
-       queue_status: 'ยกเลิกนัด'
+       queue_status: 'ยกเลิกนัด',
+       massage_status:'cancle'
     })
       .then(() => {
         // Update the list of appointments after successful deletion
@@ -241,7 +246,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
             {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
               <TableRow key={index}>
                 <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
-                <TableCell>{appointment.appointment_time|| 'ตลอดทั้งวัน'}</TableCell>
+                <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
                 <TableCell>{appointment.pet_name}</TableCell>
                 <TableCell>{appointment.full_name}</TableCell>
                 <TableCell>{appointment.type_service}</TableCell>

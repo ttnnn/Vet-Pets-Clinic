@@ -51,6 +51,16 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       };
 
+       // ตรวจสอบเวลาปัจจุบันกับเวลานัดหมาย
+    const currentDateTime = dayjs(); // เวลาปัจจุบัน
+    const originalAppointmentDateTime = dayjs(`${appointmentDate}T${appointmentTime}`); // วันที่และเวลานัดหมายเดิม
+    const diffMinutes = originalAppointmentDateTime.diff(currentDateTime, 'minute'); // คำนวณความต่างในหน่วยนาที
+
+    if (diffMinutes < 45) {
+      alert('สามารถเลื่อนนัดได้อย่างน้อย 45 นาทีก่อนถึงเวลานัดหมาย.');
+      return;
+    }
+
       const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
         appointment_date: formatDate(appointmentDate),
         appointment_time: isNoTime ? null : formatTime(appointmentTime),
