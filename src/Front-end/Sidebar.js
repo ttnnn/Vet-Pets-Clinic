@@ -1,19 +1,37 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemText, ListItemIcon, Box, Typography } from '@mui/material';
+import React from 'react'; 
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { Drawer, List, ListItem, ListItemText, ListItemIcon, Box, Typography, Button } from '@mui/material';
+
 import logo from '../Logo.jpg'; 
+import HomeIcon from '@mui/icons-material/Home';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import CategoryIcon from '@mui/icons-material/Category';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Icon for log out
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate(); // Hook for navigation
 
   const menuItems = [
-    { text: 'หน้าหลัก', path: '/home' },
-    { text: 'เวชระเบียน',  path: '/register' },
-    { text: 'การนัดหมาย',  path: '/appointment' },
-    { text: 'หมวดหมู่บริการ',  path: '/category' },
-    { text: 'การเงิน', path: '/finance' },
-    { text: 'สถิติการใช้บริการ',  path: '/dashboard' },
+    { text: 'หน้าหลัก', path: '/home', icon: <HomeIcon /> },
+    { text: 'เวชระเบียน',  path: '/register', icon: <AssignmentIcon /> },
+    { text: 'การนัดหมาย',  path: '/appointment', icon: <EventNoteIcon /> },
+    { text: 'หมวดหมู่บริการ',  path: '/category', icon: <CategoryIcon /> },
+    { text: 'การเงิน', path: '/finance', icon: <AttachMoneyIcon /> },
+    { text: 'สถิติการใช้บริการ',  path: '/dashboard', icon: <BarChartIcon /> },
   ];
+
+  const handleLogout = () => {
+    // เพิ่มโค้ดสำหรับการออกจากระบบที่นี่
+    console.log('Logged out');
+
+    // ตัวอย่าง: ลบโทเค็นและเปลี่ยนเส้นทางไปที่หน้า Login
+    localStorage.removeItem('authToken');
+    navigate('/'); // Navigate to the home page or login page
+  };
 
   return (
     <Drawer
@@ -21,7 +39,13 @@ const Sidebar = () => {
       sx={{
         width: 240,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
+        [`& .MuiDrawer-paper`]: { 
+          width: 240, 
+          boxSizing: 'border-box',
+          backgroundColor: 'white', // สีพื้นหลังของ Sidebar
+          color: '#000', // สีข้อความใน Sidebar
+          borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+        },
       }}
     >
       <Box sx={{ textAlign: 'center', padding: 1 }}>
@@ -40,26 +64,42 @@ const Sidebar = () => {
             selected={location.pathname === item.path}
             sx={{
               '&.Mui-selected': {
-                backgroundColor: '#000', // สีพื้นหลังเมื่อถูกเลือก
-                color: '#fff', // สีข้อความเมื่อถูกเลือก
+                backgroundColor: '#b3e5fc', // สีพื้นหลังเมื่อถูกเลือก
+                color: 'black', // สีข้อความเมื่อถูกเลือก
                 '& .MuiListItemIcon-root': {
-                  color: '#fff', // สีของไอคอนเมื่อถูกเลือก
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#555', // สีพื้นหลังเมื่อ hover
-                color: '#fff', // สีข้อความเมื่อ hover
-                '& .MuiListItemIcon-root': {
-                  color: '#fff', // สีของไอคอนเมื่อ hover
+                  color: 'black', // สีของไอคอนเมื่อถูกเลือก
                 },
               },
             }}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: location.pathname === item.path ? '#fff' : '#000' }}>
+              {item.icon}
+            </ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
       </List>
+      {/* Log Out Button at the bottom */}
+      <Box sx={{ position: 'absolute', bottom: 40, width: '100%', padding: 2 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          startIcon={<ExitToAppIcon />}
+          onClick={handleLogout}
+          sx={{
+            color: '#000', 
+            backgroundColor: '#e0e0e0', 
+            borderRadius: '10px', // Rounded corners
+            '&:hover': {
+              backgroundColor: '#b3e5fc', // สีเมื่อเม้าชี้
+              color: 'black', // สีข้อความเมื่อเม้าชี้
+            },
+          }}
+        >
+          ออกจากระบบ
+        </Button>
+      </Box>
     </Drawer>
   );
 };

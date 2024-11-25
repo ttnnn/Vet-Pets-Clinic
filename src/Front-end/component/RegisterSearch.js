@@ -4,8 +4,7 @@ import {
   Box, Typography, Autocomplete, TextField, Button
 } from '@mui/material';
 import PetDialog from './Addnewpets';
-import { useNavigate } from 'react-router-dom'; 
-
+import { useNavigate } from 'react-router-dom';
 
 const api = 'http://localhost:8080'; // Replace with your actual API base URL
 
@@ -29,7 +28,7 @@ const RegisterSearch = () => {
       axios.get(`${api}/pets?owner_id=${selectedOwnerId}`)
         .then(response => {
           setPets(response.data);
-          console.log('setPets' ,response.data)
+          console.log('setPets', response.data);
         })
         .catch(error => console.error('Error fetching pets:', error));
     } else {
@@ -37,149 +36,144 @@ const RegisterSearch = () => {
     }
   }, [selectedOwnerId]);
 
-
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>ข้อมูลลูกค้า</Typography>
-      <Box display="flex" gap={2}  >
-      {/* Autocomplete for searching and selecting owners */}
-      <Autocomplete
-        options={owners}
-        getOptionLabel={(owner) => `${owner.first_name} ${owner.last_name} ` } // Assuming full_name is the field to display
-        onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
-        value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) : null}
-        isOptionEqualToValue={(option, value) => option.owner_id === value.owner_id}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="ค้นหาข้อมูลด้วย ชื่อ-นามสกุล"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-          />
-        )}
-        
-        sx={{ width: '100%' }}
-        renderOption={(props, option) => (
-          <li {...props} key={option.owner_id}> {/* Set unique key here */}
-            {`${option.first_name} ${option.last_name}`}
-          </li>)}
-      />
-      <Autocomplete
-        options={owners} 
-        getOptionLabel={(owner) => `${owner.phone_number}` } // Assuming full_name is the field to display
-        onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
-        value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) : null}
-        isOptionEqualToValue={(option, value) => option.owner_id === value.owner_id}
-        renderInput={(params) => (
+      <Box display="flex" gap={2} alignItems="center">
+        {/* Autocomplete for searching and selecting owners */}
+        <Autocomplete
+          options={owners}
+          getOptionLabel={(owner) => `${owner.first_name} ${owner.last_name}`}
+          onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
+          value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) : null}
+          isOptionEqualToValue={(option, value) => option.owner_id === value.owner_id}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="ค้นหาข้อมูลด้วย ชื่อ-นามสกุล"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+            />
+          )}
+          sx={{ width: '48%' }}  // Set width to 48% for balance with the phone number field
+          renderOption={(props, option) => (
+            <li {...props} key={option.owner_id}>
+              {`${option.first_name} ${option.last_name}`}
+            </li>
+          )}
+        />
+
+        {/* Always display TextField for phone number */}
         <TextField
-          {...params}
-          label="ค้นหาข้อมูลด้วย เบอร์โทรศัพท์"
+          label="เบอร์โทรศัพท์"
           variant="outlined"
           fullWidth
           margin="normal"
+          value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId)?.phone_number || '' : ''}
+          InputProps={{
+            readOnly: true, // Make phone number read-only
+          }}
+          sx={{ width: '48%' }}  // Set width to 48% for balance with the autocomplete field
         />
-      )}
-      sx={{ width: '100%' }}
-      renderOption={(props, option) => (
-        <li {...props} key={option.owner_id}> {/* Set unique key here */}
-          {`${option.phone_number}`}
-        </li>)}
-    />
-    </Box>
-      
-
+      </Box>
 
       {/* Display pets of the selected owner */}
       {selectedOwnerId && pets.length > 0 && (
         <>
-          <Typography variant="h7">
-            สัตว์เลี้ยงของคุณ 
-          </Typography>
-          <Button 
-            variant="contained" 
-            className="submit-button"
-            onClick={() => setOpen(true)}
-            sx={{ padding: 1, ml:10}}
-        >
-        ลงทะเบียนสัตว์เลี้ยงใหม่
-        </Button>
-        <PetDialog
+          <Box>
+            <Typography variant="h6" sx={{ mt: 3 }}>
+              สัตว์เลี้ยงของคุณ
+              <Button
+                variant="contained"
+                className="submit-button"
+                onClick={() => setOpen(true)}
+                sx={{
+                  padding: '8px 5px',
+                  fontSize: '16px',
+                  minWidth: '200px',
+                  ml: 3,
+                }}
+              >
+                ลงทะเบียนสัตว์เลี้ยงใหม่
+              </Button>
+            </Typography>
+          </Box>
+          <PetDialog
             open={open}
             handleClose={() => setOpen(false)}
             selectedOwnerId={selectedOwnerId}
             setPets={setPets}
             isEditMode={false}
-        />
-          <Box >
+          />
+          <Box>
             {pets.map((pet) => (
-            <>
-              <Box key={pet.pet_id} 
-              sx={{
-                backgroundColor: '#ffffff', // สีพื้นหลังสำหรับแต่ละกล่อง
-                padding: 2,
-                borderRadius: 2,
-                mt: 2, // ระยะห่างระหว่างกล่อง
-                boxShadow: 1, // เงาของกล่อง
-               
-               
-              }}>
-                
-                 {pet.image_url && (
+              <Box
+                key={pet.pet_id}
+                sx={{
+                  backgroundColor: '#e0e0e0',
+                  padding: 2,
+                  borderRadius: 2,
+                  mt: 2,
+                  boxShadow: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {pet.image_url && (
                   <Box
-                  sx={{
-                    mr:2,
-                    borderRadius: '8px', // กรอบมน
-                    overflow: 'hidden', // ป้องกันรูปภาพล้นกรอบ
-                    width: 150, // กำหนดความกว้างของกรอบ
-                    height: 150, // กำหนดความสูงของกรอบ
-                    
-                  }}
-                >
-                    <img 
-                      src={`http://localhost:8080${pet.image_url}`} 
-                      alt={pet.pet_name} 
+                    sx={{
+                      mr: 2,
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      width: 150,
+                      height: 150,
+                    }}
+                  >
+                    <img
+                      src={`http://localhost:8080${pet.image_url}`}
+                      alt={pet.pet_name}
                       style={{
-                        width: '100%', // ให้รูปขยายเต็มกรอบ
-                        height: '100%', // ให้รูปสูงเต็มกรอบ
-                        objectFit: 'cover', // ปรับให้เต็มกรอบโดยไม่บิดเบี้ยว
-                        borderRadius: '8px', // เพิ่มมุมโค้ง
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
                       }}
                     />
                   </Box>
                 )}
-                
-                <Typography variant="h6">{pet.pet_name}</Typography>
-                <Typography>พันธุ์: {pet.pet_breed}</Typography>
-                <Typography>ประเภท: {pet.pet_species}</Typography>
-                <Box
-                    sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'flex-end', // ให้ปุ่มอยู่ที่มุมขวา
-                      }}>
-                <Button  
-                        variant="contained" 
-                        className="submit-button"
-                    sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        borderRadius: 1, // มุมมน
+
+                {/* Pet details next to the image */}
+                <Box>
+                  <Typography variant="h6">{pet.pet_name}</Typography>
+                  <Typography>พันธุ์: {pet.pet_breed}</Typography>
+                  <Typography>ประเภท: {pet.pet_species}</Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', ml: 'auto' }}>
+                  <Button
+                    variant="contained"
+                    className="submit-button"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: 1,
+                      marginRight: 5,
+                      padding: '8px 15px',
+                      fontSize: '16px',
                     }}
-                    onClick={()=>{
-                      const owner = owners.find(owner => owner.owner_id === selectedOwnerId); // ค้นหาข้อมูลเจ้าของ
-                      navigate('/pet-profile', { state: { pet, owner } }); // ส่งข้อมูลสัตว์เลี้ยงและเจ้าของ
+                    onClick={() => {
+                      const owner = owners.find(owner => owner.owner_id === selectedOwnerId);
+                      navigate('/pet-profile', { state: { pet, owner } });
                     }}
-                    >
+                  >
                     โปรไฟล์
-                </Button>
+                  </Button>
                 </Box>
               </Box>
-              </>
             ))}
           </Box>
         </>
       )}
-      
 
       {selectedOwnerId && pets.length === 0 && (
         <Typography variant="h6" color="textSecondary" style={{ marginTop: '20px' }}>

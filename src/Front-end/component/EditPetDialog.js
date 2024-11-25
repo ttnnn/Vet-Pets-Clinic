@@ -13,6 +13,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     pet_name: pet.pet_name,
     pet_gender: pet.pet_gender,
     pet_species: pet.pet_species,
+    pet_breed: pet.pet_breed,
     pet_color: pet.pet_color,
     spayed_neutered: pet.spayed_neutered,
     microchip_number:pet.microchip_number    ,
@@ -42,6 +43,7 @@ console.log("pet_birthday", formData.pet_birthday);
       pet_gender: pet.pet_gender,
       pet_species: pet.pet_species,
       pet_color: pet.pet_color,
+      pet_breed: pet.pet_breed,
       spayed_neutered: pet.spayed_neutered,
       microchip_number: pet.microchip_number,
       pet_birthday: formattedDate,
@@ -98,7 +100,7 @@ console.log("pet_birthday", formData.pet_birthday);
           ) : (
             <Autocomplete
             options={formData.pet_species === "แมว" ? CatBreed : formData.pet_species === "สุนัข" ? DogBreed : []}
-              value={formData.petBreed}
+              value={formData.pet_breed}
               onChange={(event, newValue) => {
                 setFormData((prev) => ({ ...prev, pet_breed: newValue }));
               }}
