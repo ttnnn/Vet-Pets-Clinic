@@ -5,8 +5,9 @@ import Sidebar from './Sidebar'; // Assuming Sidebar is in the same directory
 import axios from 'axios';
 import dayjs from 'dayjs';
 import AppointmentList from './component/AppointmentList';
+import OngoingAppointments from './component/OngoingAppointment';
 // Categories for filtering
-const categories = ['คิววันนี้', 'อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
+const categories = ['คิวทั้งหมด'];
 const api = 'http://localhost:8080';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -76,7 +77,7 @@ const AppointmentSummary = ({
           sx={{ p: 2, width: '24%', textAlign: 'center', cursor: 'pointer' }} 
           onClick={() => handleTabClick('total')}
         >
-          <Typography variant="h6">คิววันนี้</Typography>
+          <Typography variant="h6">รอรับบริการ</Typography>
           <Typography variant="h4">{totalAppointments}</Typography>
         </Paper>
         <Paper 
@@ -92,7 +93,7 @@ const AppointmentSummary = ({
           sx={{ p: 2, width: '24%', textAlign: 'center', backgroundColor: '#f8d7da', cursor: 'pointer' }} 
           onClick={() => handleTabClick('pending-payment')}
         >
-          <Typography variant="h6">กำลังชำระเงิน</Typography>
+          <Typography variant="h6">รอชำระเงิน</Typography>
           <Typography variant="h4">{pendingPayment}</Typography>
         </Paper>
         <Paper 
@@ -104,7 +105,7 @@ const AppointmentSummary = ({
         </Paper>
       </Box>
       <Typography variant="h6" sx={{ mb: 2, textAlign: 'left' }}>
-        {activeTab === 'total' && 'คิววันนี้'}
+        {activeTab === 'total' && 'รอรับบริการ'}
         {activeTab === 'ongoing' && 'กำลังให้บริการ'}
         {activeTab === 'pending-payment' && 'กำลังชำระเงิน'}
       </Typography>
@@ -112,131 +113,12 @@ const AppointmentSummary = ({
   );
 };
 
-// AppointmentList componentll>
 
-
-// OngoingAppointments component
-const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending }) => {
-  const [activeCategory, setActiveCategory] = useState('คิววันนี้');
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('appointment_date');
-
-  const handleRequestSort = (event, property) => {
-  const isAsc = orderBy === property && order === 'asc';
-  setOrder(isAsc ? 'desc' : 'asc');
-  setOrderBy(property);
-};
-
-  const filteredAppointments = appointments.filter(appointment => {
-    if (activeCategory === 'คิววันนี้') {
-      return appointment.queue_status === 'กำลังให้บริการ';
-    }
-    return appointment.category === activeCategory && appointment.queue_status === 'กำลังให้บริการ';
-  });
-
-  return (
-    <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={activeCategory}
-          onChange={(e, newValue) => setActiveCategory(newValue)}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="scrollable auto tabs example"
-        >
-          {categories.map(category => (
-            <StyledTab
-              key={category}
-              label={category}
-              value={category}
-            />
-          ))}
-        </Tabs>
-      </Box>
-      <TableContainer component={Paper}>
-   <Table>
-     <TableHead>
-       <TableRow>
-         <TableCell>เลขที่นัดหมาย</TableCell>
-         <TableCell>
-           <TableSortLabel
-             active={orderBy === 'appointment_time'}
-             direction={orderBy === 'appointment_time' ? order : 'asc'}
-             onClick={(event) => handleRequestSort(event, 'appointment_time')}
-           >
-             เวลา
-           </TableSortLabel>
-         </TableCell>
-         <TableCell>ชื่อสัตว์</TableCell>
-         <TableCell>ชื่อเจ้าของ</TableCell>
-         <TableCell>ประเภทนัดหมาย</TableCell>
-         <TableCell>รายละเอียด</TableCell>
-         <TableCell sx={{width: '20%'}}></TableCell>
-         <TableCell></TableCell>
-       </TableRow>
-     </TableHead>
-     <TableBody>
-       {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment) => {
-         // กำหนดสีตามประเภทการจองใน detail_server
-         const detailColor = appointment.detail_service === 'นัดหมาย' ? '#eefaaa' : 
-                             appointment.detail_service === 'walkin' ? '#aafabb' : '#cffdff';
-         return (
-           <TableRow key={appointment.appointment_id}> 
-             <TableCell>{appointment.appointment_id}</TableCell>
-             <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
-             <TableCell>{appointment.pet_name}</TableCell>
-             <TableCell>{appointment.full_name}</TableCell>
-             <TableCell>{appointment.type_service}</TableCell>
-             <TableCell>{appointment.reason || '-'}</TableCell>
-             <TableCell>
-               {/* ใช้ Box สำหรับกล่องสีพื้นหลังที่ไม่เต็มช่อง */}
-               <Box 
-                 sx={{ 
-                   backgroundColor: detailColor, 
-                   width: '60%', // ขนาดของกล่องเป็น 60% ของช่อง
-                   padding: '4px', 
-                   borderRadius: '4px' 
-                 }}
-               >
-                 {appointment.detail_service || '-'}
-               </Box>
-             </TableCell>
-             <TableCell>
-               <Box mt={1} display="flex" justifyContent="flex-end">
-                 <Button
-                   variant="contained"
-                   color="secondary"
-                   sx={{ mr: 1 }}
-                   onClick={() => onRevertToPending(appointment.appointment_id)}
-                 >
-                   คืนคิว
-                 </Button>
-                 <Button
-                   variant="contained"
-                   color="primary"
-                   onClick={() => onMoveToPending(appointment.appointment_id)}
-                 >
-                   ส่งคิว
-                 </Button>
-               </Box>
-             </TableCell>
-           </TableRow>
-         );
-       })}
-     </TableBody>
-   </Table>
- </TableContainer>
-
-    </Paper>
-  );
-};
 
 
 // PendingAppointments component
-const PendingAppointments = ({ appointments, onCancelAppointment }) => {
-  const [activeCategory, setActiveCategory] = useState('คิววันนี้');
+const PendingAppointments = ({ appointments }) => {
+  const [activeCategory, setActiveCategory] = useState('คิวทั้งหมด');
   const [openPopup, setOpenPopup] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [order, setOrder] = useState('asc');
@@ -263,13 +145,12 @@ const PendingAppointments = ({ appointments, onCancelAppointment }) => {
     // Logic to handle payment
     handleClose(); // Close popup after payment action
   };
-
-  const filteredAppointments = appointments.filter(appointment => {
-    if (activeCategory === 'คิววันนี้') {
-      return appointment.queue_status === 'รอชำระเงิน';
-    }
-    return appointment.category === activeCategory && appointment.queue_status === 'รอชำระเงิน';
-  });
+  const filteredAppointments = appointments.filter(appointment =>
+    activeCategory === 'คิวทั้งหมด'
+      ? appointment.queue_status === 'รอชำระเงิน' && appointment.status === 'อนุมัติ'
+      : false
+  );
+  
 
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
@@ -318,7 +199,7 @@ const PendingAppointments = ({ appointments, onCancelAppointment }) => {
        {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment) => {
          // กำหนดสีตามประเภทการจองใน detail_server
          const detailColor = appointment.detail_service === 'นัดหมาย' ? '#eefaaa' : 
-                             appointment.detail_service === 'walkin' ? '#aafabb' : '#cffdff';
+                             appointment.detail_service === 'Walk-in' ? '#aafabb' : '#cffdff';
          return (
            <TableRow key={appointment.appointment_id}> 
              <TableCell>{appointment.appointment_id}</TableCell>
@@ -342,14 +223,6 @@ const PendingAppointments = ({ appointments, onCancelAppointment }) => {
              </TableCell>
              <TableCell>
                <Box mt={1} display="flex" justifyContent="flex-end">
-                 <Button
-                   variant="contained"
-                   color="secondary"
-                   sx={{ mr: 1 }}
-                   onClick={() => onCancelAppointment(appointment.appointment_id)}
-                 >
-                   ยกเลิก
-                 </Button>
                  <Button
                    variant="contained"
                    color="primary"
@@ -502,18 +375,32 @@ const HomeDashboard = () => {
 
   const today = dayjs().format('YYYY-MM-DD');
   const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
-  const totalAppointmentsDay = appointments.filter(
-    (a) =>  dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ'
-  ).length;
 
+  //คิวที่มีวันที่ตรงกับวันนี้ + คิวฝากเลี้ยงที่กำลังรับบริการ 
+  const totalAppointmentsDay = appointments.filter((a) => {
+    return (
+      (dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ') ||
+      (a.type_service === 'ฝากเลี้ยง' && a.queue_status === 'กำลังให้บริการ')
+    );
+  }).length;
+  
   const totalAppointments = appointments.filter(
     (a) => a.queue_status === 'รอรับบริการ' && dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ'
   ).length;
 
-  const ongoingAppointments = appointments.filter(
-    (a) => a.queue_status === 'กำลังให้บริการ' && dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ'
-  ).length;
-
+  const ongoingAppointments = appointments.filter((a) => {
+    if (a.type_service !== 'ฝากเลี้ยง') {
+      return (
+        a.queue_status === 'กำลังให้บริการ' &&
+        dayjs(a.appointment_date).isSame(today, 'day') &&
+        a.status === 'อนุมัติ'
+      );
+    } else {
+      return a.queue_status === 'กำลังให้บริการ' &&  a.status === 'อนุมัติ';
+    }
+  }).length;
+  
+//ถ้ายังไม่ชำระเงินจะยังขึ้นแสดงไว้
   const pendingPayment = appointments.filter(
     (a) => a.queue_status === 'รอชำระเงิน' && dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ'
   ).length;
@@ -552,7 +439,7 @@ const HomeDashboard = () => {
         {view === 'total' && (
           <AppointmentList
             appointments={filteredAppointments('รอรับบริการ')}
-            onMoveToOngoing={(appointment_id) => updateAppointmentStatus(appointment_id, { queue_status: 'กำลังให้บริการ' })}
+            onMoveToOngoing={(appointment_id) => updateAppointmentStatus(appointment_id, { queue_status: 'กำลังให้บริการ', })}
             onCancelAppointment={(appointment_id) =>
               updateAppointmentStatus(appointment_id, { status: 'ยกเลิกนัด', queue_status: 'ยกเลิกนัด' })
             }
@@ -575,9 +462,9 @@ const HomeDashboard = () => {
             onMoveToOngoing={(appointment_id) =>
               updateAppointmentStatus(appointment_id, { queue_status: 'กำลังให้บริการ' })
             }
-            onCancelAppointment={(appointment_id) =>
-              updateAppointmentStatus(appointment_id, { status: 'ยกเลิกนัด', queue_status: 'ยกเลิกนัด' })
-            }
+            // onCancelAppointment={(appointment_id) =>
+              // updateAppointmentStatus(appointment_id, { status: 'ยกเลิกนัด', queue_status: 'ยกเลิกนัด' })
+            // }
           />
         )}
       </Box>

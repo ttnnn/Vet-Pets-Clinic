@@ -19,6 +19,7 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday) => {
   const end = new Date();
   end.setHours(endHour, 30, 0, 0); // สิ้นสุดที่ 20:30
 
+  
   const formatTime = (date) =>
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
@@ -37,7 +38,11 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
-
+  // console.log('TypeService' ,TypeService)
+  // console.log('selectedDate' ,selectedDate)
+  // console.log('bookedSlots' ,bookedSlots)
+  // console.log('timeSlots',timeSlots)
+  // console.log('selectedTime',selectedTime)
   const getStepMinutes = useCallback(() => {
     switch (TypeService) {
       case 'อาบน้ำ-ตัดขน':
@@ -63,7 +68,9 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
 
         try {
           const response = await axios.get(`${api}/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
-          setBookedSlots(response.data);
+          const cleanedBookedSlots = response.data.map(slot => slot.replace('+07', ''));
+          setBookedSlots(cleanedBookedSlots);
+          
         } catch (error) {
           console.error('Error fetching booked time slots:', error);
         }

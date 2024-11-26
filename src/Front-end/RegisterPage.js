@@ -1,5 +1,4 @@
-import React, { useState , useEffect  } from 'react';
-import {  useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Button, TextField, Typography, Box, Paper, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ToggleButtonGroup, ToggleButton, MenuItem
   , Autocomplete
  } from '@mui/material';
@@ -75,32 +74,32 @@ const RegisterPage = () => {
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
   // const [ownerName, setOwnerName] = useState('');
   // const [ownerPhone, setOwnerPhone] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  // const [searchQuery, setSearchQuery] = useState('');
 
-  const location = useLocation();
-  useEffect(() => {
-    if (location.state) {
-      if (location.state.searchQuery) {
-        setSearchQuery(location.state.searchQuery);
-      }
-      if (location.state.activeTab !== undefined) {
-        setActiveTab(location.state.activeTab);
-      }
+  // const location = useLocation();
+  // useEffect(() => {
+    // if (location.state) {
+      // if (location.state.searchQuery) {
+        // setSearchQuery(location.state.searchQuery);
+      // }
+      // if (location.state.activeTab !== undefined) {
+        // setActiveTab(location.state.activeTab);
+      // }
       // if (location.state.ownerName) {
         // setOwnerName(location.state.ownerName);
       // }
       // if (location.state.ownerPhone) {
         // setOwnerPhone(location.state.ownerPhone);
       // }
-    }
-  }, [location.state]);
-  
+    // }
+  // }, [location.state]);
+  // 
   
   const handleSavePet = () => {
     const petData = {
       pet_name: petName,
       pet_color: petColor,
-      pet_breed: petBreed ,
+      pet_breed: petBreed || '',
       pet_gender: gender,
       pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : '',
       spayed_neutered: petSpayed ,

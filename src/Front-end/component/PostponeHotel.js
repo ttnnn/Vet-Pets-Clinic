@@ -30,7 +30,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppointments }) => {
+const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppointments,isExtendBooking }) => {
   const [checkInDate, setCheckInDate] = useState(null);
   const [checkOutDate, setCheckOutDate] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -43,9 +43,11 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(''); // Snackbar message state
   const [snackbarColor, setSnackbarColor] = useState(''); // Snackbar color state
+  const [initialCheckInDate, setInitialCheckInDate] = useState(null); 
+
 
   const resetFields = () => {
-    setCheckInDate(null);
+    setCheckInDate(initialCheckInDate);
     setCheckOutDate(null);
     setSelectedCage(null);
     setSelectedPersonnel(null);
@@ -58,8 +60,8 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
   };
   const handlePostpone = async () => {
     try {
-      if (!checkInDate || !checkOutDate || !selectedCage || !selectedPersonnel) {
-        setSnackbarMessage('กรุณากรอกข้อมูลให้ครบถ้วน!');
+      if ((isExtendBooking && !checkInDate)|| !checkOutDate || !selectedCage || !selectedPersonnel) {
+        setSnackbarMessage('กรุณาเลือกวันที่เข้าพัก!');
         setSnackbarColor('red');
         setSnackbarOpen(true);
         return;
@@ -144,6 +146,23 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
     fetchPersonnel();
   }, []);
 
+  useEffect(() => {
+    if (isExtendBooking && appointmentId) {
+      const fetchAppointmentDetails = async () => {
+        try {
+          const response = await axios.get(`${api}/appointments/${appointmentId}`);
+          const appointmentDate = new Date(response.data.appointment_date);
+          setInitialCheckInDate(appointmentDate);
+          setCheckInDate(appointmentDate); // ล็อกวันที่
+        } catch (error) {
+          console.error('Error fetching appointment details:', error);
+        }
+      };
+      fetchAppointmentDetails();
+    }
+  }, [isExtendBooking, appointmentId]);
+  
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Dialog open={open} onClose={() => { resetFields(); handleClose(); }} maxWidth="md" fullWidth 
@@ -166,34 +185,63 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
             variant="fullWidth"
         >
             <StyledTab label="ค้างคืน" />
-            <StyledTab label="ระหว่างวัน" />
+            {!isExtendBooking && <StyledTab label="ระหว่างวัน" />} {/* ซ่อนแท็บนี้เมื่อ isExtendBooking เป็น true */}
+
+            
         </Tabs>
           {activeTab === 0 && (
             <>
-            <Box sx={{ gap: 2, display: 'flex' , width :'100%' }}>
-              <DatePicker
-                label="Check-in Date"
-                value={checkInDate}
-                onChange={(newDate) => setCheckInDate(newDate)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
-                disablePast
-                views={['year', 'month', 'day']}
-                sx={{ flexGrow: 1 }} // ทำให้ขยายเต็มพื้นที่
-              />
-              <DatePicker
-                label="Check-out Date"
-                value={checkOutDate}
-                onChange={(newDate) => setCheckOutDate(newDate)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
-                disablePast
-                views={['year', 'month', 'day']}
-                sx={{ flexGrow: 1 }} // ทำให้ขยายเต็มพื้นที่
-              />
-              {checkInDate && checkOutDate && totalDays > 0 && <p>Total Days: {totalDays}</p>}
+            <Box sx={{ gap: 2, display: 'flex', flexDirection: 'column', width: '100%' }}>
+              {isExtendBooking && (
+                <Typography color="error" variant="body2" sx={{ mb: 1 }}>
+                  * ไม่สามารถเปลี่ยนวันที่เข้าพักได้สำหรับการขยายการจอง
+                </Typography>
+              )}
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                {isExtendBooking ? (
+                  // แสดง TextField แบบ readOnly เมื่อเป็นการจองต่อ
+                  <TextField
+                    label="Check-in Date"
+                    value={dayjs(checkInDate).format('MM/DD/YYYY')} // ฟอร์แมตวันที่
+                    fullWidth
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    sx={{ width: '50%' }}
+                  />
+                ) : (
+                  // ใช้ DatePicker เมื่อไม่ได้จองต่อ
+                  <DatePicker
+                    label="Check-in Date"
+                    value={checkInDate}
+                    onChange={(newDate) => setCheckInDate(newDate)}
+                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    disablePast
+                    views={['year', 'month', 'day']}
+                    sx={{  flexGrow: 1 }}
+                  />
+                )}
+                <DatePicker
+                  label="Check-out Date"
+                  value={checkOutDate}
+                  onChange={(newDate) => setCheckOutDate(newDate)}
+                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  disablePast
+                  views={['year', 'month', 'day']}
+                  sx={{ flexGrow: 1 }} // ขยายเต็มพื้นที่
+                />
               </Box>
+              <Box>
+                {checkInDate && checkOutDate && totalDays > 0 && (
+                  <Typography variant="body2" sx={{ mt: 2 }}>
+                    Total Days: {totalDays}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
             </>
           )}
-          {activeTab === 1 && (
+          {activeTab === 1 && !isExtendBooking && (
             <DatePicker
               label="เลือกวันที่"
               value={checkInDate}
@@ -208,7 +256,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
           )}
           <Autocomplete
             options={petCages}
-            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reservedCount || 0)} (${cage.cage_capacity})`}
+            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)}  (${cage.cage_capacity}) `}
             onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : null)}
             renderInput={(params) => <TextField {...params} label="เลือกกรง" />}
           />

@@ -139,9 +139,9 @@ console.log("rec_weight:", parseFloat(formMedical.rec_weight));
 
     console.log("data:",payload);
     try {
-      // ส่งข้อมูลไปยัง backend
+ 
       const response = await axios.post(`${api}/treatment/diagnosis`, payload);
-      alert(response.data.message); // แสดงข้อความตอบกลับจาก backend
+      alert(response.data.message); 
       handleReset()
       
     } catch (error) {

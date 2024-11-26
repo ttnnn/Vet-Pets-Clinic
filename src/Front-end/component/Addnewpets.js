@@ -22,25 +22,13 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   const [petMicrochip , setMicrochip] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [age, setAge] = useState({});
-  const [imagePreview, setImagePreview] = useState(null);
   const [gender, setGender] = useState('male');
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
-  const [imageFile, setImageFile] = useState(null);
+  const[otherPetSpecies,setOtherPetSpecies] = useState('')
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
 
-  const handleImageUpload = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-          setImageFile(file);
-          const reader = new FileReader();
-          reader.onloadend = () => {
-              setImagePreview(reader.result);
-          };
-          reader.readAsDataURL(file);
-      }
-  };
 
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
@@ -73,11 +61,11 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
       setPetSpayed(false);
       setMicrochip('');
       setPetSpecies('');
-      setImagePreview(null);
   };
 
+
   const handleSavePet = async () => {
-    if (!petName || !petSpecies || !petBreed || !birthDate) {
+    if (!petName || !petSpecies || (petSpecies !== "อื่นๆ" && !petBreed) || !birthDate) {
       setAlertSeverity("error");
       setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
       setTimeout(() => {
@@ -85,47 +73,50 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
       }, 2000);
       return;
     }
-      const formData = new FormData();
-      formData.append("owner_id", selectedOwnerId);
-      formData.append("pet_name", petName);
-      formData.append("pet_color", petColor);
-      formData.append("pet_breed", petBreed);
-      formData.append("pet_gender", gender);
-      formData.append("pet_birthday", birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "");
-      formData.append("spayed_neutered", petSpayed ? true : false);
-      formData.append("MicrochipNumber", petMicrochip);
-      formData.append("pet_species", petSpecies);
-      if (imageFile) {
-          formData.append("image", imageFile);
-      }
 
-      try {
-          const response =  await axios.post(`${api}/pets`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+    const petData = {
+        owner_id: selectedOwnerId,
+        pet_name: petName,
+        pet_color: petColor,
+        pet_breed: petBreed || '',
+        pet_gender: gender,
+        pet_birthday: birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "",
+        spayed_neutered: petSpayed,
+        microchip_number: petMicrochip,
+        pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
+    };
+    console.log('petData',petData)
 
-       if (response.status === 200) {
-          const petsResponse = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
-          setPets(petsResponse.data);
-          handleClose();
-          clearPetForm();
-          setAlertSeverity("success");
-          setAlertMessage("ลงทะเบียนสำเร็จ");
-          setTimeout(() => {
-              setAlertMessage("");
-          }, 2000);}else {
-            // จัดการเมื่อ response ไม่สำเร็จ
-            throw new Error("Failed to save pet data");
+    try {
+        const response = await axios.post(`${api}/pets`, petData, {
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (response.status === 200) {
+            const petsResponse = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
+            setPets(petsResponse.data);
+            setAlertSeverity("success");
+            setAlertMessage("ลงทะเบียนสำเร็จ");
+            setTimeout(() => {
+                setAlertMessage("");
+            }, 2000);
+
+            clearPetForm();
+            handleClose();
+        } else {
+          alert("เพิ่มสัตว์เลี้ยงล้มเหลว")
         }
+    } catch (error) {
+        console.error("Error saving pet data:", error);
+        setAlertSeverity("error");
+        setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        setTimeout(() => {
+            setAlertMessage("");
+        }, 2000);
+    }
+};
 
-      } catch (error) {
-          setAlertSeverity("error");
-          setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
-          setTimeout(() => {
-              setAlertMessage("");
-          }, 2000);
-      }
-  };
 
-  
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
     <Dialog open={open} onClose={handleClose}>
@@ -144,38 +135,6 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
       gap: 2,
     }}
   >
-    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <label htmlFor="image-upload">
-        <Button
-          component="span"
-          variant="contained"
-          className="upload-button"  // ใช้ className เพื่อใช้สไตล์ที่กำหนดใน CSS
-        >
-          {imagePreview ? (
-            <Box
-              component="img"
-              src={imagePreview}
-              alt="Pet"
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '4px',
-              }}
-            />
-          ) : (
-            <Typography className="upload-button-text">อัพโหลดรูปภาพ</Typography>
-          )}
-        </Button>
-        <input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          hidden
-        />
-      </label>
-    </Box>
     <Box sx={{ flex: 2 }}>
       <TextField
         label="ชื่อสัตว์เลี้ยง"
@@ -201,32 +160,43 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
       <MenuItem value="สุนัข">สุนัข</MenuItem>
       <MenuItem value="อื่นๆ">อื่นๆ</MenuItem>
     </TextField>
-    <Autocomplete
-    options={petSpecies === "แมว" ? CatBreed : DogBreed}
+    {petSpecies === "อื่นๆ" ? (
+  <TextField
+    label="กรุณาระบุประเภทสัตว์เลี้ยง"
+    value={otherPetSpecies}
+    fullWidth
+    required
+    onChange={(e) => setOtherPetSpecies(e.target.value)}
+    sx={{ mb: 2 }}
+  />
+) : (
+  <Autocomplete
+    options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
     value={petBreed}
     onChange={(event, newValue) => {
-        setPetBreed(newValue);
+      setPetBreed(newValue);
     }}
     renderInput={(params) => (
-        <TextField 
-            {...params} 
-            label="พันธุ์ของสัตว์เลี้ยง" 
-            variant="outlined" 
-            required
-            fullWidth 
-        />
+      <TextField 
+        {...params} 
+        label="พันธุ์ของสัตว์เลี้ยง" 
+        variant="outlined" 
+        required
+        fullWidth 
+      />
     )}
-    freeSolo //พิมพ์และเลือกข้อความที่ไม่ได้อยู่ในรายการตัวเลือกที่มีอยู่ใน options ได้ 
+    freeSolo // Allow custom input
     sx={{ 
-        '& .MuiAutocomplete-listbox': {
-            maxHeight: '200px', 
-            overflowY: 'auto' ,
-        }
+      '& .MuiAutocomplete-listbox': {
+        maxHeight: '200px', 
+        overflowY: 'auto',
+      }
     }}
-    isOptionEqualToValue={(option, value) => option === value} // Ensure correct matching
-    getOptionLabel={(option) => option} // Use the option as the label
-/>
-    
+    isOptionEqualToValue={(option, value) => option === value}
+    getOptionLabel={(option) => option}
+  />
+)}
+
       <TextField
         label="สี/ตำหนิ"
         value={petColor}
@@ -283,10 +253,10 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
         sx={{ mt: 3 }}
       >
         <ToggleButton value="male"  >
-          <Typography>♂</Typography>
+          <Typography>♂ male</Typography>
         </ToggleButton>
         <ToggleButton value="female">
-          <Typography>♀</Typography>
+          <Typography>♀ female</Typography>
         </ToggleButton>
       </ToggleButtonGroup>
       <TextField

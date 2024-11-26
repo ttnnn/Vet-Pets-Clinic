@@ -10,8 +10,9 @@ import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
 import PostponeHotel from './PostponeHotel';
 import dayjs from 'dayjs';
-import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
+
+import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 
@@ -163,13 +164,43 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setOrderBy(property);
   };
   //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
-  const isAppointmentInPast = (appointmentDate) => {
-    const today = dayjs();// Current date
-    const appointmentDateObj = dayjs(appointmentDate);
-    return appointmentDateObj.isBefore(today);
-  }
+  const isAppointmentInPast = (appointmentDate, appointmentTime) => {
+    try {
+      if (!appointmentDate) {
+        console.error("Invalid appointment date: Date is null or undefined.");
+        return false;
+      }
+  
+      // กำหนดเวลาเริ่มต้นเป็น 23:59 หากไม่มี appointmentTime
+      const timeWithoutOffset = appointmentTime
+        ? appointmentTime.split('+')[0] // หากมีค่า appointmentTime
+        : "20:00:50"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 23:59:59
+  
+      // แปลงวันที่ให้อยู่ในรูปแบบ 'YYYY-MM-DD'
+      const appointmentDateOnly = dayjs(appointmentDate).format('YYYY-MM-DD');
+      const appointmentDateTime = dayjs(
+        `${appointmentDateOnly}T${timeWithoutOffset}+07:00`
+      ); // เพิ่ม timezone ด้วย +07:00
+  
+      if (!appointmentDateTime.isValid()) {
+        console.error(`Invalid date or time: ${appointmentDate}, ${appointmentTime}`);
+        return false;
+      }
+  
+      const currentDateTime = dayjs();
+  
+      // ตรวจสอบว่าเวลานัดหมายอยู่ในอดีตหรือไม่
+      return appointmentDateTime.isBefore(currentDateTime);
+    } catch (error) {
+      console.error('Error while parsing date or time:', error);
+      return false;
+    }
+  };
   
   
+
+
+
 
   const filteredAppointments = appointments.filter(appointment => {
     // console.log('Active category:', activeCategory);
@@ -278,7 +309,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                     )
                   ) : null}
 
-                  {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date) &&(
+                  {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date,appointment.appointment_time) &&(
                   <>
                     <Button 
                       variant="outlined" 

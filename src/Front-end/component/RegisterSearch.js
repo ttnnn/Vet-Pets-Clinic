@@ -16,6 +16,17 @@ const RegisterSearch = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  const handleOpen = () => {
+    setOpen(true);  // Set open to true to display the dialog
+  };
+
+  // Function to close the dialog
+  const handleClose = () => {
+    setOpen(false);  // Set open to false to close the dialog
+  };
+
+
+
   useEffect(() => {
     // Fetch owners when component mounts
     axios.get(`${api}/owners`)
@@ -99,14 +110,14 @@ const RegisterSearch = () => {
           <Button 
             variant="contained" 
             className="submit-button"
-            onClick={() => setOpen(true)}
+            onClick={handleOpen}
             sx={{ padding: 1, ml:10}}
         >
         ลงทะเบียนสัตว์เลี้ยงใหม่
         </Button>
         <PetDialog
             open={open}
-            handleClose={() => setOpen(false)}
+            handleClose={handleClose}
             selectedOwnerId={selectedOwnerId}
             setPets={setPets}
             isEditMode={false}

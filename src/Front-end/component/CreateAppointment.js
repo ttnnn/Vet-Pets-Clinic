@@ -163,7 +163,7 @@ const AddAppointment = () => {
           return;
         }
       }else {
-        if (!checkInDate || !checkOutDate || !petCages ) {
+        if (!checkInDate || !checkOutDate || !petCages  || !isNoTime ) {
           alert('Please fill all required fields.');
           return;
         }
@@ -173,7 +173,7 @@ const AddAppointment = () => {
         owner_id: selectedOwnerId,
         pet_id: selectedPetId,
         type_service: TypeService,
-        status: 'รออนุมัติ',
+        status: 'อนุมัติ',   //ลงหน้าร้าน
         queue_status: 'รอรับบริการ',
         personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null,
         
@@ -188,8 +188,8 @@ const AddAppointment = () => {
           ...appointmentData,
           appointment_date: formattedDate,
           appointment_time: formattedTime,
-          reason: reason || null,
-          detail_service: detailservice || isNoTime === true ? 'Walk-in' : 'นัดหมาย',
+          reason: `${reason ? reason : ''}${reason && detailservice ? ' - ' : ''}${detailservice ? detailservice : ''}`,
+          detail_service:  isNoTime === true ? 'Walk-in' : 'นัดหมาย',
         };
       } else {
         // กรณีเป็น "ฝากเลี้ยง" ให้เพิ่มข้อมูลการจองกรง

@@ -250,9 +250,8 @@ app.post('/create-owner-pet', async (req, res) => {
 });
 
 
-app.post('/pets', upload.single('image'), async (req, res) => {
+app.post('/pets', async (req, res) => {
   console.log("/pets", req.body); // Log request body
-  console.log("Uploaded file:", req.file); // Log uploaded file info
 
   const { 
     owner_id, 
@@ -266,31 +265,33 @@ app.post('/pets', upload.single('image'), async (req, res) => {
     pet_species 
   } = req.body;
 
-  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
-
-  const sql = `
-    INSERT INTO pets (
-      owner_id, pet_name, pet_color, pet_breed, 
-      pet_gender, pet_birthday,
-      spayed_neutered, microchip_number, pet_species, image_url
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING pet_id
-  `;
+  const sql  = `
+  INSERT INTO pets (
+    owner_id, 
+    pet_name, 
+    pet_color, 
+    pet_breed, 
+    pet_gender, 
+    pet_birthday, 
+    spayed_neutered, 
+    microchip_number, 
+    pet_species
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`;
 
   try {
     const result = await pool.query(sql, [
       owner_id, pet_name, pet_color, pet_breed, pet_gender, 
       pet_birthday, spayed_neutered, microchip_number, 
-      pet_species, ImageUrl
+      pet_species
     ]);
 
-    const petId = result.rows[0].pet_id;
-    res.status(201).send({ message: 'Pet added successfully', petId });
   } catch (err) {
     console.error('Error inserting pet:', err);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 });
+
 app.put('/postpone/hotels/:id', async (req, res) => {
   console.log('/postpone/hotels/:id', req.params);
   const { id } = req.params;
@@ -490,54 +491,77 @@ app.get('/personnel', async (req, res) => {
   }
 });
 
-// Update appointment status
-app.put('/appointment/:id', async (req, res) => {  
+app.put('/appointment/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, queue_status } = req.body;  // Expecting status and queue_status to be passed in the request body
+  const { status, queue_status } = req.body;
 
   console.log('Updating appointment with ID:', id);
   console.log('Received status:', status, 'queue_status:', queue_status);
 
+  const client = await pool.connect();
+
   try {
-    // Fetch current values for status and queue_status from the database
-    const currentQuery = 'SELECT status, queue_status FROM appointment WHERE appointment_id = $1';
-    const currentResult = await pool.query(currentQuery, [id]);
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Fetch current appointment details
+    const currentQuery = `
+      SELECT status, queue_status, type_service 
+      FROM appointment 
+      WHERE appointment_id = $1
+    `;
+    const currentResult = await client.query(currentQuery, [id]);
 
     if (currentResult.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).send({ message: 'Appointment not found' });
     }
 
-    const currentStatus = currentResult.rows[0].status;
-    const currentQueueStatus = currentResult.rows[0].queue_status;
+    const { type_service } = currentResult.rows[0];
 
-    // Use the provided values, or retain the current ones if not provided
-    const newStatus = status || currentStatus;
-    const newQueueStatus = queue_status || currentQueueStatus;
+    // Check if type_service is 'ฝากเลี้ยง'
+    if (type_service === 'ฝากเลี้ยง') {
+      // Update pethotel status if status is provided
+      if (status) {
+        const petHotelUpdateQuery = `
+          UPDATE pethotel 
+          SET status = $1 
+          WHERE appointment_id = $2
+        `;
+        const petHotelResult = await client.query(petHotelUpdateQuery, [status, id]);
 
-    const updateQuery = `
+        if (petHotelResult.rowCount === 0) {
+          await client.query('ROLLBACK');
+          return res.status(400).send({ message: 'Failed to update PetHotel status. Cannot update queue.' });
+        }
+      }
+    }
+
+    // Update appointment table
+    const appointmentUpdateQuery = `
       UPDATE appointment 
-      SET status = $1, queue_status = $2 
-      WHERE appointment_id = $3
+      SET queue_status = $1 
+      WHERE appointment_id = $2
     `;
+    await client.query(appointmentUpdateQuery, [queue_status, id]);
 
-    // Perform the update with either the new or existing values
-    const result = await pool.query(updateQuery, [newStatus, newQueueStatus, id]);
+    // Commit transaction
+    await client.query('COMMIT');
 
-    if (result.rowCount === 0) {
-      return res.status(404).send({ message: 'Appointment not found' });
-    }
-
-    return res.send({ message: 'Appointment status updated successfully' });
+    return res.send({ message: 'Appointment updated successfully' });
   } catch (err) {
-    console.error('Failed to update appointment status:', err);
+    console.error('Failed to update appointment:', err);
+    await client.query('ROLLBACK');
     return res.status(500).send({ message: 'Database error' });
+  } finally {
+    client.release();
   }
 });
 
 
 app.put('/postpone/appointment/:id', async (req, res) => {  
   const { id } = req.params;
-  const { appointment_date, appointment_time } = req.body; // Expecting the appointment_date and appointment_time to be passed in the request body
+  const { appointment_date, appointment_time } = req.body;
   console.log(`Updating appointment with ID: ${id}, date: ${appointment_date}, time: ${appointment_time}`);
   
   console.log('Updating appointment with ID:', id);
@@ -577,14 +601,72 @@ app.get('/appointment', async (req, res) => {
       appointment.appointment_time,
       pets.pet_name,
       pets.pet_id,
+      pets.pet_birthday,
+      pets.pet_gender,
+      pets.pet_breed,
+      pets.pet_species,
+      pets.image_url,
+      pets.spayed_neutered,
       owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
       appointment.type_service,
       appointment.reason,
       appointment.detail_service,
-      appointment.queue_status
+      appointment.queue_status,
+      medicalrecord.rec_weight,
+      medicalrecord.med_id
     FROM appointment
     JOIN pets ON appointment.pet_id = pets.pet_id
     JOIN owner ON appointment.owner_id = owner.owner_id
+    LEFT JOIN medicalrecord ON appointment.appointment_id = medicalrecord.appointment_id
+  `;
+
+  try {
+    const result = await pool.query(query);
+    res.json(result.rows);  // Return result rows as JSON
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/appointments/:appointmentId', async (req, res) => {
+  const { appointmentId } = req.params;
+
+  try {
+    const result = await pool.query('SELECT * FROM appointment WHERE appointment_id = $1', [appointmentId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching appointment:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+app.get('/appointment/hotel', async (req, res) => {
+  const query = `
+    SELECT 
+      appointment.appointment_id,
+      appointment.status,
+      appointment.detail_service,
+      appointment.type_service,
+      appointment.queue_status,
+      pets.pet_name,
+      pets.pet_id,
+      pets.pet_species,
+      owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
+      petshotel.start_date,
+      petshotel.end_date,
+      petshotel.num_day,
+      petshotel.status As status_hotel,
+      petshotel.pet_cage_id
+
+    FROM appointment
+    JOIN pets ON appointment.pet_id = pets.pet_id
+    JOIN owner ON appointment.owner_id = owner.owner_id
+    LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+    where appointment.type_service = 'ฝากเลี้ยง'
   `;
 
   try {
@@ -643,7 +725,7 @@ async function createPetHotelEntry(client, newAppointmentID, pet_id, start_date,
   try{
   const insertPetHotelQuery = `
     INSERT INTO petshotel (appointment_id, pet_id, start_date, end_date, num_day, status, pet_cage_id )
-    VALUES ($1, $2, $3, $4, $5, 'จอง', $6)
+    VALUES ($1, $2, $3, $4, $5, 'รอเข้าพัก', $6)
   `;
   await client.query(insertPetHotelQuery, [newAppointmentID, pet_id, start_date, end_date, num_day, pet_cage_id]);
 
@@ -666,10 +748,14 @@ async function createAppointment(client, newAppointmentID, data ) {
   const { owner_id, pet_id, personnel_id, detail_service, type_service, appointment_date, appointment_time, reason, status, queue_status } = data;
   
   const insertQuery = `
-    INSERT INTO appointment (appointment_id, owner_id, pet_id, personnel_id, detail_service, type_service, appointment_date, appointment_time, reason, status, queue_status , massage_status)
+    INSERT INTO appointment (appointment_id, owner_id, pet_id, personnel_id, 
+    detail_service, type_service, appointment_date, 
+    appointment_time, reason, status, queue_status , massage_status)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11 , $12)
   `;
-  await client.query(insertQuery, [newAppointmentID, owner_id, pet_id, personnel_id, detail_service, type_service, appointment_date, appointment_time, reason, status, queue_status,massage_status]);
+  await client.query(insertQuery, [newAppointmentID, owner_id, pet_id, personnel_id, detail_service,
+     type_service, appointment_date, appointment_time,
+     reason, status, queue_status,massage_status]);
   // อัปเดตวันที่นัดหมายในตาราง appointment หลังสร้างการจองสำเร็จ
 }
 
@@ -697,6 +783,60 @@ app.get('/available-cages', async (req, res) => {
   } catch (err) {
     console.error('Error fetching available cages:', err);
     res.status(500).json({ error: 'Database error fetching available cages' });
+  }
+});
+
+app.post('/medical/symptom', async (req, res) => {
+  console.log('/medical/symptom', req.body);
+  const { appointment_id, rec_weight, diag_cc, pet_id, type_service } = req.body; // รับประเภทบริการด้วย
+
+  const client = await pool.connect(); // ใช้ client สำหรับ transaction
+  try {
+    await client.query('BEGIN'); // เริ่ม transaction
+
+    let diagnosis_id = null;
+
+    // ตรวจสอบประเภทบริการ
+    if (type_service === 'ตรวจรักษา') {  // ถ้าเป็นประเภทบริการ 'ตรวจรักษา' ให้บันทึก diagnosis_id
+      // 1. บันทึกหรืออัปเดตข้อมูลในตาราง `diagno`
+      const resultDiagno = await client.query(
+        `INSERT INTO diagnosis (diag_cc) 
+         VALUES ($1) 
+         RETURNING diagnosis_id`,
+        [diag_cc]
+      );
+
+      if (resultDiagno.rows.length > 0) {
+        // หากเพิ่มข้อมูลใหม่ใน `diagno` ได้ ให้ใช้ id ที่เพิ่ม
+        diagnosis_id = resultDiagno.rows[0].diagnosis_id;
+      } else {
+        // หาก diag_cc มีอยู่แล้ว ให้ค้นหา `diagno_id` ที่ตรงกัน
+        const existingDiagno = await client.query(
+          `SELECT diagnosis_id FROM diagnosis WHERE diag_cc = $1`,
+          [diag_cc]
+        );
+        diagnosis_id = existingDiagno.rows[0].diagnosis_id;
+      }
+    }
+
+    // 2. บันทึกหรืออัปเดตข้อมูลในตาราง `medicalrecord`
+    await client.query(
+      `INSERT INTO medicalrecord (appointment_id, pet_id, rec_weight, diagnosis_id) 
+       VALUES ($1, $2, $3, $4) 
+       ON CONFLICT (appointment_id, pet_id) 
+       DO UPDATE SET rec_weight = $3, diagnosis_id = $4`,
+      [appointment_id, pet_id, rec_weight, diagnosis_id]
+    );
+
+    await client.query('COMMIT'); // ยืนยัน transaction
+
+    res.status(200).json({ message: 'Medical record saved successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK'); // ย้อนกลับ transaction เมื่อเกิดข้อผิดพลาด
+    console.error('Error saving medical record:', error);
+    res.status(500).json({ error: 'Failed to save medical record' });
+  } finally {
+    client.release(); // ปล่อย client กลับสู่ pool
   }
 });
 

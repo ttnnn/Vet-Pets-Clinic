@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
 import {  Box, Paper, Button, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogTitle, TableCell,
-     TableRow ,TableContainer,Table,TableBody,TableHead ,TableSortLabel,Typography, IconButton} from '@mui/material';
+     TableRow ,TableContainer,Table,TableBody,TableHead ,TableSortLabel,Typography, IconButton,TextField} from '@mui/material';
 import { styled } from '@mui/system';
 import CloseIcon from '@mui/icons-material/Close';
+import dayjs from 'dayjs';
+import 'dayjs/locale/th'; // Thai localization
+import axios from 'axios';
+
+
 // Categories for filtering
 const categories = ['คิววันนี้', 'อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
-// const api = 'http://localhost:8080';
+const api = 'http://localhost:8080';
+
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -46,21 +52,95 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
     const [orderBy, setOrderBy] = useState('appointment_date');
     const [openPopup, setOpenPopup] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
-  
+    const [age, setAge] = useState('');
+    const [formMedical, setFormMedical] = useState({
+      rec_weight: '',
+      diag_cc: '',
+      pet_id: '',
+      type_service:''
+     
+    });
+    const handleMedicalChange = (field) => (event) => {
+      setFormMedical((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
+ 
+
+    const handleSaveMedical = async (appointmentId) => {
+      try {
+        if(selectedAppointment.type_service !== 'ตรวจรักษา'){
+          if (!formMedical.rec_weight) {
+            alert('Please fill all required fields.');
+            return;
+          }
+        }else {
+          if (!formMedical.rec_weight || !formMedical.diag_cc ) {
+            alert('Please fill all required fields.');
+            return;
+          }
+        }
+
+        const response = await axios.post(`${api}/medical/symptom`, {
+          appointment_id: appointmentId,
+          rec_weight: formMedical.rec_weight,
+          diag_cc: formMedical.diag_cc,
+          pet_id: formMedical.pet_id,
+          type_service: formMedical.type_service
+        });
+      
+        if (response.status === 200) {
+          alert('บันทึกข้อมูลสำเร็จ');
+          onMoveToOngoing(appointmentId); // เรียกฟังก์ชันส่งคิว
+          handleClose(); // ปิดฟอร์มหลังจากส่งคิว
+        } else {
+          alert('เกิดข้อผิดพลาดในการบันทึก');
+        }
+      } catch (error) {
+        console.error('Error saving medical record:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+      }
+    };
+
+    
+
+    useEffect(() => {
+      if (selectedAppointment) {
+        calculateAge(selectedAppointment.pet_birthday); // คำนวณอายุใหม่เมื่อ appointment เปลี่ยน
+      }
+    }, [selectedAppointment]);
+    
+    
+    
+    
     const handleRequestSort = (event, property) => {
       const isAsc = orderBy === property && order === 'asc';
       setOrder(isAsc ? 'desc' : 'asc');
       setOrderBy(property);
     };
-  
+      const calculateAge = (date) => {
+      if (!date) return;
+      const today = dayjs();
+      const birthDay = dayjs(date);
+      const years = today.diff(birthDay, 'year');
+      const months = today.diff(birthDay.add(years, 'year'), 'month');
+      const days = today.diff(birthDay.add(years, 'year').add(months, 'month'), 'day');
+      setAge({ years, months, days });
+    };
+
     const filteredAppointments = appointments.filter(appointment => {
       if (activeCategory === 'คิววันนี้') {
-        return appointment.queue_status === 'รอรับบริการ';
+        return appointment.queue_status === 'รอรับบริการ'&& appointment.status=== 'อนุมัติ';
       }
-      return appointment.type_service === activeCategory && appointment.queue_status === 'รอรับบริการ';
+      return appointment.type_service === activeCategory && appointment.queue_status === 'รอรับบริการ' && appointment.status === 'อนุมัติ';
     });
     const handleClickOpen = (appointment) => {
         setSelectedAppointment(appointment);
+        setFormMedical({
+          pet_id: appointment.pet_id, // เซ็ต pet_id อัตโนมัติ
+          type_service:appointment.type_service
+        });
         setOpenPopup(true);
       };
       const handleClose = () => {
@@ -115,7 +195,7 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
               {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment) => {
                 // กำหนดสีตามประเภทการจองใน detail_server
                 const detailColor = appointment.detail_service === 'นัดหมาย' ? '#eefaaa' : 
-                                    appointment.detail_service === 'walkin' ? '#aafabb' : '#cffdff';
+                                    appointment.detail_service === 'Walk-in' ? '#aafabb' : '#cffdff';
   
                 return (
                   <TableRow key={appointment.appointment_id}> 
@@ -164,41 +244,106 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
             </TableBody>
           </Table>
         </TableContainer>
+
         <Dialog open={openPopup} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          ซักประวัติ
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          {selectedAppointment && (
-            <Box>
-              <Typography variant="h6">{selectedAppointment.pet_name}</Typography>
-              <Typography>เจ้าของ: {selectedAppointment.full_name}</Typography>
-              <Typography>น้ำหนัก: {selectedAppointment.weight} Kg</Typography>
+          <DialogTitle>
+            ซักประวัติ
+            <IconButton
+              aria-label="close"
+              onClick={handleClose}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            {selectedAppointment && (
+              <Box display="flex" alignItems="start">
+                {/* รูปภาพ */}
+                <Box sx={{ marginRight: 2 }}>
+                  <img
+                    src={`http://localhost:8080${selectedAppointment.image_url}`}
+                    alt={selectedAppointment.pet_name}
+                    style={{
+                      width: '100px',
+                      height: '110px',
+                      borderRadius: '8px',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+                  
+                {/* ข้อมูลสัตว์ในบรรทัดเดียว */}
+                <Box display="flex" flexDirection="row" flexWrap="wrap" gap={2} alignItems="center">
+                  <Typography variant="h6">{selectedAppointment.pet_name} </Typography>
+                  <Typography variant="body1">{selectedAppointment.pet_species}| </Typography>
+                  <Typography variant="body1">{selectedAppointment.pet_breed}|</Typography>
+                  <Typography variant="body1">
+                    อายุ: {age.years} ปี {age.months} เดือน {age.days} วัน |
+                  </Typography>
+                  <Typography>
+                    {selectedAppointment.pet_gender === 'female' ? 'เพศเมีย' : 'เพศผู้'} |
+                  </Typography>
+                  <Typography variant="body1">
+                    {selectedAppointment.spayed_neutered ? 'เคยทำหมัน' : 'ไม่ได้ทำหมัน'} |
+                  </Typography>
+                  <Typography>เจ้าของ: {selectedAppointment.full_name}</Typography>
+                </Box>
+              </Box>
+            )}
+
+            <Box mt={3}>
+              <Box display="flex" alignItems="center" mb={2}>
+                {/* <Typography sx={{ color: 'blue', marginRight: '16px' }}> */}
+                  {/* น้ำหนักเดิม {selectedAppointment?.rec_weight ? selectedAppointment.rec_weight : '-'} Kg. */}
+                {/* </Typography> */}
+                <Typography sx={{ mr: 2 }}>น้ำหนัก (Kg.)</Typography>
+                <TextField
+                  type="number"
+                  value={formMedical?.rec_weight ?? ''}
+                  onChange={handleMedicalChange('rec_weight')}
+                  sx={{
+                    width: '80px',   // ลดขนาดความกว้าง
+                    height: '30px',  // ลดขนาดความสูง
+                    fontSize: '12px', // ลดขนาดตัวอักษร
+                    '& .MuiInputBase-input': {
+                      padding: '5px' // ลด padding
+                    },
+                  }}
+                />
+              </Box>
+          
+              <Box>
+                <Typography>อาการเบื้องต้น </Typography>
+                <TextField
+                  type="text"
+                  value={formMedical.diag_cc}
+                  onChange={handleMedicalChange('diag_cc')}
+                  fullWidth
+                  multiline
+                  rows={4}
+                />
+                <Typography sx={{ mt: 2 }}> *(สำหรับสัตว์เลี้ยงที่มาทำการตรวจรักษา)</Typography>
+              </Box>
             </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button variant="contained" color="primary" 
-           onClick={() => {
-            onMoveToOngoing(selectedAppointment?.appointment_id); // เรียกฟังก์ชันส่งคิว
-            handleClose(); // ปิดฟอร์มหลังจากส่งคิว
-          }}>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                handleSaveMedical(selectedAppointment?.appointment_id); // บันทึกข้อมูล
+              }}
+            >
               ส่งคิว
-          </Button>
-        </DialogActions>
-      </Dialog>
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Paper>
       
     );
