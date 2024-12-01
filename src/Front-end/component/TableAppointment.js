@@ -23,6 +23,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minWidth: 0,
   marginRight: theme.spacing(2),
   fontWeight: theme.typography.fontWeightRegular,
+  fontSize: 18,
+
   '&:hover': {
     color: '#40a9ff',
     opacity: 1,
@@ -30,6 +32,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   '&.Mui-selected': {
     color: 'black',
     fontWeight: theme.typography.fontWeightMedium,
+    fontWeight: 'bold',
+    
   },
   '&.Mui-focusVisible': {
     backgroundColor: 'rgba(100, 95, 228, 0.32)',
@@ -215,7 +219,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
  
   // console.log(filteredAppointments)
   return (
-    <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
+    <Paper elevation={3} sx={{ p: 2}}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={activeCategory}
@@ -226,7 +230,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
           scrollButtons="auto"
         >
           {categories.map(category => (
-            <StyledTab key={category} label={category} value={category} />
+            <StyledTab key={category} label={category} value={category} 
+            sx={{
+              fontSize: 16 ,
+              fontWeight: 'bold',
+              }} 
+            />
           ))}
         </Tabs>
       </Box>
@@ -237,7 +246,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
           variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ flexGrow: 1, mr: 2 }}
+          sx={{ flexGrow: 1, mr: 1 }}
         />
         <Button variant="contained" color="primary">ค้นหา</Button>
       </Box>
@@ -291,6 +300,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                       <Button 
                         variant="outlined" 
                         color="secondary" 
+                        sx={{ width: '100px' }}
                         onClick={() => handleApproveClick(appointment.appointment_id)}
                       >
                         อนุมัติ
@@ -310,17 +320,19 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                   ) : null}
 
                   {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date,appointment.appointment_time) &&(
-                  <>
+                  <Box sx={{ display: 'flex', gap: 2 }}> {/* ใช้ gap เพื่อเพิ่มระยะห่างระหว่างปุ่ม */}
                     <Button 
                       variant="outlined" 
                       color="secondary" 
+                      sx={{ width: '100px' }}
                       onClick={() => handleCancelClick(appointment.appointment_id)}
                     >
                     ยกเลิกนัด
                     </Button> 
                     <Button
                       variant="outlined" 
-                      color="secondary" 
+                      color="secondary"
+                      sx={{ width: '100px' }} 
                       onClick={() => handlePostponeClick(appointment.appointment_id, appointment.type_service,  appointment.pet_id )}
                     >  เลื่อนนัด
                     </Button> 
@@ -344,7 +356,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                         />
                       )
                     )}    
-                  </>                    
+                  </Box>                    
                   )}
                      
                 </TableCell>

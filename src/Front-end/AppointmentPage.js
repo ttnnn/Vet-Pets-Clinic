@@ -9,25 +9,31 @@ import { DateTime } from 'luxon';
 
 const api = 'http://localhost:8080';
 
+// Styled Tab with custom colors
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
   minWidth: 0,
   marginRight: theme.spacing(2),
   fontWeight: theme.typography.fontWeightRegular,
+  fontSize: 18,
+
   '&:hover': {
     color: theme.palette.primary.main,
     opacity: 1,
   },
   '&.Mui-selected': {
-    color: 'purple',
-    backgroundColor: 'rgba(128, 0, 128, 0.2)',
+    color: 'black', // สีข้อความเมื่อเลือก
+    backgroundColor: '#b3e5fc', // สีพื้นหลังเมื่อเลือก
     fontWeight: theme.typography.fontWeightMedium,
   },
   '&.Mui-focusVisible': {
     backgroundColor: 'rgba(100, 95, 228, 0.32)',
   },
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-indicator': {
-    backgroundColor: 'purple',
+    backgroundColor: 'black', // เปลี่ยนเส้นใต้เป็นสีฟ้า
   },
 }));
 
@@ -40,7 +46,7 @@ const AppointmentPage = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-    updateAppointments(); // ดึงข้อมูลใหม่เมื่อเปลี่ยนแท็บ
+    updateAppointments(); // Fetch new data on tab change
   };
 
   const handleFilterChange = (event) => {
@@ -70,7 +76,7 @@ const AppointmentPage = () => {
       return appointments.filter((appointment) => {
         const appointmentDate = DateTime.fromISO(appointment.appointment_date);
 
-        // แสดงข้อมูลตามแท็บและประเภทฟิลเตอร์ที่เลือก
+        // Filter by tab and selected filter type
         if (activeTab === 0 && appointment.status !== 'รออนุมัติ') return false;
         if (activeTab === 1 && !['อนุมัติ', 'ยกเลิกนัด'].includes(appointment.status)) return false;
 
@@ -102,10 +108,32 @@ const AppointmentPage = () => {
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Paper sx={{ p: 3 }}>
           <Typography variant="h4" gutterBottom>ระบบจัดการนัดหมาย</Typography>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange} 
-            indicatorColor="secondary"
+  
+          {/* Dropdown */}
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            mb: 2, // เพิ่มระยะห่างระหว่าง Dropdown และ Tabs
+          }}>
+            <Select
+              value={filterType}
+              onChange={handleFilterChange}
+              variant="outlined"
+              sx={{ width: '250px' }} // ปรับขนาดให้พอดี
+            >
+              <MenuItem value="all">คิวนัดหมายทั้งหมด</MenuItem>
+              <MenuItem value="today">คิวนัดหมายวันนี้</MenuItem>
+              <MenuItem value="tomorrow">คิวนัดหมายวันพรุ่งนี้</MenuItem>
+              <MenuItem value="this_month">คิวนัดหมายเดือนนี้</MenuItem>
+              <MenuItem value="this_pass">คิวนัดหมายที่ผ่านมาแล้ว</MenuItem>
+              <MenuItem value="cancel">คิวนัดหมายที่ยกเลิก</MenuItem>
+            </Select>
+          </Box>
+  
+          {/* Tabs */}
+          <StyledTabs
+            value={activeTab}
+            onChange={handleTabChange}
             textColor="inherit"
             variant="fullWidth"
             aria-label="full width tabs example"
@@ -113,35 +141,12 @@ const AppointmentPage = () => {
             <StyledTab label="นัดหมายใหม่(รออนุมัติ)" />
             <StyledTab label="สมุดนัดหมาย" />
             <StyledTab label="เพิ่มการนัดหมาย" />
-          </Tabs>
-
-          {activeTab !== 2 && (
-            <Box sx={{
-              width: '40%',
-              height: '100px',
-              marginLeft: 'auto',
-              padding: 3,
-              borderRadius: '10px',
-            }}>
-              <Select
-                value={filterType}
-                onChange={handleFilterChange}
-                variant="outlined"
-                fullWidth
-              >
-                <MenuItem value="all">คิวนัดหมายทั้งหมด</MenuItem>
-                <MenuItem value="today">คิวนัดหมายวันนี้</MenuItem>
-                <MenuItem value="tomorrow">คิวนัดหมายวันพรุ่งนี้</MenuItem>
-                <MenuItem value="this_month">คิวนัดหมายเดือนนี้</MenuItem>
-                <MenuItem value="this_pass">คิวนัดหมายที่ผ่านมาแล้ว</MenuItem>
-                <MenuItem value="cancel">คิวนัดหมายที่ยกเลิก</MenuItem>
-              </Select>
-            </Box>
-          )}
-
+          </StyledTabs>
+  
+          {/* Content */}
           {activeTab === 0 && (
             <TableAppointments
-              setAppointments={setAppointments} 
+              setAppointments={setAppointments}
               appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -149,7 +154,7 @@ const AppointmentPage = () => {
           )}
           {activeTab === 1 && (
             <TableAppointments
-              setAppointments={setAppointments} 
+              setAppointments={setAppointments}
               appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -160,6 +165,7 @@ const AppointmentPage = () => {
       </Box>
     </Box>
   );
+  
 };
 
 export default AppointmentPage;

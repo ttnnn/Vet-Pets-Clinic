@@ -5,7 +5,6 @@ import { Button, TextField, Typography, Box, Paper, Tabs, Tab, Dialog, DialogTit
 import CloseIcon from '@mui/icons-material/Close';
 import Sidebar from './Sidebar';
 import { styled } from '@mui/material/styles';
-import './RegisterPage.css';
 import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -31,20 +30,18 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minWidth: 0,
   marginRight: theme.spacing(2),
   fontWeight: theme.typography.fontWeightRegular,
+  fontSize: 18,
   '&:hover': {
     color: theme.palette.primary.main,
     opacity: 1,
   },
   '&.Mui-selected': {
-    color: 'purple', // Change the text color for the selected tab
-    backgroundColor: 'rgba(128, 0, 128, 0.2)', // Optional: background color when selected
+    color: 'black', // Change the text color for the selected tab
+    backgroundColor: '#b3e5fc', // Optional: background color when selected
     fontWeight: theme.typography.fontWeightMedium,
   },
   '&.Mui-focusVisible': {
     backgroundColor: 'rgba(100, 95, 228, 0.32)',
-  },
-  '& .MuiTabs-indicator': {
-    backgroundColor: 'purple', // Change the color of the tab indicator
   },
 }));
 
@@ -262,10 +259,20 @@ const RegisterPage = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
-    <Box className="main-container">
+    <Box display="flex" height="100vh" sx={{backgroundColor: '#e0e0e0'}}>
       <Sidebar />
-      <Box className="register-container">
-        <Paper sx={{ width: '100%' }}>
+      <Box className="register-container"
+        sx={{
+        flex: 1,
+        padding: 2, // Equivalent to 20px padding
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+
+        <Paper sx={{ p: 3 }} >
+        <Typography variant="h4" gutterBottom>
+          เวชระเบียน
+        </Typography>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -287,10 +294,10 @@ const RegisterPage = () => {
             <StyledTab label="ค้นหาข้อมูลลูกค้า" className="tab-button" />
           </Tabs>
 
-          <Box p={3}>
+          <Box p={3} >
             {activeTab === 0 ? (
               <Box>
-                <Typography variant="h4" gutterBottom>
+                <Typography variant="h5" gutterBottom>
                   ลงทะเบียนสัตว์เลี้ยงใหม่
                 </Typography>
                 {alertMessage && (
@@ -298,8 +305,14 @@ const RegisterPage = () => {
                       {alertMessage}
                   </Alert>)}
 
-                <Box component="form" noValidate autoComplete="off" className="register-form">
-                  <Box className="form-row">
+                <Box component="form" noValidate autoComplete="off" className="register-form"
+                      sx={{
+                          backgroundColor: '#f9f9f9',
+                          padding: '20px',
+                          borderRadius: '8px',
+                          boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+                        }}>
+                  <Box className="form-row" sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 , }}>
                     <TextField
                       label="ชื่อลูกค้า"
                       value={firstNameOwner}
@@ -307,7 +320,7 @@ const RegisterPage = () => {
                       fullWidth
                       required
                       onChange={(e) => setFirstName(e.target.value)}
-                      sx={{ mr: 5 }}
+                      sx={{ mr: 2 }}
                     />
                     <TextField
                       label="นามสกุล"
@@ -315,10 +328,10 @@ const RegisterPage = () => {
                       variant="outlined"
                       fullWidth
                       onChange={(e) => setLastNameOwner(e.target.value)}
-                      sx={{ mr: 5 }}
+                      sx={{ mr: 2 }}
                     />
                   </Box>
-                  <Box className="form-row"> 
+                  <Box className="form-row" sx={{ display: 'flex', justifyContent: 'space-between',mb: 2 ,}}>
                     <TextField
                     label="เบอร์โทรศัพท์"
                     name="phoneNumber"
@@ -328,7 +341,7 @@ const RegisterPage = () => {
                     required
                     inputProps={{ maxLength: 10 }} 
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    sx={{ mr: 5 }}
+                    sx={{ mr: 2 }}
                   />
                     <TextField
                     label="เบอร์โทรศัพท์ฉุกเฉิน"
@@ -338,10 +351,10 @@ const RegisterPage = () => {
                     fullWidth
                     inputProps={{ maxLength: 10 }} 
                     onChange={(e) => setPhoneEmergency(e.target.value)}
-                    sx={{ mr: 5 }}
+                    sx={{ mr: 2 }}
                   />
                   </Box>
-                  <Box className="form-row"> 
+                  <Box className="form-row" sx={{ display: 'flex', justifyContent: 'space-between',mb: 2 , }}> 
                     <TextField
                     label="ที่อยู่"
                     name="address"
@@ -349,11 +362,11 @@ const RegisterPage = () => {
                     value={address}
                     fullWidth
                     onChange={(e) => setAddress(e.target.value)}
-                    sx={{ mr: 5 }}
+                    sx={{ mr: 2, }}
                   />
                   </Box>
 
-                   <Box className="form-row"> 
+                  <Box className="form-row" sx={{ display: 'flex', justifyContent: 'space-between',mb: 2 , }}>
                     <TextField
                     label="จังหวัด"
                     name="province"
@@ -361,7 +374,7 @@ const RegisterPage = () => {
                     value={province}
                     fullWidth
                     onChange={(e) => setProvince(e.target.value)}
-                    sx={{ mr: 5 }}
+                    sx={{ mr: 2 }}
                   /> 
                    <TextField
                   label="รหัสไปรษณีย์"
@@ -371,16 +384,20 @@ const RegisterPage = () => {
                   fullWidth
                   inputProps={{ maxLength: 5 }} 
                   onChange={(e) => setPostalCode(e.target.value)}
-                  sx={{ mr: 5 }}
+                  sx={{ mr: 2 }}
                 />
                   </Box>
-                  <Typography variant="h6" sx={{ mt: 2 }}>
+                  <Typography variant="h6" sx={{ mt: 3 }}>
                       สัตว์เลี้ยงของคุณ
                       <Button 
                         variant="contained" 
                         onClick={() => handleClickOpen({}, null)}
                         className="submit-button"
-                        sx={{ padding: 2, ml: 3 }}
+                        sx={{ 
+                          padding: '8px 5px',
+                          fontSize: '16px',
+                          minWidth: '200px',
+                          ml: 3,}}
                       >
                       ลงทะเบียนสัตว์เลี้ยงใหม่
                       </Button>
@@ -461,7 +478,7 @@ const RegisterPage = () => {
               </Box>
             ) : (
               <Box>
-                <Typography variant="h4" gutterBottom>
+                <Typography variant="h5" gutterBottom>
                   ค้นหาข้อมูลลูกค้า
                 </Typography>
                 <Box component="form" noValidate autoComplete="off" className="search-form">
@@ -478,8 +495,6 @@ const RegisterPage = () => {
           </Box>
         </Paper>
       </Box>
-          
-
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
           เพิ่มประวัติสัตว์เลี้ยงใหม่
@@ -625,11 +640,33 @@ const RegisterPage = () => {
                 fullWidth
                 sx={{ mt: 3 }}
               >
-                <ToggleButton value="male"  >
-                  <Typography>♂ male </Typography>
+                <ToggleButton
+                  value="male"
+                  sx={{
+                    "&.Mui-selected": {
+                      backgroundColor: "#2196f3", // สีที่ต้องการเมื่อถูกเลือก
+                      color: "#fff",             // สีตัวอักษร
+                      "&:hover": {
+                        backgroundColor: "#1976d2", // สีเมื่อ hover ขณะเลือก
+                      },
+                    },
+                  }}
+                >
+                  <Typography>♂ male</Typography>
                 </ToggleButton>
-                <ToggleButton value="female">
-                  <Typography>♀ female </Typography>
+                <ToggleButton
+                  value="female"
+                  sx={{
+                    "&.Mui-selected": {
+                      backgroundColor: "#f06292", // สีที่ต้องการเมื่อถูกเลือก
+                      color: "#fff",
+                      "&:hover": {
+                        backgroundColor: "#e91e63", // สีเมื่อ hover ขณะเลือก
+                      },
+                    },
+                  }}
+                >
+                  <Typography>♀ female</Typography>
                 </ToggleButton>
               </ToggleButtonGroup>
 

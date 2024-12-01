@@ -118,6 +118,19 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
           fullWidth
           margin="dense"
         />
+                '& .MuiAutocomplete-listbox': {
+                  maxHeight: '200px', 
+                  overflowY: 'auto',
+                }
+              }}
+              isOptionEqualToValue={(option, value) => option === value}
+              getOptionLabel={(option) => option}
+            />
+          )}
+
+    
+
+              sx={{ 
         {formData.pet_species === 'อื่นๆ' ? (
           <TextField
             label="กรุณาระบุประเภทสัตว์เลี้ยง"

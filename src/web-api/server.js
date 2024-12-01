@@ -6,6 +6,8 @@ require('dotenv').config();
 const multer = require('multer');
 const path = require('path');
 const app = express();
+const { generateServiceID } = require('./generateServiceID.js'); 
+const bodyParser = require('body-parser');
 
 // Middleware
 app.use(cors());
@@ -132,6 +134,108 @@ app.get('/owners', async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+//servicecategory
+app.get('/servicecategory', async (req, res) => {
+  console.log("/servicecategory", req.body);
+
+  const query = `
+    SELECT * FROM servicecategory
+  `;
+
+  try {
+    const results = await pool.query(query);
+
+    // แปลงผลลัพธ์เป็นอาร์เรย์ของหมวดหมู่บริการ
+    const serviceCategories = results.rows;
+    res.json(serviceCategories);
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+// API Endpoint สำหรับสร้าง Service ID
+app.post('/servicecategory', async (req, res) => {
+  const { category_type, category_name, price_service } = req.body;
+
+  console.log("data", req.body)
+
+
+  if (!category_type || !category_name || !price_service) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
+  try {
+    await client.query('BEGIN'); // เริ่มต้น Transaction
+
+    // เรียกฟังก์ชันในการสร้าง Service ID
+    const newServiceID = await generateServiceID(pool, category_type); // ใช้ client แทน db
+
+    // บันทึกข้อมูลในตาราง servicecategory
+    const result = await client.query(
+      'INSERT INTO servicecategory ( category_id, category_type, category_name, price_service) VALUES ($1, $2, $3, $4) RETURNING *',
+      [ newServiceID, category_type, category_name, price_service]
+    );
+
+    // Commit transaction
+    await client.query('COMMIT');
+
+    // ส่งกลับข้อมูล Service ID ใหม่ที่บันทึกลงในฐานข้อมูล
+    res.json({ category_id: newServiceID, service_category: result.rows[0] });
+
+  } catch (error) {
+    // Rollback transaction หากเกิดข้อผิดพลาด
+    await client.query('ROLLBACK');
+    console.error(error);
+    res.status(500).json({ error: 'Failed to generate service ID and save category' });
+  } finally {
+    client.release(); // ปล่อยการเชื่อมต่อกลับ
+  }
+});
+
+// DELETE /servicecategory/:id
+app.delete('/servicecategory/:id', async (req, res) => {
+  console.log('id', req.params)
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM servicecategory WHERE category_id = $1', [id]);
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Category not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// PUT /servicecategory/:id
+app.put('/servicecategory/:id', async (req, res) => {
+  const { id } = req.params;
+  const { category_type, category_name, price_service } = req.body;
+
+  try {
+    const result = await pool.query(
+      'UPDATE servicecategory SET category_type = $1, category_name = $2, price_service = $3 WHERE category_id = $4',
+      [category_type, category_name, price_service, id]
+    );
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Category not found' });
+    }
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
 
 
 // Fetch booked time slots for a specific date and service type
