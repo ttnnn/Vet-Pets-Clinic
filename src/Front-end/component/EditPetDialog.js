@@ -118,19 +118,44 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
           fullWidth
           margin="dense"
         />
-                '& .MuiAutocomplete-listbox': {
-                  maxHeight: '200px', 
-                  overflowY: 'auto',
-                }
-              }}
-              isOptionEqualToValue={(option, value) => option === value}
-              getOptionLabel={(option) => option}
-            />
-          )}
-
-    
-
-              sx={{ 
+          {formData.pet_species === "อื่นๆ" ? (
+          <TextField
+            label="กรุณาระบุประเภทสัตว์เลี้ยง"
+            value={formData.otherPetSpecies}
+            fullWidth
+            required
+            onChange={handleChange}
+            sx={{ mb: 2 }}
+          />
+        ) : (
+          <Autocomplete
+          options={formData.pet_species === "แมว" ? CatBreed : formData.pet_species === "สุนัข" ? DogBreed : []}
+            value={formData.pet_breed}
+            onChange={(event, newValue) => {
+              setFormData((prev) => ({ ...prev, pet_breed: newValue }));
+            }}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="พันธุ์ของสัตว์เลี้ยง" 
+                variant="outlined" 
+                required
+                fullWidth 
+              />
+            )}
+            freeSolo // Allow custom input
+            sx={{ 
+              '& .MuiAutocomplete-listbox': {
+                maxHeight: '200px', 
+                overflowY: 'auto',
+              }
+            }}
+            isOptionEqualToValue={(option, value) => option === value}
+            getOptionLabel={(option) => option}
+          />
+        )}
+      
+        
         {formData.pet_species === 'อื่นๆ' ? (
           <TextField
             label="กรุณาระบุประเภทสัตว์เลี้ยง"

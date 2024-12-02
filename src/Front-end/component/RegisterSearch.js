@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import PetDialog from './Addnewpets';
 import { useNavigate } from 'react-router-dom';
-
+import { useLocation } from 'react-router-dom';
 const api = 'http://localhost:8080'; // Replace with your actual API base URL
 
 const RegisterSearch = () => {
@@ -24,13 +24,21 @@ const RegisterSearch = () => {
     setOpen(false);  // Set open to false to close the dialog
   };
 
+  const location = useLocation();
 
+  const { locationOwnerID } = location.state || {};
+  console.log("locationOwnerID : ",locationOwnerID)
 
   useEffect(() => {
     // Fetch owners when component mounts
     axios.get(`${api}/owners`)
       .then(response => setOwners(response.data))
       .catch(error => console.error('Error fetching owners:', error));
+
+    if (locationOwnerID !== undefined) {
+      setSelectedOwnerId(locationOwnerID);
+    }
+
   }, []);
 
   useEffect(() => {

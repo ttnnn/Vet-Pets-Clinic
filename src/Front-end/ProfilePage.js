@@ -61,7 +61,7 @@ const PetProfilePage = () => {
   };
  
   const handleBack =()=>{
-    navigate('/register', { state: { searchQuery, activeTab: 1 } });
+    navigate('/register', { state: { locationOwnerID: owner.owner_id, locationActiveTab: 1 } });
   }
 
   // const handleBack = () => {

@@ -29,6 +29,10 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
 
+  const Closehandle = () => {
+    //เคลียร์ฟอร์ม
+    clearPetForm()
+  }
 
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
@@ -52,6 +56,7 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   };
 
   const clearPetForm = () => {
+      console.log("clearPetForm")
       setPetName('');
       setPetColor('');
       setPetBreed('');
@@ -272,7 +277,8 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   </Box>
   </DialogContent>
   <DialogActions>
-  <Button onClick={handleClose}>ยกเลิก</Button>
+
+  <Button onClick={Closehandle}>ยกเลิก</Button>
     <Button variant="contained" onClick={handleSavePet} className="submit-button">บันทึก</Button>
       </DialogActions>
     </Dialog>

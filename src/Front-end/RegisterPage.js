@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, TextField, Typography, Box, Paper, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ToggleButtonGroup, ToggleButton, MenuItem
   , Autocomplete
  } from '@mui/material';
@@ -19,6 +19,8 @@ import RegisterSearch from './component/RegisterSearch';
 import { DogBreed, CatBreed } from './component/Breeds';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+
+import { useLocation } from 'react-router-dom';
 
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
@@ -69,6 +71,19 @@ const RegisterPage = () => {
   const [alertMessage, setAlertMessage] = useState(''); 
   const [alertSeverity, setAlertSeverity] = useState('success'); 
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
+
+  const location = useLocation();
+  const { locationActiveTab } = location.state || {};
+
+  console.log("locationActiveTab : ",locationActiveTab)
+
+  useEffect(() => {
+    if (locationActiveTab !== undefined) {
+      setActiveTab(locationActiveTab);
+    }
+  }, [locationActiveTab]);
+
+
   // const [ownerName, setOwnerName] = useState('');
   // const [ownerPhone, setOwnerPhone] = useState('');
   // const [searchQuery, setSearchQuery] = useState('');

@@ -12,15 +12,21 @@ import {
   TableBody,
   TableHead,
   TableSortLabel,
-  Typography, Dialog, DialogActions, DialogContent, DialogTitle,
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  MenuItem,
+  Select,
+  TablePagination,
+  TextField,
 } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import PostponeHotel from './PostponeHotel';
-import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
+import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
+
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
-const categories = ['คิวทั้งหมด'];
 
 const api = 'http://localhost:8080';
 
@@ -56,234 +62,395 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-// PendingAppointments component
 const PendingAppointments = ({ appointments }) => {
-    const [activeCategory, setActiveCategory] = useState('คิวทั้งหมด');
-    const [openPopup, setOpenPopup] = useState(false);
-    const [selectedAppointment, setSelectedAppointment] = useState(null);
-    const [order, setOrder] = useState('asc');
-    const [orderBy, setOrderBy] = useState('appointment_date');
-  
-    const handleRequestSort = (event, property) => {
+  const [activeCategory, setActiveCategory] = useState('คิวทั้งหมด');
+  const [openPopup, setOpenPopup] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('appointment_date');
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedItems, setSelectedItems] = useState([]); // จัดการสินค้าที่เลือก
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+  const resetPage = () => setPage(0);
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    resetPage();
+  };
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
   
-    
-    const handleClickOpen = (appointment) => {
-      setSelectedAppointment(appointment);
-      setOpenPopup(true);
-    };
+  const handleSelectItem = (item) => {
+    setSelectedItems((prevItems) => {
+      const isDuplicate = prevItems.some(
+        (i) =>
+          i.id === item.id &&
+          i.price_service === item.price_service &&
+          i.category_name === item.category_name // เพิ่มตรวจสอบคุณสมบัติเฉพาะ
+      );
   
-    const handleClose = () => {
-      setOpenPopup(false);
-      setSelectedAppointment(null);
-    };
-  
-    const handlePay = () => {
-      // Logic to handle payment
-      handleClose(); // Close popup after payment action
-    };
-    
-    
-    const filteredAppointments = appointments.filter(appointment => {
-      if (activeCategory === 'คิวทั้งหมด') {
-        return appointment.queue_status === 'รอชำระเงิน' && appointment.status=== 'อนุมัติ';
+      if (isDuplicate) {
+        return prevItems.map((i) =>
+          i.id === item.id &&
+          i.price_service === item.price_service &&
+          i.category_name === item.category_name
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        );
       }
+  
+      return [...prevItems, { ...item, quantity: 1 }];
     });
-    
+  };
   
-    return (
-      <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={activeCategory}
-            onChange={(e, newValue) => setActiveCategory(newValue)}
-            indicatorColor="primary"
-            textColor="primary"
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="scrollable auto tabs example"
-          >
-            {categories.map(category => (
-              <StyledTab
-                key={category}
-                label={category}
-                value={category}
-              />
-            ))}
-          </Tabs>
-        </Box>
-        <TableContainer component={Paper}>
-     <Table>
-       <TableHead>
-         <TableRow>
-           <TableCell>เลขที่นัดหมาย</TableCell>
-           <TableCell>
-             <TableSortLabel
-               active={orderBy === 'appointment_time'}
-               direction={orderBy === 'appointment_time' ? order : 'asc'}
-               onClick={(event) => handleRequestSort(event, 'appointment_time')}
-             >
-               เวลา
-             </TableSortLabel>
-           </TableCell>
-           <TableCell>ชื่อสัตว์</TableCell>
-           <TableCell>ชื่อเจ้าของ</TableCell>
-           <TableCell>ประเภทนัดหมาย</TableCell>
-           <TableCell>รายละเอียด</TableCell>
-           <TableCell sx={{width: '20%'}}></TableCell>
-           <TableCell></TableCell>
-         </TableRow>
-       </TableHead>
-       <TableBody>
-         {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment) => {
-           // กำหนดสีตามประเภทการจองใน detail_server
-           const detailColor = appointment.detail_service === 'นัดหมาย' ? '#eefaaa' : 
-                               appointment.detail_service === 'Walk-in' ? '#aafabb' : '#cffdff';
-           return (
-             <TableRow key={appointment.appointment_id}> 
-               <TableCell>{appointment.appointment_id}</TableCell>
-               <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
-               <TableCell>{appointment.pet_name}</TableCell>
-               <TableCell>{appointment.full_name}</TableCell>
-               <TableCell>{appointment.type_service}</TableCell>
-               <TableCell>{appointment.reason || '-'}</TableCell>
-               <TableCell>
-                 {/* ใช้ Box สำหรับกล่องสีพื้นหลังที่ไม่เต็มช่อง */}
-                 <Box 
-                   sx={{ 
-                     backgroundColor: detailColor, 
-                     width: '60%', // ขนาดของกล่องเป็น 60% ของช่อง
-                     padding: '4px', 
-                     borderRadius: '4px' 
-                   }}
-                 >
-                   {appointment.detail_service || '-'}
-                 </Box>
-               </TableCell>
-               <TableCell>
-                 <Box mt={1} display="flex" justifyContent="flex-end">
-                   <Button
-                     variant="contained"
-                     color="primary"
-                     onClick={() => handleClickOpen(appointment.appointment_id)}
-                   >
-                     ชำระเงิน
-                   </Button>
-                 </Box>
-               </TableCell>
-             </TableRow>
-           );
-         })}
-       </TableBody>
-     </Table>
-   </TableContainer>
-  
-  
-        {/* Popup for payment */}
-        <Dialog open={openPopup} onClose={handleClose} maxWidth="md" fullWidth>
-    <DialogTitle>
-      ชำระเงิน
-    </DialogTitle>
-    <DialogContent>
-      {selectedAppointment && (
-        <Box display="flex" flexDirection="row" justifyContent="space-between" mb={2}>
-          {/* Left Section: Search bar and Dropdown */}
-          <Box flex="1" pr={2}>
-            {/* Search Bar and Dropdown */}
-            <Box mt={2}>
-              <input
-                type="text"
-                placeholder="ค้นหายา/บริการ"
-                style={{
-                  padding: '8px',
-                  width: '100%',
-                  marginBottom: '12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-              />
-              <select
-                style={{
-                  padding: '8px',
-                  width: '100%',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-              >
-                <option value="medication1">ยา ABC</option>
-                <option value="medication2">ยา XYZ</option>
-                <option value="service1">บริการ 123</option>
-                <option value="service2">บริการ 456</option>
-              </select>
-              <select
-                style={{
-                  padding: '8px',
-                  width: '100%',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-              >
-                <option value="medication1">รายการ1</option>
-                <option value="medication2">รายการ2</option>
-                <option value="service1">รายการ3</option>
-                <option value="service2">รายการ4</option>
-              </select>
-            </Box>
-          </Box>
-  
-          {/* Right Section: Customer and Pet Info and Payment Details */}
-          <Box flex="1" pl={2}>
-            {/* Customer and Pet Info */}
-            <Box mb={2}>
-              <Typography variant="body1" gutterBottom>
-                ชื่อลูกค้า: {selectedAppointment.name}
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                สัตว์เลี้ยง: {selectedAppointment.pet}
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                หมายเลขออเดอร์: #{selectedAppointment.orderNumber}
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                วันที่: {selectedAppointment.date}
-              </Typography>
-            </Box>
-  
-            {/* Payment Details */}
-            <Typography variant="h6" gutterBottom>
-              รายละเอียดการชำระเงิน
-            </Typography>
-            <Box display="flex" justifyContent="space-between">
-              <Typography variant="body2">ค่ารักษาพยาบาล</Typography>
-              <Typography variant="body2">150 บาท</Typography>
-            </Box>
-            <Box display="flex" justifyContent="space-between">
-              <Typography variant="body2">อาบน้ำแมว &lt; 5kg</Typography>
-              <Typography variant="body2">300 บาท</Typography>
-            </Box>
-            <Box display="flex" justifyContent="space-between" mt={2}>
-              <Typography variant="h6">รวม</Typography>
-              <Typography variant="h6">450 บาท</Typography>
-            </Box>
-          </Box>
-        </Box>
-      )}
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={handleClose} variant="outlined">
-        ยกเลิก
-      </Button>
-      <Button onClick={handlePay} variant="contained" color="primary">
-        ชำระเงิน
-      </Button>
-    </DialogActions>
-  </Dialog>
-        </Paper>
+  const handleIncreaseQuantity = (id) => {
+    console.log(id);
+
+    setSelectedItems((prevItems) =>
+      prevItems.map((item) =>
+        item.category_id === id ? { ...item, quantity: item.quantity + 1 } : item
+      )
     );
   };
   
+  const handleDecreaseQuantity = (id) => {
+    setSelectedItems((prevItems) =>
+      prevItems
+        .map((item) =>
+          item.category_id === id ? { ...item, quantity: item.quantity - 1 } : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  };
 
-export default PendingAppointments
+
+  const calculateTotal = () => {
+    return selectedItems.reduce(
+      (sum, item) => sum + item.quantity * item.price_service,
+      0
+    );
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${api}/servicecategory`);
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClickOpen = (appointment) => {
+    setSelectedAppointment({
+      name: appointment.full_name,
+      pet: appointment.pet_name,
+      orderNumber: appointment.appointment_id,
+      date: appointment.appointment_date,
+      species:appointment.pet_species
+    });
+    setOpenPopup(true);
+  };
+
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
+    resetPage();
+  };
+
+  const handleClose = () => {
+    setSelectedItems([])
+    setOpenPopup(false);
+    setSelectedAppointment(null);
+    setSelectedCategory('');
+  };
+
+  const handlePay = () => {
+    // Logic to handle payment
+    handleClose(); // Close popup after payment action
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+
+ 
+  const filteredAppointments = appointments.filter((appointment) => {
+    if (activeCategory === 'คิวทั้งหมด') {
+      return (
+        appointment.queue_status === 'รอชำระเงิน' &&
+        appointment.status === 'อนุมัติ'
+      );
+    }
+    return true;
+  });
+  const filteredCategories = categories.filter(service => 
+    (!selectedCategory || service.category_type === selectedCategory) &&
+    (!searchTerm || service.category_name.includes(searchTerm))
+  );
+  const paginatedCategories = filteredCategories.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  return (
+    <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={activeCategory}
+          onChange={(e, newValue) => setActiveCategory(newValue)}
+          indicatorColor="primary"
+          textColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="scrollable auto tabs example"
+        >
+          <StyledTab label="คิวทั้งหมด" value="คิวทั้งหมด" />
+        </Tabs>
+      </Box>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>เลขที่นัดหมาย</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'appointment_time'}
+                  direction={orderBy === 'appointment_time' ? order : 'asc'}
+                  onClick={(event) =>
+                    handleRequestSort(event, 'appointment_time')
+                  }
+                >
+                  เวลา
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>ชื่อสัตว์</TableCell>
+              <TableCell>ประเภทสัตว์เลี้ยง</TableCell>
+              <TableCell>ชื่อเจ้าของ</TableCell>
+              <TableCell>ประเภทนัดหมาย</TableCell>
+              <TableCell>รายละเอียด</TableCell>
+              <TableCell sx={{ width: '20%' }}></TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredAppointments
+              .sort(getComparator(order, orderBy))
+              .map((appointment) => (
+                <TableRow key={appointment.appointment_id}>
+                  <TableCell>{appointment.appointment_id}</TableCell>
+                  <TableCell>
+                    {appointment.appointment_time
+                      ? formatTime(appointment.appointment_time)
+                      : 'ตลอดทั้งวัน'}
+                  </TableCell>
+                  <TableCell>{appointment.pet_name}</TableCell>
+                  <TableCell>{appointment.pet_species}</TableCell>
+                  <TableCell>{appointment.full_name}</TableCell>
+                  <TableCell>{appointment.type_service}</TableCell>
+                  <TableCell>{appointment.reason || '-'}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleClickOpen(appointment)}
+                    >
+                      ชำระเงิน
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Dialog open={openPopup} onClose={handleClose} maxWidth="md" fullWidth>
+    <DialogContent sx={{ p: 2 }}>
+    {loading ? (
+      <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 200 }}>
+        <Typography>กำลังโหลดข้อมูล...</Typography>
+      </Box>
+    ) : (
+      <Box display="flex" gap={2}>
+        {/* รายการบริการ */}
+        <Box flex={1} display="flex" flexDirection="column" gap={2}>
+          <Typography variant="h6" gutterBottom>
+            เลือกบริการ
+          </Typography>
+          <TextField
+            placeholder="ค้นหาบริการ"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            variant="outlined"
+            sx={{ flex: 1, minWidth: 250 }}
+            />
+          <Select //ค้นหาบริการ
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            displayEmpty
+            variant="outlined"
+            sx={{ mb: 2, width: '100%'  }}
+          >
+            <MenuItem value="">ทั้งหมด</MenuItem>
+            {[...new Set(categories.map((cat) => cat.category_type))].map((type) => (
+              <MenuItem key={type} value={type}>
+                {type}
+              </MenuItem>
+            ))}
+          </Select>
+          <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '60vh', overflowY: 'auto' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ชื่อบริการ</TableCell>
+                  <TableCell>ราคา</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell>{category.category_name}</TableCell>
+                    <TableCell>{category.price_service || 'N/A'} บาท</TableCell>
+                    <TableCell>
+                      <Button onClick={() => handleSelectItem(category)}>เพิ่ม</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {paginatedCategories.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      ไม่มีข้อมูล
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+                rowsPerPageOptions={[5, 10,100]}
+                component="div"
+                count={filteredCategories.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+        </Box>
+
+        {/* รายการที่เลือก */}
+        <Box flex={1} display="flex" flexDirection="column" gap={2}>
+        <Typography variant="h6" gutterBottom>  ชำระเงิน </Typography>
+
+        {selectedAppointment && (
+            <Box
+                display="flex"
+                flexDirection="column"
+                mb={2}
+                p={2}
+                border={1}
+                borderColor="grey.300"
+                borderRadius={2}
+            >
+            <Typography variant="h6" gutterBottom>
+                 รายละเอียดนัดหมาย
+            </Typography>
+            <Typography>
+                <strong>เลขที่นัดหมาย:</strong> {selectedAppointment.orderNumber}
+            </Typography>
+            <Typography>
+                <strong>ชื่อสัตว์:</strong> {selectedAppointment.pet} ({selectedAppointment.species})
+            </Typography>
+            <Typography>
+            <strong>ชื่อเจ้าของ:</strong> {selectedAppointment.name}
+            </Typography>
+            <Typography>
+                <strong>วันที่นัดหมาย:</strong>{' '}
+                {dayjs(selectedAppointment.date).format('DD MMMM YYYY')}
+            </Typography>
+            </Box>
+         )}
+        <Typography variant="h6" gutterBottom>
+            รายการที่เลือก
+        </Typography>
+        {selectedItems.length === 0 ? (
+            <Typography>ไม่มีรายการ</Typography>
+        ) : (
+            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '40vh', overflowY: 'auto' }}>
+            <Table>
+                <TableHead>
+                <TableRow>
+                    <TableCell>ชื่อบริการ</TableCell>
+                    <TableCell>จำนวน</TableCell>
+                    <TableCell>ราคา</TableCell>
+                    <TableCell></TableCell>
+                </TableRow>
+                </TableHead>
+                <TableBody>
+                {selectedItems.map((item) => (
+                    <TableRow key={item.category_id}>
+                    <TableCell>{item.category_name}</TableCell>
+                    <TableCell>
+                        <Button onClick={() => handleDecreaseQuantity(item.category_id)}>-</Button>
+                        {item.quantity}
+                        <Button onClick={() => handleIncreaseQuantity(item.category_id)}>+</Button>
+                    </TableCell>
+                    <TableCell>{item.quantity * item.price_service} บาท</TableCell>
+                    <TableCell>
+                        <Button
+                        color="error"
+                        onClick={() =>
+                            setSelectedItems((prevItems) =>
+                            prevItems.filter((i) => i.category_id !== item.category_id)
+                            )
+                        }
+                        >
+                        ลบ
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+            </TableContainer>
+        )}
+        <Box mt={2} display="flex" justifyContent="space-between">
+            <Typography variant="h6">ยอดรวม:</Typography>
+            <Typography variant="h6">{calculateTotal()} บาท</Typography>
+        </Box>
+        </Box>
+    </Box>
+    )}
+    </DialogContent>
+    <DialogActions>
+        <Button onClick={handleClose} variant="outlined">
+        ยกเลิก
+        </Button>
+        <Button onClick={handlePay} variant="contained" color="primary">
+        ชำระเงิน
+        </Button>
+    </DialogActions>
+    </Dialog>
+    </Paper>
+  );
+};
+
+export default PendingAppointments;

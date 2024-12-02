@@ -256,15 +256,17 @@ console.log('appointmentHotel',appointmentHotel)
                       <Button
                         variant="contained"
                         color="secondary"
-                        onClick={() => {
+                        onClick={async () => {
                           if (appointment.type_service === 'ฝากเลี้ยง') {
-                            onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
+                            await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
+                            await fetchAppointments(); // อัปเดตข้อมูลใหม่
                           } else if (appointment.type_service === 'ตรวจรักษา') {
                             window.location.href = `/treatment/${appointment.appointment_id}`;
                           } else {
-                            onRevertToPending(appointment.appointment_id); // Action for other types
+                            await onRevertToPending(appointment.appointment_id); // Action for other types
                           }
                         }}
+                        
                       >
                         {appointment.type_service === 'ฝากเลี้ยง'
                           ? 'ปล่อยกลับ'
@@ -286,7 +288,11 @@ console.log('appointmentHotel',appointmentHotel)
                             }
                           }}
                         >
-                          {appointment.type_service === 'ฝากเลี้ยง' ? 'จองต่อ' : 'ส่งคิว'}
+                          {appointment.type_service === 'ฝากเลี้ยง' 
+                          ? 'จองต่อ' 
+                          : appointment.type_service === 'วัคซีน'
+                          ? 'เลือกวัคซีน'
+                          : 'ส่งคิว'}
                         </Button>
                       )}
                       <PostponeHotel

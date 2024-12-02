@@ -193,7 +193,7 @@ const CategoryPage = () => {
   const paginatedCategories = filteredCategories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box display="flex" height="100vh" >
+    <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >
       <Sidebar />
       <CategoryContainer>
         <Paper sx={{ width: '100%' }}>

@@ -32,7 +32,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   '&.Mui-selected': {
     color: 'black',
     fontWeight: theme.typography.fontWeightMedium,
-    fontWeight: 'bold',
+    // fontWeight: 'bold',
     
   },
   '&.Mui-focusVisible': {
@@ -141,7 +141,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   
   
   const deleteAppointment = (AppointmentID) => {
-    console.log("Deleting appointment with ID:", AppointmentID);
     axios.put(`${api}/appointment/${AppointmentID}`,{
        status: 'ยกเลิกนัด',
        queue_status: 'ยกเลิกนัด',
@@ -159,6 +158,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         console.error('Error deleting appointment:', error);
         setSnackbarSeverity('error');
       });
+    console.log("Deleting appointment with ID:", AppointmentID);
   };
 
 
@@ -282,89 +282,73 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
-              <TableRow key={index}>
-                <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
-                <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
-                <TableCell>{appointment.pet_name}</TableCell>
-                <TableCell>{appointment.full_name}</TableCell>
-                <TableCell>{appointment.type_service}</TableCell>
-                <TableCell>{appointment.detail_service || '-'}</TableCell>
-                <TableCell>{appointment.reason || '-'}</TableCell>
-                <TableCell>{appointment.status}</TableCell>
-                
-                <TableCell>
-                {appointment.status === 'รออนุมัติ' ? (
-                    new Date() <= new Date(appointment.appointment_date) ? (
-                      <Button 
-                        variant="outlined" 
-                        color="secondary" 
-                        sx={{ width: '100px' }}
-                        onClick={() => handleApproveClick(appointment.appointment_id)}
-                      >
-                        อนุมัติ
-                      </Button>
-                    ) : (
-                      <Box 
-                        bgcolor="error.main" 
-                        color="white" 
-                        p={1} 
-                        borderRadius={1}
-                      >
-                        <Typography variant="body2">
-                          เลยกำหนดเวลานัดหมายแล้ว
-                        </Typography>
-                      </Box>
-                    )
-                  ) : null}
 
-                  {appointment.status ==='อนุมัติ'  && !isAppointmentInPast(appointment.appointment_date,appointment.appointment_time) &&(
-                  <Box sx={{ display: 'flex', gap: 2 }}> {/* ใช้ gap เพื่อเพิ่มระยะห่างระหว่างปุ่ม */}
-                    <Button 
-                      variant="outlined" 
-                      color="secondary" 
-                      sx={{ width: '100px' }}
-                      onClick={() => handleCancelClick(appointment.appointment_id)}
-                    >
-                    ยกเลิกนัด
-                    </Button> 
-                    <Button
-                      variant="outlined" 
-                      color="secondary"
-                      sx={{ width: '100px' }} 
-                      onClick={() => handlePostponeClick(appointment.appointment_id, appointment.type_service,  appointment.pet_id )}
-                    >  เลื่อนนัด
-                    </Button> 
-                    {selectedAppointmentId && (
-                      selectedTypeService === 'ฝากเลี้ยง' ? (
-                        <PostponeHotel
-                          open={openPostponeDialog}
-                          handleClose={() => setOpenPostponeDialog(false)}
-                          appointmentId={selectedAppointmentId}
-                          petId={selectedPetId} // Pass petId
-                          updateAppointments={updateAppointments}
-                          
-                        />
-                      ) : (
-                        <Postpone
-                          open={openPostponeDialog}
-                          handleClose={() => setOpenPostponeDialog(false)}
-                          appointmentId={selectedAppointmentId}
-                          TypeService={selectedTypeService}
-                          updateAppointments={updateAppointments}
-                        />
-                      )
-                    )}    
-                  </Box>                    
-                  )}
-                     
-                </TableCell>
-              </TableRow>  
-            ))}
-          </TableBody>
+          <TableBody>
+      {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
+        <TableRow key={index}>
+          {/* ข้อมูลอื่นๆ */}
+          <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
+          <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
+          <TableCell>{appointment.pet_name}</TableCell>
+          <TableCell>{appointment.full_name}</TableCell>
+          <TableCell>{appointment.type_service}</TableCell>
+          <TableCell>{appointment.detail_service || '-'}</TableCell>
+          <TableCell>{appointment.reason || '-'}</TableCell>
+          <TableCell>{appointment.status}</TableCell>
+                
+          <TableCell>
+            {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ width: '100px' }}
+                  onClick={() => handleCancelClick(appointment.appointment_id)}
+                >
+                  ยกเลิกนัด
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ width: '100px' }}
+                  onClick={() =>
+                    handlePostponeClick(appointment.appointment_id, appointment.type_service, appointment.pet_id)
+                  }
+                >
+                  เลื่อนนัด
+                </Button>
+              </Box>
+            )}
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+
+          {/* Popup เดียวที่แสดงตามเงื่อนไข */}
+    {selectedAppointmentId && (
+      selectedTypeService === 'ฝากเลี้ยง' ? (
+        <PostponeHotel
+          open={openPostponeDialog}
+          handleClose={() => setOpenPostponeDialog(false)}
+          appointmentId={selectedAppointmentId}
+          petId={selectedPetId}
+          updateAppointments={updateAppointments}
+        />
+      ) : (
+        <Postpone
+          open={openPostponeDialog}
+          handleClose={() => setOpenPostponeDialog(false)}
+          appointmentId={selectedAppointmentId}
+          TypeService={selectedTypeService}
+          updateAppointments={updateAppointments}
+        />
+      )
+    )}
+
         </Table>
       </TableContainer>
+
+
        {/* Confirmation Dialog */}
         <Dialog open={openDialog} onClose={handleDialogClose}>
           <DialogTitle>ยืนยันการอนุมัติ</DialogTitle>
