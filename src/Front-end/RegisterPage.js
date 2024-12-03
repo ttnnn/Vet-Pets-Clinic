@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Button, TextField, Typography, Box, Paper, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ToggleButtonGroup, ToggleButton, MenuItem
-  , Autocomplete
+import { Button, TextField, Typography, Box, Paper, Tabs, Tab, 
+    Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ToggleButtonGroup, 
+    ToggleButton, MenuItem, Autocomplete, Snackbar
  } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import Sidebar from './Sidebar';
@@ -66,12 +67,32 @@ const RegisterPage = () => {
   const [petMicrochip , setMicrochip] = useState('')
   const [pets, setPets] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-  const [alertMessage, setAlertMessage] = useState(''); 
-  const [alertSeverity, setAlertSeverity] = useState('success'); 
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
+
+  const [snackbar, setSnackbar] = useState({ 
+    open: false, 
+    message: '', 
+    severity: 'success' 
+  });
+
+  const handleSnackbarOpen = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
+  
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+  
+
 
     
   const handleSavePet = () => {
+    
+    if (!petName || !petColor || !petBreed || !gender || !birthDate || !petSpecies) {
+      handleSnackbarOpen('กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึก!', 'error');
+      return;
+    }
+
     const petData = {
       pet_name: petName,
       pet_color: petColor,
@@ -121,15 +142,35 @@ const RegisterPage = () => {
     setOpen(true);
   };
   
-
   const handleClose = () => {
     setOpen(false);
     clearPetForm()
     setEditIndex(null);
   };
-  const handleDeletePet = (index) => {
-    setPets((prevPets) => prevPets.filter((_, i) => i !== index)); // Remove pet at index
+
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);  // สำหรับเปิด/ปิด Dialog
+  const [selectedPetIndex, setSelectedPetIndex] = useState(null);  // เก็บ index ของสัตว์เลี้ยงที่จะลบ
+
+  // ฟังก์ชันเปิด Dialog ยืนยันการลบ
+  const handleOpenDeleteDialog = (index) => {
+    setSelectedPetIndex(index); // ตั้งค่า index ที่ต้องการลบ
+    setOpenDeleteDialog(true);  // เปิด Dialog
   };
+
+    // ฟังก์ชันยืนยันการลบ
+  const handleDeletePet = () => {
+    if (selectedPetIndex !== null) {
+      setPets((prevPets) => prevPets.filter((_, i) => i !== selectedPetIndex));  // ลบสัตว์เลี้ยงที่ index ที่เลือก
+      setSelectedPetIndex(null); // รีเซ็ตค่า index
+    }
+    setOpenDeleteDialog(false); // ปิด Dialog หลังจากลบเสร็จ
+  };
+
+  // ฟังก์ชันยกเลิกการลบ
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false); // ปิด Dialog โดยไม่ลบ
+  };
+
 
   const handleGenderChange = (event, newGender) => {
     if (newGender !== null) {
@@ -212,26 +253,31 @@ const RegisterPage = () => {
       };
       console.log('data:',combinedData)
 
-      if(combinedData.pets.length > 0){
+      if (combinedData.pets.length > 0) {
         await axios.post(`${api}/create-owner-pet`, combinedData);
-        alert('Data saved successfully!');
-        setAlertSeverity('success');
-        setAlertMessage('ลงทะเบียนสำเร็จ')
+        setSnackbar({
+          open: true,
+          message: 'ลงทะเบียนสำเร็จ',
+          severity: 'success',
+        });
         resetForm();
-        setTimeout(() => {
-          setAlertMessage('');
-        }, 2000);
-      }else{
-        alert("กรุณาเพิ่มสัตว์เลี้ยง")
-      }
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'กรุณาเพิ่มสัตว์เลี้ยง',
+          severity: 'warning',
+        });
+      }      
 
     } catch (error) {
       console.error('Error saving data:', error);
-      setAlertSeverity('error');
-      setAlertMessage('กรุณากรอกข้อมูลให้ครบถ้วน')
+      setSnackbar({
+        open: true, 
+        message: 'กรุณากรอกข้อมูลให้ครบถ้วน', 
+        severity: 'warning'})
 
       setTimeout(() => {
-        setAlertMessage('');
+        setSnackbar('');
       }, 2000);
     }
   };
@@ -279,10 +325,20 @@ const RegisterPage = () => {
                 <Typography variant="h5" gutterBottom>
                   ลงทะเบียนสัตว์เลี้ยงใหม่
                 </Typography>
-                {alertMessage && (
-                   <Alert severity={alertSeverity} icon={alertSeverity === 'success' ? <CheckIcon fontSize="inherit" /> : undefined}>
-                      {alertMessage}
-                  </Alert>)}
+                <Snackbar
+                  open={snackbar.open}
+                  autoHideDuration={6000}
+                  onClose={handleSnackbarClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} // สามารถปรับตำแหน่งได้
+                >
+                  <Alert 
+                    onClose={handleSnackbarClose} 
+                    severity={snackbar.severity} 
+                    sx={{ width: '100%' }}
+                  >
+                    {snackbar.message}
+                  </Alert>
+                </Snackbar>
 
                 <Box component="form" noValidate autoComplete="off" className="register-form"
                       sx={{
@@ -423,7 +479,7 @@ const RegisterPage = () => {
                           <Button 
                             variant="outlined" 
                             color="secondary" 
-                            onClick={() => handleDeletePet(index)} // ฟังก์ชันสำหรับการยกเลิก
+                            onClick={() =>handleOpenDeleteDialog(index)} // ส่ง index ของสัตว์เลี้ยงที่จะลบ
                             sx={{ 
                               display: 'flex', 
                               alignItems: 'center', 
@@ -434,6 +490,24 @@ const RegisterPage = () => {
                             <ClearIcon sx={{ marginRight: 1 }} /> {/* ไอคอนยกเลิก */}
                             ยกเลิก
                           </Button>
+                          {/* Dialog ยืนยันการลบ */}
+                          <Dialog
+                            open={openDeleteDialog}
+                            onClose={handleCloseDeleteDialog}
+                          >
+                            <DialogTitle>ยืนยันการลบ</DialogTitle>
+                            <DialogContent>
+                              <Typography variant="body1">คุณต้องการลบสัตว์เลี้ยงนี้หรือไม่?</Typography>
+                            </DialogContent>
+                            <DialogActions>
+                              <Button onClick={handleCloseDeleteDialog} color="primary">
+                                ยกเลิก
+                              </Button>
+                              <Button onClick={handleDeletePet} color="secondary">
+                                ลบ
+                              </Button>
+                            </DialogActions>
+                          </Dialog>
                         </Box>
                       </Box>
                     ))}
@@ -445,6 +519,7 @@ const RegisterPage = () => {
                       onClick={handleCreateData} 
                       className="submit-button"
                       sx={{marginLeft: 'auto',
+                            width: '100px', 
                             mt:2 ,
                             display: 'flex', 
                             alignItems: 'center', 
@@ -469,7 +544,7 @@ const RegisterPage = () => {
           </Box>
         </Paper>
       </Box>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           เพิ่มประวัติสัตว์เลี้ยงใหม่
           <IconButton
@@ -659,10 +734,11 @@ const RegisterPage = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>ยกเลิก</Button>
+          <Button onClick={handleClose} sx={{ width: '150px' }}>ยกเลิก</Button>
           <Button 
             variant="contained" 
             onClick={handleSavePet} 
+            sx={{ width: '100px' }}
             className="submit-button"
           >
             บันทึก
