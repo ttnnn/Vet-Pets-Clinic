@@ -82,32 +82,11 @@ const RegisterPage = () => {
       setActiveTab(locationActiveTab);
     }
   }, [locationActiveTab]);
-
-
-  // const [ownerName, setOwnerName] = useState('');
-  // const [ownerPhone, setOwnerPhone] = useState('');
-  // const [searchQuery, setSearchQuery] = useState('');
-
-  // const location = useLocation();
-  // useEffect(() => {
-    // if (location.state) {
-      // if (location.state.searchQuery) {
-        // setSearchQuery(location.state.searchQuery);
-      // }
-      // if (location.state.activeTab !== undefined) {
-        // setActiveTab(location.state.activeTab);
-      // }
-      // if (location.state.ownerName) {
-        // setOwnerName(location.state.ownerName);
-      // }
-      // if (location.state.ownerPhone) {
-        // setOwnerPhone(location.state.ownerPhone);
-      // }
-    // }
-  // }, [location.state]);
-  // 
   
   const handleSavePet = () => {
+    if(!petName || !petColor || !petBreed ||!petSpecies || !birthDate || !gender) {
+      
+    }
     const petData = {
       pet_name: petName,
       pet_color: petColor,
@@ -140,9 +119,6 @@ const RegisterPage = () => {
     setActiveTab(newValue);
   };
 
-  // const handleClickOpen = () => {
-    // setOpen(true)
-  // };
   const handleClickOpen = (pet, index) => {
     setPetName(pet.pet_name);
     setPetColor(pet.pet_color);
@@ -171,19 +147,7 @@ const RegisterPage = () => {
     if (newGender !== null) {
       setGender(newGender);
     }
-  };
-
-  // const handleImageUpload = (event) => {
-    // const file = event.target.files[0];
-    // if (file) {
-      // const reader = new FileReader();
-      // reader.onloadend = () => {
-        // setImagePreview(reader.result);
-      // };
-      // reader.readAsDataURL(file);
-    // }
-  // };
-
+  }
   const handleBirthDateChange = (newDate) => {
     setBirthDate(newDate);
     calculateAge(newDate);
@@ -497,12 +461,7 @@ const RegisterPage = () => {
                   ค้นหาข้อมูลลูกค้า
                 </Typography>
                 <Box component="form" noValidate autoComplete="off" className="search-form">
-                  <RegisterSearch 
-                    // searchQuery={searchQuery} 
-                    // activeTab={activeTab} 
-                    // ownerName={ownerName} 
-                    // ownerPhone={ownerPhone} 
-                  />
+                  <RegisterSearch />
                 </Box>
               </Box>
             )}

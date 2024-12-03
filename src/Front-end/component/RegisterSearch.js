@@ -15,13 +15,12 @@ const RegisterSearch = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleOpen = () => {
-    setOpen(true);  // Set open to true to display the dialog
+  const handleClickOpen = () => {
+    setOpen(true);
   };
 
-  // Function to close the dialog
   const handleClose = () => {
-    setOpen(false);  // Set open to false to close the dialog
+    setOpen(false);
   };
 
   const location = useLocation();
@@ -101,29 +100,20 @@ const RegisterSearch = () => {
         <>
           <Box>
             <Typography variant="h6" sx={{ mt: 3 }}>
-              สัตว์เลี้ยงของคุณ
-              <Button
-                variant="contained"
-                className="submit-button"
-                onClick={() => setOpen(true)}
-                sx={{
-                  padding: '8px 5px',
-                  fontSize: '16px',
-                  minWidth: '200px',
-                  ml: 3,
-                }}
-              >
-                ลงทะเบียนสัตว์เลี้ยงใหม่
-              </Button>
+              รายการสัตว์เลี้ยง
+              <React.Fragment>
+                <Button variant="outlined" onClick={handleClickOpen}>
+                  ลงทะเบียนสัตว์เลี้ยงใหม่
+                </Button>
+                <PetDialog open={open} onClose={handleClose} 
+                  selectedOwnerId={selectedOwnerId}
+                  setPets={setPets}
+                  isEditMode={false}
+                />
+              </React.Fragment>
             </Typography>
           </Box>
-          <PetDialog
-            open={open}
-            handleClose={handleClose}
-            selectedOwnerId={selectedOwnerId}
-            setPets={setPets}
-            isEditMode={false}
-          />
+          
           <Box>
             {pets.map((pet) => (
               <Box

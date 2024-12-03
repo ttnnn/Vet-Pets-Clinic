@@ -13,7 +13,7 @@ import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 const api = 'http://localhost:8080'
-const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
+const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   const [petName , setPetName] = useState('');
   const [petColor , setPetColor] = useState('');
   const [petSpecies , setPetSpecies] = useState('');
@@ -28,11 +28,6 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
-
-  const Closehandle = () => {
-    //เคลียร์ฟอร์ม
-    clearPetForm()
-  }
 
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
@@ -107,7 +102,6 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
             }, 2000);
 
             clearPetForm();
-            handleClose();
         } else {
           alert("เพิ่มสัตว์เลี้ยงล้มเหลว")
         }
@@ -124,7 +118,12 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog
+      open={open}
+      keepMounted
+      onClose={onClose}
+      aria-describedby="alert-dialog-slide-description"
+    >
     <DialogTitle>เพิ่มสัตว์เลี้ยง</DialogTitle>
       <DialogContent dividers>
       {alertMessage && (
@@ -277,9 +276,18 @@ const PetDialog = ({ open, handleClose, selectedOwnerId, setPets}) => {
   </Box>
   </DialogContent>
   <DialogActions>
-
-  <Button onClick={Closehandle}>ยกเลิก</Button>
-    <Button variant="contained" onClick={handleSavePet} className="submit-button">บันทึก</Button>
+    <Button onClick={()=> {
+      onClose()
+      clearPetForm()
+    }}>
+      ยกเลิก
+    </Button>
+    <Button variant="contained" onClick={() => {
+        handleSavePet(); // ฟังก์ชันบันทึกข้อมูล
+        onClose();  // ฟังก์ชันปิด Dialog
+        clearPetForm()
+      }}  className="submit-button"
+    >บันทึก</Button>
       </DialogActions>
     </Dialog>
     </LocalizationProvider>

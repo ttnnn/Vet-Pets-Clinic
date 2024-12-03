@@ -628,7 +628,7 @@ app.put('/appointment/:id', async (req, res) => {
       // Update pethotel status if status is provided
       if (status) {
         const petHotelUpdateQuery = `
-          UPDATE pethotel 
+          UPDATE petshotel 
           SET status = $1 
           WHERE appointment_id = $2
         `;
@@ -644,10 +644,10 @@ app.put('/appointment/:id', async (req, res) => {
     // Update appointment table
     const appointmentUpdateQuery = `
       UPDATE appointment 
-      SET queue_status = $1 
-      WHERE appointment_id = $2
+      SET queue_status = $1 , status = $2
+      WHERE appointment_id = $3
     `;
-    await client.query(appointmentUpdateQuery, [queue_status, id]);
+    await client.query(appointmentUpdateQuery, [queue_status,status, id]);
 
     // Commit transaction
     await client.query('COMMIT');

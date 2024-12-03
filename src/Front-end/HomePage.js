@@ -28,21 +28,6 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     backgroundColor: 'rgba(100, 95, 228, 0.32)',
   },
 }));
-const formatTime = (timeString) => {
-  // แยกเวลาออกจากรูปแบบ 'HH:mm:ss+ZZ' และแสดงแค่ 'HH:mm'
-  const time = timeString.split(':');  // แยกเป็น [ '16', '00', '00+07' ]
-  return `${time[0]}:${time[1]}`;  // คืนค่าแค่ '16:00'
-};
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) return -1;
-  if (b[orderBy] > a[orderBy]) return 1;
-  return 0;
-}
-function getComparator(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
 const formatDate = (date) => {
   const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   
