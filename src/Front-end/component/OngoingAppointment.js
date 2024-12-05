@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -13,11 +14,17 @@ import {
   TableHead,
   TableSortLabel,
   Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import PostponeHotel from './PostponeHotel';
+import ChooseVac from './ChooseVac';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
@@ -76,12 +83,13 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const [appointmentHotel, setAppointmentHotel] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
+  const [openVaccineDialog, setOpenVaccineDialog] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [selectedPetId, setSelectedPetId] = useState(null);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-
-console.log('appointmentHotel',appointmentHotel)
-
+  const navigate = useNavigate();
 
   const fetchAppointments = async () => {
     try {
@@ -115,6 +123,82 @@ console.log('appointmentHotel',appointmentHotel)
       ? sortedData(filterAppointments(appointmentHotel, activeCategory))
       : sortedData(filterAppointments(appointments, activeCategory))
       ;
+
+
+
+  const handleOpenConfirmDialog = (appointment) => {
+    setSelectedAppointment(appointment);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setOpenConfirmDialog(false);
+    setSelectedAppointment(null);
+  };
+
+  const handleConfirmSendQueue = async () => {
+    if (selectedAppointment) {
+      await onMoveToPending(selectedAppointment.appointment_id);
+    }
+    handleCloseConfirmDialog();
+  };
+  const handleAppointmentAction = (appointment) => {
+    switch (appointment.type_service) {
+      case 'ฝากเลี้ยง':
+        setSelectedAppointmentId(appointment.appointment_id);
+        setSelectedPetId(appointment.pet_id);
+        setOpenPostponeDialog(true);
+        break;
+  
+      case 'วัคซีน':
+        setSelectedAppointmentId(appointment.appointment_id);
+        setSelectedPetId(appointment.pet_id);
+        setOpenVaccineDialog(true);
+        break;
+  
+      case 'อาบน้ำ-ตัดขน':
+        handleOpenConfirmDialog(appointment);
+        break;
+  
+      default:
+        onMoveToPending(appointment.appointment_id);
+    }
+  };
+
+  const handleButtonAction = async (appointment) => {
+    try {
+      console.log('ownerId' , appointment.owner_id )
+      switch (appointment.type_service) {
+        case 'ฝากเลี้ยง':
+          await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
+          await fetchAppointments(); // อัปเดตข้อมูลใหม่
+          break;
+  
+        case 'ตรวจรักษา':
+          const pet = {
+            petId: appointment.pet_id,
+          };
+          const owner = {
+            ownerId: appointment.owner_id,
+          };
+          navigate('/pet-profile' ,  { state: { pet, owner } }
+          )
+          break;
+  
+        case 'อาบน้ำ-ตัดขน':
+          handleOpenConfirmDialog(appointment); // ฟังก์ชันเปิด dialog ยืนยัน
+          break;
+  
+        default:
+          await onRevertToPending(appointment.appointment_id); // Action for other types
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling button action:', error);
+    }
+  };
+  
+  
 
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
@@ -170,6 +254,7 @@ console.log('appointmentHotel',appointmentHotel)
                         เวลา
                       </TableSortLabel>
                     </TableCell>
+                    <TableCell>ประเภทสัตว์เลี้ยง</TableCell>
                     <TableCell>ชื่อสัตว์</TableCell>
                     <TableCell>ชื่อเจ้าของ</TableCell>
                     <TableCell>ประเภทนัดหมาย</TableCell>
@@ -245,6 +330,7 @@ console.log('appointmentHotel',appointmentHotel)
                             ? formatTime(appointment.appointment_time)
                             : 'ตลอดทั้งวัน'}
                         </TableCell>
+                        <TableCell>{appointment.pet_species}</TableCell>
                         <TableCell>{appointment.pet_name}</TableCell>
                         <TableCell>{appointment.full_name}</TableCell>
                         <TableCell>{appointment.type_service}</TableCell>
@@ -256,16 +342,7 @@ console.log('appointmentHotel',appointmentHotel)
                       <Button
                         variant="contained"
                         color="secondary"
-                        onClick={async () => {
-                          if (appointment.type_service === 'ฝากเลี้ยง') {
-                            await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
-                            await fetchAppointments(); // อัปเดตข้อมูลใหม่
-                          } else if (appointment.type_service === 'ตรวจรักษา') {
-                            window.location.href = `/treatment/${appointment.appointment_id}`;
-                          } else {
-                            await onRevertToPending(appointment.appointment_id); // Action for other types
-                          }
-                        }}
+                        onClick={() => handleButtonAction(appointment)}
                         
                       >
                         {appointment.type_service === 'ฝากเลี้ยง'
@@ -278,15 +355,8 @@ console.log('appointmentHotel',appointmentHotel)
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => {
-                            if (appointment.type_service === 'ฝากเลี้ยง') {
-                              setSelectedAppointmentId(appointment.appointment_id);
-                              setSelectedPetId(appointment.pet_id);
-                              setOpenPostponeDialog(true);
-                            } else {
-                              onMoveToPending(appointment.appointment_id);
-                            }
-                          }}
+                          onClick={() => handleAppointmentAction(appointment)}
+                         
                         >
                           {appointment.type_service === 'ฝากเลี้ยง' 
                           ? 'จองต่อ' 
@@ -302,7 +372,17 @@ console.log('appointmentHotel',appointmentHotel)
                         petId={selectedPetId}
                         updateAppointments={fetchAppointments}
                         isExtendBooking={true} 
-                      />                    
+                      />
+                      
+                      <ChooseVac
+                       open={openVaccineDialog}
+                       handleClose={() => setOpenVaccineDialog(false)}
+                       appointmentId={selectedAppointmentId}
+                       petId={selectedPetId}
+                       TypeService={"วัคซีน"}
+                       updateAppointments={fetchAppointments}
+                       onMoveToPending={onMoveToPending} // ส่งฟังก์ชันนี้ไปเป็น prop
+                      />                  
                     </Box>
                   </TableCell>
                   </TableRow>
@@ -312,6 +392,28 @@ console.log('appointmentHotel',appointmentHotel)
           </Table>
         )}
       </TableContainer>
+        {/* Confirm Dialog */}
+        <Dialog
+        open={openConfirmDialog}
+        onClose={handleCloseConfirmDialog}
+        aria-labelledby="confirm-dialog-title"
+        aria-describedby="confirm-dialog-description"
+      >
+        <DialogTitle id="confirm-dialog-title">ยืนยันการส่งคิว</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="confirm-dialog-description">
+            คุณต้องการส่งคิวสำหรับสัตว์เลี้ยง {selectedAppointment?.pet_name} ใช่หรือไม่?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog} color="secondary">
+            ยกเลิก
+          </Button>
+          <Button onClick={handleConfirmSendQueue} color="primary">
+            ยืนยัน
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

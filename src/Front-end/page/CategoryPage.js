@@ -26,7 +26,6 @@ const FormRow = styled(Box)({
 });
 
 const CategoryPage = () => {
-  const [activeTab, setActiveTab] = useState(2);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);

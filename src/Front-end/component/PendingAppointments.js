@@ -72,7 +72,7 @@ const PendingAppointments = ({ appointments }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selectedItems, setSelectedItems] = useState([]); // จัดการสินค้าที่เลือก
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -230,6 +230,7 @@ const PendingAppointments = ({ appointments }) => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>วันที่</TableCell>
               <TableCell>เลขที่นัดหมาย</TableCell>
               <TableCell>
                 <TableSortLabel
@@ -256,6 +257,7 @@ const PendingAppointments = ({ appointments }) => {
               .sort(getComparator(order, orderBy))
               .map((appointment) => (
                 <TableRow key={appointment.appointment_id}>
+                  <TableCell>{dayjs(appointment.appointment_date).format('DD/MM/YYYY')}</TableCell>
                   <TableCell>{appointment.appointment_id}</TableCell>
                   <TableCell>
                     {appointment.appointment_time
@@ -327,7 +329,7 @@ const PendingAppointments = ({ appointments }) => {
               </TableHead>
               <TableBody>
                 {paginatedCategories.map((category) => (
-                  <TableRow key={category.id}>
+                  <TableRow key={category.category_id}>
                     <TableCell>{category.category_name}</TableCell>
                     <TableCell>{category.price_service || 'N/A'} บาท</TableCell>
                     <TableCell>

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Route, Routes, useLocation, Navigate } from 'react-router-dom'; 
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import Navbar from './Front-end/Navbar';
-import HomePage from './Front-end/HomePage';
-import RegisterPage from './Front-end/RegisterPage';
-import AppointmentPage from './Front-end/AppointmentPage';
-import FinancePage from './Front-end/FinancePage';
-import CategoryPage from './Front-end/CategoryPage';
-import LoginPage from './Front-end/LoginPage';
-import PetProfilePage from './Front-end/ProfilePage';
+import Navbar from './Front-end/page/Navbar';
+import HomePage from './Front-end/page/HomePage';
+import RegisterPage from './Front-end/page/RegisterPage';
+import AppointmentPage from './Front-end/page/AppointmentPage';
+import FinancePage from './Front-end/page/FinancePage';
+import CategoryPage from './Front-end/page/CategoryPage';
+import LoginPage from './Front-end/page/LoginPage';
+import PetProfilePage from './Front-end/page/ProfilePage'
 
 
 const theme = createTheme();

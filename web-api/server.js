@@ -7,7 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const app = express();
 const { generateServiceID } = require('./generateServiceID.js'); 
-const bodyParser = require('body-parser');
+require('./cronAppointment.js')
 
 // Middleware
 app.use(cors());
@@ -31,9 +31,13 @@ app.get('/', function (req, res) {
   res.send('Hello World');
 });
 
+app.use('/public', express.static(path.join(__dirname, '../public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
+
+
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, '../../public/Images')); // save images in the 'uploads' folder
+      cb(null, path.join(__dirname, '../public/Images')); // save images in the 'uploads' folder
   },
   filename: (req, file, cb) => {
       cb(null, file.fieldname+"_"+Date.now()+ path.extname(file.originalname));
@@ -134,6 +138,23 @@ app.get('/owners', async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/owners/:owner_id', async (req, res) => {
+  console.log('/owners/:owner_id' , req.params)
+  const { owner_id } = req.params; // Receive search query
+
+  if (!owner_id || isNaN(Number(owner_id))) {
+    return res.status(400).json({ error: 'Invalid owner ID' });
+  }
+  const query = `SELECT * FROM owner WHERE owner_id = $1`;
+
+  try {
+      const results = await pool.query(query, [owner_id]);
+      res.json(results.rows); // Access `rows` to get the actual data
+  } catch (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 //servicecategory
 app.get('/servicecategory', async (req, res) => {
@@ -154,6 +175,70 @@ app.get('/servicecategory', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/vaccines', async (req, res) => {
+  console.log("/vaccines", req.body);
+
+  const query = `
+    SELECT * FROM servicecategory WHERE category_type = 'รายการยา'
+  `;
+
+  try {
+    const results = await pool.query(query);
+
+    // แปลงผลลัพธ์เป็นอาร์เรย์ของหมวดหมู่บริการ
+    const serviceCategories = results.rows;
+    res.json(serviceCategories);
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/appointments/:appointmentId/vaccines', async (req, res) => {
+  console.log('/appointments/:appointmentId/vaccines' , req.body )
+  const { appointmentId } = req.params;
+  const { pet_id, vaccine_id, notes } = req.body;
+
+  const client = await pool.connect(); // เชื่อมต่อฐานข้อมูลด้วย client
+  try {
+    await client.query('BEGIN'); // เริ่มต้น transaction
+
+    // 1. ตรวจสอบการมีอยู่ของ appointment
+    const appointmentRes = await client.query(
+      'SELECT * FROM appointment WHERE appointment_id = $1',
+      [appointmentId]
+    );
+    if (appointmentRes.rows.length === 0) {
+      throw new Error('Appointment not found');
+    }
+
+    // 2. ตรวจสอบการมีอยู่ของ vaccine
+    const vaccineRes = await client.query(
+      'SELECT * FROM servicecategory WHERE category_id = $1',
+      [vaccine_id]
+    );
+    if (vaccineRes.rows.length === 0) {
+      throw new Error('Vaccine not found');
+    }
+
+    // 3. เพิ่มข้อมูลลงใน history_vac_id
+    await client.query(
+      'INSERT INTO historyvaccine (appointment_id, category_id, pet_id, notes) VALUES ($1, $2, $3, $4)',
+      [appointmentId, vaccine_id, pet_id, notes]
+    );
+
+    await client.query('COMMIT'); // ยืนยัน transaction
+
+    res.status(200).json({ message: 'Vaccine added to appointment successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK'); // ยกเลิก transaction ในกรณีที่มีข้อผิดพลาด
+    console.error('Error while saving vaccine to appointment:', error.message);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release(); // ปล่อย client
+  }
+});
+
 
 
 // API Endpoint สำหรับสร้าง Service ID
@@ -711,6 +796,7 @@ app.get('/appointment', async (req, res) => {
       pets.pet_species,
       pets.image_url,
       pets.spayed_neutered,
+      owner.owner_id,
       owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
       appointment.type_service,
       appointment.reason,
@@ -946,7 +1032,7 @@ app.post('/medical/symptom', async (req, res) => {
 
 
 
-app.use('/public', express.static(path.join(__dirname, '../../public')));
+// app.use('/public', express.static(path.join(__dirname, '../../public')));
 
 
 app.listen(8080, function () {

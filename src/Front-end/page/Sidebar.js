@@ -1,8 +1,6 @@
 import React from 'react'; 
 import { Link, useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
-import { Drawer, List, ListItem, ListItemText, ListItemIcon, Box, Typography, Button } from '@mui/material';
-
-import logo from '../Logo.jpg'; 
+import { Drawer, List, ListItem, ListItemText, ListItemIcon, Box, Typography, Button } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import EventNoteIcon from '@mui/icons-material/EventNote';
@@ -49,8 +47,13 @@ const Sidebar = () => {
       }}
     >
       <Box sx={{ textAlign: 'center', padding: 1 }}>
-        <img src={logo} alt="Logo" style={{ width: '60%', height: 'auto' }} />
-        <Typography variant="h6" align="center" gutterBottom sx={{ fontSize: '1rem' , fontWeight: 'bold' }}>
+        <img src="/Logo.jpg" alt="Logo" style={{ width: '60%', height: 'auto' }} />
+        <Typography
+          variant="h6"
+          align="center"
+          gutterBottom
+          sx={{ fontSize: '1rem', fontWeight: 'bold' }}
+        >
           คลินิกรักษาสัตว์สองคุณหมอ
         </Typography>
       </Box>

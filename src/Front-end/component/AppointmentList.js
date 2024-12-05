@@ -130,8 +130,9 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
     };
 
     const filteredAppointments = appointments.filter(appointment => {
+      const today = dayjs().format('YYYY-MM-DD');
       if (activeCategory === 'คิววันนี้') {
-        return appointment.queue_status === 'รอรับบริการ'&& appointment.status=== 'อนุมัติ';
+        return appointment.queue_status === 'รอรับบริการ' && appointment.status=== 'อนุมัติ' && dayjs(appointment.appointment_date).isSame(today, 'day');
       }
       return appointment.type_service === activeCategory && appointment.queue_status === 'รอรับบริการ' && appointment.status === 'อนุมัติ';
     });
@@ -147,7 +148,8 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
         setOpenPopup(false);
         setSelectedAppointment(null);
       };
-  
+
+    
     return (
       <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

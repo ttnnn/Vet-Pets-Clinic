@@ -5,12 +5,12 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import Sidebar from './Sidebar';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import EditPetDialog from './component/EditPetDialog';
-import EditOwnerDialog from './component/EditOwnerDialog';
+import EditPetDialog from '../component/EditPetDialog';
+import EditOwnerDialog from '../component/EditOwnerDialog';
 import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
-import DiagnosisForm from './component/Diagnosisform';
-import TableHistory from './component/Tablehistory';
+import DiagnosisForm from '../component/Diagnosisform';
+import TableHistory from '../component/Tablehistory';
 
 
 
@@ -31,13 +31,53 @@ const PetProfilePage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  console.log("Owner state before rendering:", owner);
+
+  
+  console.log('Location state:', location.state);
+
+  //ดึงข้อมูลทั้งหมดจาก API และอัปเดตสถานะ (state) ของ pet และ owner
+  
+  const fetchPetAndOwnerDetails = async (petId, ownerId) => {
+    try {
+      const [petResponse, ownerResponse] = await Promise.all([
+        axios.get(`${api}/pets/${petId}`),
+        axios.get(`${api}/owners/${ownerId}`)
+      ]);
+  
+      if (petResponse.status === 200) {
+        setPet(petResponse.data);
+        console.log('Pet Data:', petResponse.data);
+        // calculateAge(petResponse.data.pet_birthday);
+      }
+      if (ownerResponse.status === 200) {
+        setOwner(ownerResponse.data);
+        console.log('Owner Data:', ownerResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching pet or owner details:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!location.state) {
+      console.error('Location state is missing. Ensure the previous page sends petId and ownerId.');
+      return;
+    }
+  
+    const { pet, owner } = location.state; // ดึงค่า pet และ owner จาก location.state
+    const petId = pet?.petId;
+    const ownerId = owner?.ownerId;
+  
+    if (petId && ownerId) {
+      fetchPetAndOwnerDetails(petId, ownerId);
+    } else {
+      console.error('petId or ownerId is missing in location state:', location.state);
+    }
+  }, [location.state]);
   
   
 
-  console.log('pet' , pet)
-
-
-  console.log("ownerId",owner.owner_id);
   useEffect(() => {
     calculateAge(pet.pet_birthday); // Calculate pet's age on load
   }, [pet.pet_birthday]);
@@ -64,18 +104,6 @@ const PetProfilePage = () => {
     navigate('/register', { state: { locationOwnerID: owner.owner_id, locationActiveTab: 1 } });
   }
 
-  // const handleBack = () => {
-    // const ownerName = owner.owner_id; // ชื่อเจ้าของ
-    // const ownerPhone = owner.phone_number; // ชื่อเจ้าของ
-    // navigate('/register', { 
-      // state: { 
-        // searchQuery, 
-        // activeTab: 1, 
-        // ownerName, 
-        // ownerPhone 
-      // } 
-    // });
-  // };
   
   const spayedNeuteredStatus = pet.spayed_neutered === false ? "ไม่ได้ทำหมัน" : "ทำหมัน";
   const formatDate = (dateString) => dayjs(dateString).locale('th').format('D MMMM YYYY');

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Tabs, Tab, Select, MenuItem } from '@mui/material';
 import Sidebar from './Sidebar';
 import axios from 'axios';
-import TableAppointments from './component/TableAppointment';
+import TableAppointments from '../component/TableAppointment';
 import { styled } from '@mui/material/styles';
-import AddAppointment from './component/CreateAppointment';
+import AddAppointment from '../component/CreateAppointment';
 import { DateTime } from 'luxon';
 
 

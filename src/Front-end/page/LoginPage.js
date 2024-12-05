@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import logo from '../Logo.jpg';
-import animalImage from '../login.jpg'; // Replace with the correct path to your animal image
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -10,8 +8,6 @@ const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    //user@email.com 
-    //p@ssw0rd
     if (email === '' && password === '') {
       localStorage.setItem('isAuthenticated', 'true'); // Save login status
       onLogin();
@@ -33,13 +29,13 @@ const LoginPage = ({ onLogin }) => {
       <Paper
         elevation={3}
         sx={{
-          padding: 0, // No padding for full screen coverage
+          padding: 0,
           width: '100%',
-          height: '100%', // Full screen height
+          height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 0, // Remove border-radius to cover the entire screen
+          borderRadius: 0,
         }}
       >
         <Grid container spacing={0} sx={{ height: '100%' }}>
@@ -50,10 +46,10 @@ const LoginPage = ({ onLogin }) => {
               justifyContent="center"
               alignItems="center"
               height="100%"
-              overflow="hidden" // Ensure the image covers the area
+              overflow="hidden"
             >
               <img
-                src={animalImage}
+                src="/login.jpg" // เส้นทางของรูปภาพใน public
                 alt="Animal"
                 style={{
                   width: '100%',
@@ -75,14 +71,14 @@ const LoginPage = ({ onLogin }) => {
               padding={4}
             >
               <img
-                src={logo}
+                src="/Logo.jpg" // เส้นทางของโลโก้ใน public
                 alt="Logo"
                 style={{ width: '150px', marginBottom: '20px' }}
               />
               <Typography variant="h5" gutterBottom>
                 เข้าสู่ระบบ
               </Typography>
-              <Box sx={{ width: '75%', maxWidth: '400px' }}> {/* Contain the input fields */}
+              <Box sx={{ width: '75%', maxWidth: '400px' }}>
                 <TextField
                   label="อีเมล"
                   variant="outlined"

@@ -1,33 +1,15 @@
 import React, { useState , useEffect} from 'react';
-import {  Typography, Box, Paper, Tab} from '@mui/material';
-import { styled } from '@mui/system';
+import {  Typography, Box, Paper} from '@mui/material';
 import Sidebar from './Sidebar'; // Assuming Sidebar is in the same directory
 import axios from 'axios';
 import dayjs from 'dayjs';
-import AppointmentList from './component/AppointmentList';
-import OngoingAppointments from './component/OngoingAppointment';
-import PendingAppointments from './component/PendingAppointments';
+import AppointmentList from '../component/AppointmentList';
+import OngoingAppointments from '../component/OngoingAppointment';
+import PendingAppointments from '../component/PendingAppointments';
 // Categories for filtering
 
 const api = 'http://localhost:8080';
 
-const StyledTab = styled(Tab)(({ theme }) => ({
-  textTransform: 'none',
-  minWidth: 0,
-  marginRight: theme.spacing(2),
-  fontWeight: theme.typography.fontWeightRegular,
-  '&:hover': {
-    color: '#40a9ff',
-    opacity: 1,
-  },
-  '&.Mui-selected': {
-    color: 'black',
-    fontWeight: theme.typography.fontWeightMedium,
-  },
-  '&.Mui-focusVisible': {
-    backgroundColor: 'rgba(100, 95, 228, 0.32)',
-  },
-}));
 const formatDate = (date) => {
   const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   
@@ -141,11 +123,13 @@ const HomeDashboard = () => {
       (a.type_service === 'ฝากเลี้ยง' && a.queue_status === 'กำลังให้บริการ')
     );
   }).length;
-  
+
+  //จำนวนคิวที่รอรับบริการ
   const totalAppointments = appointments.filter(
     (a) => a.queue_status === 'รอรับบริการ' && dayjs(a.appointment_date).isSame(today, 'day') && a.status === 'อนุมัติ'
   ).length;
 
+  //จำนวนคิวที่กำลังให้บริการ
   const ongoingAppointments = appointments.filter((a) => {
     if (a.type_service !== 'ฝากเลี้ยง') {
       return (
@@ -225,7 +209,7 @@ const HomeDashboard = () => {
         {view === 'total' && (
           <AppointmentList
             appointments={filteredAppointments('รอรับบริการ')}
-            onMoveToOngoing={(appointment_id) => updateAppointmentStatus(appointment_id, { queue_status: 'กำลังให้บริการ', })}
+            onMoveToOngoing={(appointment_id) => updateAppointmentStatus(appointment_id, { status: 'อนุมัติ' , queue_status: 'กำลังให้บริการ', })}
             onCancelAppointment={(appointment_id) =>
               updateAppointmentStatus(appointment_id, { status: 'ยกเลิกนัด', queue_status: 'ยกเลิกนัด' })
             }
@@ -235,10 +219,10 @@ const HomeDashboard = () => {
           <OngoingAppointments
             appointments={filteredAppointments('กำลังให้บริการ')}
             onMoveToPending={(appointment_id) =>
-              updateAppointmentStatus(appointment_id, { queue_status: 'รอชำระเงิน' })
+              updateAppointmentStatus(appointment_id, { status: 'อนุมัติ' ,queue_status: 'รอชำระเงิน' })
             }
             onRevertToPending={(appointment_id) =>
-              updateAppointmentStatus(appointment_id, { queue_status: 'รอรับบริการ' })
+              updateAppointmentStatus(appointment_id, { status: 'อนุมัติ' , queue_status: 'รอรับบริการ' })
             }
           />
         )}

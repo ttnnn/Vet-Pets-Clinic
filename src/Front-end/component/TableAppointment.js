@@ -178,7 +178,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       // กำหนดเวลาเริ่มต้นเป็น 23:59 หากไม่มี appointmentTime
       const timeWithoutOffset = appointmentTime
         ? appointmentTime.split('+')[0] // หากมีค่า appointmentTime
-        : "20:00:50"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 23:59:59
+        : "20:00:00"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 23:59:59
   
       // แปลงวันที่ให้อยู่ในรูปแบบ 'YYYY-MM-DD'
       const appointmentDateOnly = dayjs(appointmentDate).format('YYYY-MM-DD');
@@ -201,10 +201,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     }
   };
   
-  
-
-
-
 
   const filteredAppointments = appointments.filter(appointment => {
     // console.log('Active category:', activeCategory);
@@ -286,6 +282,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
           <TableBody>
       {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
         <TableRow key={index}>
+
           {/* ข้อมูลอื่นๆ */}
           <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
           <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
@@ -297,6 +294,22 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
           <TableCell>{appointment.status}</TableCell>
                 
           <TableCell>
+
+          {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+          <Button
+            variant="outlined"
+            color="primary"
+            sx={{ width: '100px' }}
+            onClick={() => handleApproveClick(appointment.appointment_id)} // Handle the approval action
+          >
+            อนุมัติ
+          </Button>
+        )}
+        {appointment.status !== 'อนุมัติ' && appointment.status !== 'ยกเลิกนัด'  && isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+           <Box sx={{ backgroundColor: 'red', color: 'white', padding: '5px', borderRadius: '4px' }}>
+             เลยเวลานัดหมาย
+           </Box>
+        )}
             {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button

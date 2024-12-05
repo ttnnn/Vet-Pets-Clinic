@@ -38,7 +38,7 @@ const RegisterSearch = () => {
       setSelectedOwnerId(locationOwnerID);
     }
 
-  }, []);
+  }, [locationOwnerID]);
 
   useEffect(() => {
     // Fetch pets when an owner is selected
