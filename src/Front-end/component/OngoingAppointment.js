@@ -167,7 +167,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
 
   const handleButtonAction = async (appointment) => {
     try {
-      console.log('ownerId' , appointment.owner_id )
+      // console.log('ownerId' , appointment.owner_id )
       switch (appointment.type_service) {
         case 'ฝากเลี้ยง':
           await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
@@ -181,13 +181,10 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
           const owner = {
             ownerId: appointment.owner_id,
           };
-          navigate('/pet-profile' ,  { state: { pet, owner } }
+          navigate('/pet-profile' ,  { state: { pet, owner , appointmentId: appointment.appointment_id,}}
           )
           break;
   
-        case 'อาบน้ำ-ตัดขน':
-          handleOpenConfirmDialog(appointment); // ฟังก์ชันเปิด dialog ยืนยัน
-          break;
   
         default:
           await onRevertToPending(appointment.appointment_id); // Action for other types
@@ -402,7 +399,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
         <DialogTitle id="confirm-dialog-title">ยืนยันการส่งคิว</DialogTitle>
         <DialogContent>
           <DialogContentText id="confirm-dialog-description">
-            คุณต้องการส่งคิวสำหรับสัตว์เลี้ยง {selectedAppointment?.pet_name} ใช่หรือไม่?
+            คุณต้องการส่งคิวสำหรับสัตว์เลี้ยง {selectedAppointment?.pet_name} ไปชำระเงิน ใช่หรือไม่?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

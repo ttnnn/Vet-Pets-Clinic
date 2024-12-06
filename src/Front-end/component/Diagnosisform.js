@@ -10,32 +10,46 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  Autocomplete
+  Autocomplete,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
 import axios from 'axios';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 dayjs.locale('th'); // Set dayjs to use Thai locale
 const api = 'http://localhost:8080';
 
 const ExamStatusOptions = ['normal', 'abnormal', 'no exam'];
 
-const DiagnosisForm = ({petId}) => {
-  console.log('Pet ID:', petId);
+const DiagnosisForm = ({petId , appointmentId}) => {
+  // console.log('Pet ID:', petId);
+  // console.log('appointmentId:', appointmentId);
   const [personnelList, setPersonnelList] = useState([]); 
   const [selectedPersonnel, setSelectedPersonnel] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
   // State for medical record
-
-  const defaultMedical = {
+  const [formMedical, setFormMedical] = useState({
     rec_temperature: '',
     rec_pressure: '',
     rec_heartrate: '',
     rec_weight: '',
-    rec_timee: '',
-    rec_date: '',
-  };
-  
-  const defaultDiagnosis = {
+    rec_timee: dayjs().format('HH:mm'),
+    rec_date: dayjs().format('YYYY-MM-DD'),
+  });
+  const [formData, setFormData] = useState({
     diag_cc: '',
     diag_ht: '',
     diag_pe: '',
@@ -46,9 +60,8 @@ const DiagnosisForm = ({petId}) => {
     diag_treatment: '',
     diag_client: '',
     diag_note: '',
-  };
-
-  const defaultPhysical = {
+  });
+  const [formphysical, setFormphysical] = useState({
     phy_general: 'no exam',
     phy_integumentary: 'no exam',
     phy_musculo_skeletal: 'no exam',
@@ -62,14 +75,10 @@ const DiagnosisForm = ({petId}) => {
     phy_lymph_nodes: 'no exam',
     phy_mucous_membranes: 'no exam',
     phy_dental: 'no exam',
-  };
-
-  const [formMedical, setFormMedical] = useState(defaultMedical);
-  const [formData, setFormData] = useState(defaultDiagnosis);
-  const [formphysical, setFormphysical] = useState(defaultPhysical);
+  });
 
   const handleReset = () => {
-    const now = dayjs(); // เวลาปัจจุบัน
+    const now = dayjs();
     setFormMedical({
       rec_temperature: '',
       rec_pressure: '',
@@ -78,24 +87,74 @@ const DiagnosisForm = ({petId}) => {
       rec_timee: now.format('HH:mm'),
       rec_date: now.format('YYYY-MM-DD'),
     });
-    setFormData(defaultDiagnosis);
-    setFormphysical(defaultPhysical);
-    setSelectedPersonnel('');
+    setFormData({
+      diag_cc: '',
+      diag_ht: '',
+      diag_pe: '',
+      diag_majorproblem: '',
+      diag_dx: '',
+      diag_tentative: '',
+      diag_final: '',
+      diag_treatment: '',
+      diag_client: '',
+      diag_note: '',
+    });
+    setFormphysical({
+      phy_general: 'no exam',
+      phy_integumentary: 'no exam',
+      phy_musculo_skeletal: 'no exam',
+      phy_circulatory: 'no exam',
+      phy_respiratory: 'no exam',
+      phy_digestive: 'no exam',
+      phy_genito_urinary: 'no exam',
+      phy_eyes: 'no exam',
+      phy_ears: 'no exam',
+      phy_neural_system: 'no exam',
+      phy_lymph_nodes: 'no exam',
+      phy_mucous_membranes: 'no exam',
+      phy_dental: 'no exam',
+    });
+    setSelectedPersonnel(null);
   };
 
   useEffect(() => {
-    const fetchPersonnel = async () => {
+    const fetchMedicalAndPersonnel = async () => {
       try {
-        const response = await axios.get(`${api}/personnel`);
-        console.log('response',response)
-        setPersonnelList(response.data);
+        // Fetch Medical Data
+        setLoading();
+        const medicalResponse = await axios.get(`${api}/medical/form/${appointmentId}`);
+        if (medicalResponse.data && medicalResponse.data.length > 0) {
+          const medicalData = medicalResponse.data[0];
+          setFormMedical({
+            rec_temperature: medicalData.rec_temperature || '',
+            rec_pressure: medicalData.rec_pressure || '',
+            rec_heartrate: medicalData.rec_heartrate || '',
+            rec_weight: medicalData.rec_weight || '',
+            rec_timee: dayjs(medicalData.rec_timee).format('HH:mm'),
+            rec_date: dayjs(medicalData.rec_date).format('YYYY-MM-DD'),
+          });
+          setFormData({
+            diag_cc: medicalData.diag_cc || '',
+          });
+        } else {
+          alert('ไม่พบข้อมูลการรักษานี้');
+        }
+
+        // Fetch Personnel Data
+        const personnelResponse = await axios.get(`${api}/personnel`);
+        setPersonnelList(personnelResponse.data);
+
+        const response = await axios.get(`${api}/servicecategory`);
+          // console.log('servicecategory' ,response.data )
+          setCategories(response.data);
+
       } catch (error) {
-        console.error('Error fetching personnel:', error);
+        console.error('Error fetching data:', error);
+        alert('ไม่สามารถดึงข้อมูลได้');
       }
     };
-    fetchPersonnel();
-  
-  }, []);
+    fetchMedicalAndPersonnel();
+  }, [appointmentId]);
 
   // ตั้งค่าเริ่มต้น (วันที่และเวลา)
   useEffect(() => {
@@ -127,22 +186,24 @@ const DiagnosisForm = ({petId}) => {
         rec_weight: parseFloat(formMedical.rec_weight), 
         rec_time: timestamp, // รวมวันที่และเวลา
         pet_id: petId,         // เพิ่ม pet_id
-        // appointment_id: formMedical.appointment_id, // เพิ่ม appointment_id
+        appointment_id: appointmentId, // เพิ่ม appointment_id
         personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null,
       },
       diagnosisData: formData,
       physicalData: formphysical,
       
     };
-    console.log("rec_temperature:", parseFloat(formMedical.rec_temperature));
-console.log("rec_weight:", parseFloat(formMedical.rec_weight));
+    
+    // console.log("rec_temperature:", parseFloat(formMedical.rec_temperature));
+    // console.log("rec_weight:", parseFloat(formMedical.rec_weight));
 
     console.log("data:",payload);
     try {
  
       const response = await axios.post(`${api}/treatment/diagnosis`, payload);
       alert(response.data.message); 
-      handleReset()
+      handleReset();
+      setIsSaved(true); // อนุญาตให้กดปุ่มอื่น
       
     } catch (error) {
       console.error('Error saving records:', error);
@@ -165,6 +226,43 @@ console.log("rec_weight:", parseFloat(formMedical.rec_weight));
     });
   };
 
+  const filteredServices = categories.filter((service) => {
+    const matchesSearch =
+      service.category_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      !selectedCategory || service.category_type === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  //เพิ่มรายการที่เลือก
+  const handleServiceSelect = (event, value) => {
+    if (value && !selectedItems.some((item) => item.category_id === value.category_id)) {
+      setSelectedItems([...selectedItems, { ...value, quantity: 1 }]);
+      setSelectedService(null); // รีเซตค่าที่เลือกใน Autocomplete
+      setSearchTerm(''); // รีเซตค่าในกล่องค้นหา
+    }
+  };
+  
+
+  const handleRemoveItem = (category_id) => {
+    setSelectedItems(selectedItems.filter((item) => item.category_id !== category_id)); // ลบรายการที่เลือก
+  };
+  
+  
+
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+  };
+
+  //จำนวนสินค้าที่ต้องการ 
+  const handleQuantityChange = (category_id, quantity) => {
+    setSelectedItems((prevItems) =>
+      prevItems.map((item) =>
+        item.category_id === category_id ? { ...item, quantity: Number(quantity) } : item
+      )
+    );
+  };
+  
   return (
     <Paper style={{ padding: 20 }}>
       <Typography variant="h5" gutterBottom>
@@ -197,7 +295,7 @@ console.log("rec_weight:", parseFloat(formMedical.rec_weight));
         value={selectedPersonnel ? personnelList.find(p => p.personnel_id === selectedPersonnel.personnel_id) : null}
         renderInput={(params) => (
         <TextField {...params} label="สัตวแพทย์" variant="outlined" fullWidth />  )}
-        style={{ flex: 0.5 }} 
+        style={{ flex: 0.5 ,maxWidth: '50%' }} 
       />
  
 
@@ -292,10 +390,112 @@ console.log("rec_weight:", parseFloat(formMedical.rec_weight));
           ))}
         </Box>
       </Box>
+      <Typography variant="h6" gutterBottom>
+         รายการตรวจรักษา (Tx) และสั่งจ่ายยา (Rx)
+      </Typography>
+
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 200 }}>
+          <Typography>กำลังโหลดข้อมูล...</Typography>
+        </Box>
+      ) : (
+        <Box display="flex" flexDirection="column" gap={3}>
+          {/* Dropdown and Search Section */}
+          <Box display="flex" gap={2} alignItems="center">
+            <Select
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              displayEmpty
+              variant="outlined"
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">ทั้งหมด</MenuItem>
+              {[...new Set(categories.map((service) => service.category_type))].map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            <Autocomplete
+              options={filteredServices}
+              getOptionLabel={(option) => option.category_name}
+              onChange={handleServiceSelect}
+              value={selectedService}
+              sx={{ width: '100%', maxWidth: 600 }}
+              isOptionEqualToValue={(option, value) => option.category_id === value.category_id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="ค้นหาบริการ"
+                  placeholder="ค้นหา..."
+                  variant="outlined"
+                  sx={{ flex: 1 }}
+                />
+              )}
+
+            />
+
+          </Box>
+
+          {/* เลือกรายการ+สั่งยา */}
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              รายการที่เลือก
+            </Typography>
+            {selectedItems.length > 0 ? (
+              <List>
+                {selectedItems.map((item,index) => (
+                  <ListItem
+                   key={`${item.category_id}-${index}`} 
+                    secondaryAction={
+                      <Box display="flex" gap={2} alignItems="center">
+                      <Typography>จำนวน</Typography>
+                      <TextField
+                        // label="จำนวน"
+                        type="number"
+                        variant="outlined"
+                        size="small"
+                        value={item.quantity || 1} // ค่าจำนวนเริ่มต้นเป็น 0
+                        onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                        sx={{ width: 70 }}
+                      />
+                      <IconButton
+                        edge="end"
+                        color="error"
+                        onClick={() => handleRemoveItem(item.category_id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                    
+                    }
+                  >
+                    <ListItemText
+                      primary={`${item.category_name}`}
+                      secondary={`ประเภท: ${item.category_type}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography color="textSecondary">ไม่มีรายการที่เลือก</Typography>
+            )}
+          </Box>
+
+        </Box>
+      )}
+
+
 
       {/* Submit Button */}
-      <Box mt={2}>
-        <Button variant="contained" color="primary" onClick={handleSubmit} fullWidth>
+      <Box mt={2}  display="flex" justifyContent="flex-end" gap={2} >
+      <Button variant="contained" color="primary"   disabled={!isSaved}>
+          ส่งเข้า Admit
+        </Button>
+        <Button variant="contained" color="primary"  disabled={!isSaved}>
+          นัดหมายล่วงหน้า
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleSubmit} >
           บันทึกการตรวจรักษา
         </Button>
       </Box>

@@ -19,7 +19,8 @@ const PetProfilePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   // const { pet, owner } = location.state; // pet and owner data from route state
-  const { pet: initialPet, owner: initialOwner } = location.state; // Get initial data from route state
+  const { pet: initialPet, owner: initialOwner  } = location.state; // Get initial data from route state
+  const { appointmentId } = location.state;
   const [pet, setPet] = useState(initialPet);
   const [owner, setOwner] = useState(initialOwner);
   const [age, setAge] = useState('');
@@ -40,19 +41,28 @@ const PetProfilePage = () => {
   
   const fetchPetAndOwnerDetails = async (petId, ownerId) => {
     try {
+      if (!petId || !ownerId) return;
+
       const [petResponse, ownerResponse] = await Promise.all([
         axios.get(`${api}/pets/${petId}`),
         axios.get(`${api}/owners/${ownerId}`)
       ]);
-  
       if (petResponse.status === 200) {
-        setPet(petResponse.data);
-        console.log('Pet Data:', petResponse.data);
-        // calculateAge(petResponse.data.pet_birthday);
+        setPet((prevPet) => {
+          if (JSON.stringify(prevPet) !== JSON.stringify(petResponse.data)) {
+            return petResponse.data;
+          }
+          return prevPet; // Avoid updating if data is identical
+        });
       }
+  
       if (ownerResponse.status === 200) {
-        setOwner(ownerResponse.data);
-        console.log('Owner Data:', ownerResponse.data);
+        setOwner((prevOwner) => {
+          if (JSON.stringify(prevOwner) !== JSON.stringify(ownerResponse.data)) {
+            return ownerResponse.data;
+          }
+          return prevOwner; // Avoid updating if data is identical
+        });
       }
     } catch (error) {
       console.error('Error fetching pet or owner details:', error);
@@ -80,7 +90,7 @@ const PetProfilePage = () => {
 
   useEffect(() => {
     calculateAge(pet.pet_birthday); // Calculate pet's age on load
-  }, [pet.pet_birthday]);
+  }, []);
 
 
   const calculateAge = (date) => {
@@ -92,7 +102,16 @@ const PetProfilePage = () => {
     const months = today.diff(birthDay.add(years, 'year'), 'month');
     const days = today.diff(birthDay.add(years, 'year').add(months, 'month'), 'day');
 
-    setAge({ years, months, days });
+    setAge((prevAge) => {
+      if (
+        prevAge.years !== years ||
+        prevAge.months !== months ||
+        prevAge.days !== days
+      ) {
+        return { years, months, days }; // Update only if different
+      }
+      return prevAge; // Avoid unnecessary state updates
+    });
   };
 
   const handleTabChange = (event, newValue) => {
@@ -324,7 +343,7 @@ const handleUpdate = async (updatedData, type) => {
         {activeTab === 0 &&
          <DiagnosisForm 
            petId={pet.pet_id}
-          //  appointmentId={appointment_id} 
+           appointmentId={appointmentId} 
         />}
          {activeTab >= 2 && (
          <TableHistory

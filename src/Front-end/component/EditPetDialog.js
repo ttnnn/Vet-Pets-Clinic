@@ -155,36 +155,6 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
           />
         )}
       
-        
-        {formData.pet_species === 'อื่นๆ' ? (
-          <TextField
-            label="กรุณาระบุประเภทสัตว์เลี้ยง"
-            value={formData.otherPetSpecies}
-            name="otherPetSpecies"
-            fullWidth
-            required
-            onChange={handleChange}
-            sx={{ mb: 2 }}
-          />
-        ) : (
-          <Autocomplete
-            options={formData.pet_species === 'แมว' ? CatBreed : formData.pet_species === 'สุนัข' ? DogBreed : []}
-            value={formData.pet_breed}
-            onChange={(event, newValue) => {
-              setFormData((prev) => ({ ...prev, pet_breed: newValue }));
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="พันธุ์ของสัตว์เลี้ยง"
-                variant="outlined"
-                required
-                fullWidth
-              />
-            )}
-            freeSolo
-          />
-        )}
         <TextField
           label="ทำหมัน"
           name="spayed_neutered"

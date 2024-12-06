@@ -8,11 +8,11 @@ const path = require('path');
 const app = express();
 const { generateServiceID } = require('./generateServiceID.js'); 
 require('./cronAppointment.js')
+const dayjs = require('dayjs');
 
 // Middleware
 app.use(cors());
 app.use(express.json()); 
-
 // เชื่อมต่อกับ MySQL (จริง ๆ แล้วคือ PostgreSQL)
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -139,20 +139,64 @@ app.get('/owners', async (req, res) => {
   }
 });
 app.get('/owners/:owner_id', async (req, res) => {
-  console.log('/owners/:owner_id' , req.params)
-  const { owner_id } = req.params; // Receive search query
+  console.log('GET /owners/:owner_id', req.params); // Log incoming request params
+  const { owner_id } = req.params;
 
+  // Validate owner_id
   if (!owner_id || isNaN(Number(owner_id))) {
-    return res.status(400).json({ error: 'Invalid owner ID' });
+    return res.status(400).json({ error: 'Invalid owner ID. Please provide a valid number.' });
   }
+
   const query = `SELECT * FROM owner WHERE owner_id = $1`;
 
   try {
-      const results = await pool.query(query, [owner_id]);
-      res.json(results.rows); // Access `rows` to get the actual data
+    const results = await pool.query(query, [owner_id]);
+
+    // Check if owner exists
+    if (results.rows.length === 0) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+
+    res.json(results.rows[0]); // Return the first (and only) row
   } catch (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error executing query:', err.message || err);
+    res.status(500).json({ error: 'An error occurred while fetching owner details' });
+  }
+});
+app.get('/medical/form/:appointmentId', async (req, res) => {
+  console.log('/medical/form/:appointmentId', req.params); // Log incoming request params
+  const { appointmentId } = req.params;
+
+  if (!appointmentId) {
+    return res.status(400).json({ error: 'Invalid appointmentId.' });
+  }
+
+  // JOIN query
+  const query = `
+    SELECT 
+      mr.*,  
+      d.diag_cc
+    FROM 
+      medicalrecord AS mr
+    LEFT JOIN 
+      diagnosis AS d 
+    ON 
+      mr.diagnosis_id = d.diagnosis_id
+    WHERE 
+      mr.appointment_id = $1
+  `;
+
+  try {
+    const results = await pool.query(query, [appointmentId]);
+
+    if (results.rows.length === 0) {
+      return res.status(404).json({ error: 'Medical record not found.' });
+    }
+
+    res.json(results.rows); // ส่งข้อมูลหลายแถว
+  } catch (err) {
+    console.error('Error executing query:', err.message || err);
+    res.status(500).json({ error: 'An error occurred while fetching medical record details.' });
   }
 });
 
@@ -532,8 +576,6 @@ app.put('/postpone/hotels/:id', async (req, res) => {
     client.release(); // Release the client
   }
 });
-
-
 app.post('/treatment/diagnosis', async (req, res) => {
   const { medicalData, diagnosisData, physicalData } = req.body;
 
@@ -549,7 +591,7 @@ app.post('/treatment/diagnosis', async (req, res) => {
     // Insert into the diagnosis table
     const diagnosisQuery = `
       INSERT INTO diagnosis (diag_cc, diag_ht, diag_pe, diag_majorproblem, diag_dx, diag_tentative, diag_final, diag_treatment, diag_client, diag_note)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING diagnosis_id 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING diagnosis_id
     `;
     const diagnosisValues = [
       diagnosisData.diag_cc,
@@ -593,27 +635,58 @@ app.post('/treatment/diagnosis', async (req, res) => {
     const physicalResult = await client.query(physicalQuery, physicalValues);
     const physicalId = physicalResult.rows[0].physical_check_id;
 
-    // Insert into the medical table
-    const medicalQuery = `
-      INSERT INTO medicalrecord (pet_id, rec_temperature, personnel_id, rec_pressure, rec_heartrate, rec_weight, rec_time, diagnosis_id, physical_check_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8 ,$9) RETURNING med_id
+    // Check if the appointment_id already exists
+    const existingMedicalQuery = `
+      SELECT med_id FROM medicalrecord WHERE appointment_id = $1
     `;
-    const medicalValues = [
-      medicalData.pet_id,
-      medicalData.rec_temperature,
-      medicalData.personnel_id,
-      medicalData.rec_pressure,
-      medicalData.rec_heartrate,
-      medicalData.rec_weight,
-      medicalData.rec_time,
-      diagnosisId,
-      physicalId
-    ];
-    const medicalResult = await client.query(medicalQuery, medicalValues);
+    const existingMedicalResult = await client.query(existingMedicalQuery, [medicalData.appointment_id]);
+
+    let medicalResult;
+    if (existingMedicalResult.rows.length > 0) {
+      // If the appointment_id exists, update the record
+      const updateMedicalQuery = `
+        UPDATE medicalrecord
+        SET pet_id = $1, rec_temperature = $2, personnel_id = $3, rec_pressure = $4, rec_heartrate = $5,
+            rec_weight = $6, rec_time = $7, diagnosis_id = $8, physical_check_id = $9
+        WHERE appointment_id = $10 RETURNING med_id
+      `;
+      const updateMedicalValues = [
+        medicalData.pet_id,
+        medicalData.rec_temperature,
+        medicalData.personnel_id,
+        medicalData.rec_pressure,
+        medicalData.rec_heartrate,
+        medicalData.rec_weight,
+        medicalData.rec_time,
+        diagnosisId,
+        physicalId,
+        medicalData.appointment_id, // We use appointment_id here
+      ];
+      medicalResult = await client.query(updateMedicalQuery, updateMedicalValues);
+    } else {
+      // If the appointment_id does not exist, insert a new record
+      const insertMedicalQuery = `
+        INSERT INTO medicalrecord (pet_id, rec_temperature, personnel_id, rec_pressure, rec_heartrate, rec_weight, rec_time, diagnosis_id, physical_check_id, appointment_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING med_id
+      `;
+      const insertMedicalValues = [
+        medicalData.pet_id,
+        medicalData.rec_temperature,
+        medicalData.personnel_id,
+        medicalData.rec_pressure,
+        medicalData.rec_heartrate,
+        medicalData.rec_weight,
+        medicalData.rec_time,
+        diagnosisId,
+        physicalId,
+        medicalData.appointment_id, // We use appointment_id here
+      ];
+      medicalResult = await client.query(insertMedicalQuery, insertMedicalValues);
+    }
 
     await client.query('COMMIT'); // Commit transaction
     res.status(201).json({
-      message: 'Records saved successfully',
+      message: 'Records saved/updated successfully',
       medicalId: medicalResult.rows[0].med_id,
     });
   } catch (error) {
@@ -624,10 +697,6 @@ app.post('/treatment/diagnosis', async (req, res) => {
     client.release(); // Release the client back to the pool
   }
 });
-
-
-
-
 
 // Get pets by owner ID
 app.get('/pets', async (req, res) => {
@@ -1008,14 +1077,15 @@ app.post('/medical/symptom', async (req, res) => {
         diagnosis_id = existingDiagno.rows[0].diagnosis_id;
       }
     }
-
+    const rec_time = dayjs().format('YYYY-MM-DD HH:mm:ss'); 
+    console.log('Rec time:', rec_time);
     // 2. บันทึกหรืออัปเดตข้อมูลในตาราง `medicalrecord`
     await client.query(
-      `INSERT INTO medicalrecord (appointment_id, pet_id, rec_weight, diagnosis_id) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO medicalrecord (appointment_id, pet_id, rec_weight, diagnosis_id,rec_time) 
+       VALUES ($1, $2, $3, $4, $5) 
        ON CONFLICT (appointment_id, pet_id) 
-       DO UPDATE SET rec_weight = $3, diagnosis_id = $4`,
-      [appointment_id, pet_id, rec_weight, diagnosis_id]
+       DO UPDATE SET rec_weight = $3, diagnosis_id = $4 ,rec_time = $5`,
+      [appointment_id, pet_id, rec_weight, diagnosis_id,rec_time]
     );
 
     await client.query('COMMIT'); // ยืนยัน transaction
