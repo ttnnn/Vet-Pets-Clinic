@@ -4,7 +4,7 @@ import { Box, Typography, Card, CardContent, Avatar, Divider, Tab, Tabs,IconButt
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import Sidebar from './Sidebar';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditPetDialog from '../component/EditPetDialog';
 import EditOwnerDialog from '../component/EditOwnerDialog';
 import axios from 'axios';
@@ -90,7 +90,7 @@ const PetProfilePage = () => {
 
   useEffect(() => {
     calculateAge(pet.pet_birthday); // Calculate pet's age on load
-  }, []);
+  }, [pet.pet_birthday]);
 
 
   const calculateAge = (date) => {
@@ -119,9 +119,25 @@ const PetProfilePage = () => {
     updateAppointments();
   };
  
-  const handleBack =()=>{
-    navigate('/register', { state: { locationOwnerID: owner.owner_id, locationActiveTab: 1 } });
-  }
+  // const handleBack =()=>{
+    // navigate('/register', { state: { locationOwnerID: owner.owner_id, locationActiveTab: 1 } });
+  // }
+  const handleBack = () => {
+    // ตรวจสอบว่า state มาจากหน้าไหน
+    if (location?.state?.fromPage === 'home') {
+      // ถ้าจากหน้าจัดการคิว ให้กลับไปที่หน้า home
+      navigate('/home');
+    } else {
+      // กรณีที่ไม่มี state หรือมาจากหน้าอื่นๆ
+      navigate('/register', {
+        state: {
+          locationOwnerID: owner.owner_id,
+          locationActiveTab: 1,
+        },
+      });
+    }
+  };
+  
 
   
   const spayedNeuteredStatus = pet.spayed_neutered === false ? "ไม่ได้ทำหมัน" : "ทำหมัน";
@@ -224,13 +240,23 @@ const handleUpdate = async (updatedData, type) => {
       {/* Main Content Area with Gray Background */}
       <Box sx={{ flexGrow: 1, padding: 3, backgroundColor: '#f5f5f5' }}>
         {/* Header */}
-        <Box sx={{ backgroundColor: 'white', padding: 2, borderRadius: 1, mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4" gutterBottom>โปรไฟล์</Typography>
-            <IconButton onClick={handleBack} sx={{ ml: 2 }}>
-                <ArrowForwardIcon />
-            </IconButton>
-        </Box>
-
+        <Box
+          sx={{
+            backgroundColor: 'white',
+            padding: 2,
+            borderRadius: 1,
+            mb: 3,
+            display: 'flex',
+            justifyContent: 'space-between',  // ทำให้มีพื้นที่ระหว่างเนื้อหาทั้งสอง
+            alignItems: 'center',
+            flexDirection: 'row-reverse', // สลับตำแหน่งของลูกศรและข้อความ
+          }}
+        >
+        <Typography variant="h4" gutterBottom>โปรไฟล์</Typography>
+        <IconButton onClick={handleBack} sx={{ mr: 2 }}>
+          <ArrowBackIcon />
+        </IconButton>
+      </Box>
 
         {/* Profile Content Section */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
@@ -344,6 +370,7 @@ const handleUpdate = async (updatedData, type) => {
          <DiagnosisForm 
            petId={pet.pet_id}
            appointmentId={appointmentId} 
+           ownerId={owner.owner_id}
         />}
          {activeTab >= 2 && (
          <TableHistory

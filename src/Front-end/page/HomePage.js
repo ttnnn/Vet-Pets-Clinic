@@ -6,6 +6,8 @@ import dayjs from 'dayjs';
 import AppointmentList from '../component/AppointmentList';
 import OngoingAppointments from '../component/OngoingAppointment';
 import PendingAppointments from '../component/PendingAppointments';
+import CircularProgress from '@mui/material/CircularProgress';
+
 // Categories for filtering
 
 const api = 'http://localhost:8080';
@@ -88,15 +90,20 @@ const AppointmentSummary = ({
 const HomeDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [view, setView] = useState('total');
+  const [loading, setLoading] = useState(false); // Loading state
  
 
   const fetchAppointments = async () => {
+    setLoading(true); // Start loading
     try {
       const response = await axios.get(`${api}/appointment`);
       setAppointments(response.data);
       console.log('Fetched appointments:', response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
+    }
+    finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -206,6 +213,12 @@ const HomeDashboard = () => {
           onClickSummary={handleNavigation}
           totalAppointmentsDay= {totalAppointmentsDay}
         />
+         {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+            <CircularProgress/>
+          </Box>
+        ) : (
+          <>
         {view === 'total' && (
           <AppointmentList
             appointments={filteredAppointments('รอรับบริการ')}
@@ -231,6 +244,8 @@ const HomeDashboard = () => {
             appointments={filteredAppointments('รอชำระเงิน')}
           />
         )}
+        </>
+)}
       </Box>
     </Box>
   );

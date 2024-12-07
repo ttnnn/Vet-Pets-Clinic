@@ -65,10 +65,17 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
     const fetchBookedSlots = async () => {
       if (selectedDate && TypeService) {
         const formattedDate = formatDate(selectedDate);
+        console.log('selectedDate',selectedDate)
+        console.log('formattedDate',formattedDate)
 
         try {
           const response = await axios.get(`${api}/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
-          const cleanedBookedSlots = response.data.map(slot => slot.replace('+07', ''));
+          console.log('API Response:', response.data);
+
+          // const cleanedBookedSlots = response.data.map(slot => slot.replace('+07', ''));
+          const cleanedBookedSlots = Array.isArray(response.data)
+          ? response.data.map(slot => (typeof slot === 'string' ? slot.replace('+07', '') : slot))
+          : [];
           setBookedSlots(cleanedBookedSlots);
           
         } catch (error) {

@@ -4,8 +4,8 @@ import {
   Box, Typography, Autocomplete, TextField, Button
 } from '@mui/material';
 import PetDialog from './Addnewpets';
-import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { useNavigate ,useLocation} from 'react-router-dom';
+
 const api = 'http://localhost:8080'; // Replace with your actual API base URL
 
 const RegisterSearch = () => {

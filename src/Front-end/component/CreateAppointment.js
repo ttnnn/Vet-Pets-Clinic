@@ -11,7 +11,7 @@ import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
-
+import {useLocation} from 'react-router-dom';
 
 
 const api = 'http://localhost:8080';
@@ -68,10 +68,16 @@ const AddAppointment = () => {
   const [timePickerKey, setTimePickerKey] = useState(0);
   const [openDialog , setOpenDialog] = useState(false)
   // const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
-  
+  const location = useLocation();
+  const { locationOwnerID ,locationPetID } = location.state || {};
+  // console.log("locationOwnerID : ",locationOwnerID)
+  // console.log("locationPetID : ",locationPetID)
 
 
   useEffect(() => {
+    if (locationOwnerID !== undefined && locationOwnerID !== selectedOwnerId) {
+      setSelectedOwnerId(locationOwnerID);
+    }
     const fetchOwners = async () => {
       try {
         const response = await axios.get(`${api}/owners`);
@@ -81,7 +87,8 @@ const AddAppointment = () => {
       }
     };
     fetchOwners();
-  }, []);
+  }, [locationOwnerID, selectedOwnerId]);
+  
 
   useEffect(() => {
     const fetchPersonnel = async () => {
@@ -109,18 +116,27 @@ const AddAppointment = () => {
     searchOwner.length > 0 ? fetchFilteredOwners() : setOwners([]);
   }, [searchOwner]);
 
+
+
   useEffect(() => {
     const fetchPets = async () => {
       try {
         const response = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
         setPets(response.data);
-        setSelectedPetId('');
+        setSelectedPetId(locationPetID || "");
       } catch (error) {
-        console.error('Error fetching pets:', error);
+        console.error("Error fetching pets:", error);
       }
     };
-    selectedOwnerId ? fetchPets() : setPets([]);
-  }, [selectedOwnerId]);
+  
+    if (selectedOwnerId) {
+      fetchPets();
+    } else {
+      setPets([]);
+    }
+  }, [selectedOwnerId, locationPetID]);
+  
+
 
   useEffect(() => {
     const fetchAvailableCages = async () => {
@@ -141,7 +157,6 @@ const AddAppointment = () => {
     fetchAvailableCages();
   
   }, [checkInDate, checkOutDate ,petSpecies]);
-  
 
 
   const handlePetChange = (event, value) => {

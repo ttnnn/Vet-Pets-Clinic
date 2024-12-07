@@ -6,6 +6,7 @@ import TableAppointments from '../component/TableAppointment';
 import { styled } from '@mui/material/styles';
 import AddAppointment from '../component/CreateAppointment';
 import { DateTime } from 'luxon';
+import { useLocation } from 'react-router-dom';
 
 
 const api = 'http://localhost:8080';
@@ -45,6 +46,17 @@ const AppointmentPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
+  const location = useLocation();
+  const { locationActiveTab } = location.state || {};
+  // console.log("locationActiveTab : ",locationActiveTab)
+  useEffect(() => {
+    if (locationActiveTab !== undefined) {
+      setActiveTab(locationActiveTab);
+    }
+  }, [locationActiveTab]);
+  
+ 
+  
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     updateAppointments(); // Fetch new data on tab change

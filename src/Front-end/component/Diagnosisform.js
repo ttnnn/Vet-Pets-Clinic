@@ -1,34 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import {
-  TextField,
-  Button,
-  Paper,
-  Box,
-  Typography,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Autocomplete,
-  Select,
-  MenuItem,
-  List,
-  ListItem,
-  ListItemText,
-} from '@mui/material';
+import { TextField, Button, Paper, Box, Typography, 
+  FormControl, FormLabel, RadioGroup, FormControlLabel, 
+  Radio, Autocomplete, Select, MenuItem, List, 
+  ListItem, ListItemText, InputAdornment, InputLabel, 
+  OutlinedInput , Alert,Snackbar} from '@mui/material';
+
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
 import axios from 'axios';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useNavigate } from 'react-router-dom';
 
 dayjs.locale('th'); // Set dayjs to use Thai locale
 const api = 'http://localhost:8080';
 
 const ExamStatusOptions = ['normal', 'abnormal', 'no exam'];
 
-const DiagnosisForm = ({petId , appointmentId}) => {
+const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   // console.log('Pet ID:', petId);
   // console.log('appointmentId:', appointmentId);
   const [personnelList, setPersonnelList] = useState([]); 
@@ -39,12 +28,17 @@ const DiagnosisForm = ({petId , appointmentId}) => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isDataSaved, setIsDataSaved] = useState(false); //ใช้เช็คว่าเซฟรึยัง
+  const [alertMessage, setAlertMessage] = useState("");   // ข้อความสำหรับ Alert
+  const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
+  const [openSnackbar, setOpenSnackbar] = useState(false); 
+
+  const navigate = useNavigate();
   // State for medical record
   const [formMedical, setFormMedical] = useState({
-    rec_temperature: '',
-    rec_pressure: '',
-    rec_heartrate: '',
+    rec_temperature: null,
+    rec_pressure: null,
+    rec_heartrate: null,
     rec_weight: '',
     rec_timee: dayjs().format('HH:mm'),
     rec_date: dayjs().format('YYYY-MM-DD'),
@@ -77,45 +71,45 @@ const DiagnosisForm = ({petId , appointmentId}) => {
     phy_dental: 'no exam',
   });
 
-  const handleReset = () => {
-    const now = dayjs();
-    setFormMedical({
-      rec_temperature: '',
-      rec_pressure: '',
-      rec_heartrate: '',
-      rec_weight: '',
-      rec_timee: now.format('HH:mm'),
-      rec_date: now.format('YYYY-MM-DD'),
-    });
-    setFormData({
-      diag_cc: '',
-      diag_ht: '',
-      diag_pe: '',
-      diag_majorproblem: '',
-      diag_dx: '',
-      diag_tentative: '',
-      diag_final: '',
-      diag_treatment: '',
-      diag_client: '',
-      diag_note: '',
-    });
-    setFormphysical({
-      phy_general: 'no exam',
-      phy_integumentary: 'no exam',
-      phy_musculo_skeletal: 'no exam',
-      phy_circulatory: 'no exam',
-      phy_respiratory: 'no exam',
-      phy_digestive: 'no exam',
-      phy_genito_urinary: 'no exam',
-      phy_eyes: 'no exam',
-      phy_ears: 'no exam',
-      phy_neural_system: 'no exam',
-      phy_lymph_nodes: 'no exam',
-      phy_mucous_membranes: 'no exam',
-      phy_dental: 'no exam',
-    });
-    setSelectedPersonnel(null);
-  };
+  // const handleReset = () => {
+    // const now = dayjs();
+    // setFormMedical({
+      // rec_temperature: '',
+      // rec_pressure: '',
+      // rec_heartrate: '',
+      // rec_weight: '',
+      // rec_timee: now.format('HH:mm'),
+      // rec_date: now.format('YYYY-MM-DD'),
+    // });
+    // setFormData({
+      // diag_cc: '',
+      // diag_ht: '',
+      // diag_pe: '',
+      // diag_majorproblem: '',
+      // diag_dx: '',
+      // diag_tentative: '',
+      // diag_final: '',
+      // diag_treatment: '',
+      // diag_client: '',
+      // diag_note: '',
+    // });
+    // setFormphysical({
+      // phy_general: 'no exam',
+      // phy_integumentary: 'no exam',
+      // phy_musculo_skeletal: 'no exam',
+      // phy_circulatory: 'no exam',
+      // phy_respiratory: 'no exam',
+      // phy_digestive: 'no exam',
+      // phy_genito_urinary: 'no exam',
+      // phy_eyes: 'no exam',
+      // phy_ears: 'no exam',
+      // phy_neural_system: 'no exam',
+      // phy_lymph_nodes: 'no exam',
+      // phy_mucous_membranes: 'no exam',
+      // phy_dental: 'no exam',
+    // });
+    // setSelectedPersonnel(null);
+  // };
 
   useEffect(() => {
     const fetchMedicalAndPersonnel = async () => {
@@ -126,10 +120,10 @@ const DiagnosisForm = ({petId , appointmentId}) => {
         if (medicalResponse.data && medicalResponse.data.length > 0) {
           const medicalData = medicalResponse.data[0];
           setFormMedical({
-            rec_temperature: medicalData.rec_temperature || '',
-            rec_pressure: medicalData.rec_pressure || '',
-            rec_heartrate: medicalData.rec_heartrate || '',
-            rec_weight: medicalData.rec_weight || '',
+            rec_temperature: medicalData.rec_temperature || null,
+            rec_pressure: medicalData.rec_pressure || null,
+            rec_heartrate: medicalData.rec_heartrate || null,
+            rec_weight: medicalData.rec_weight || null,
             rec_timee: dayjs(medicalData.rec_timee).format('HH:mm'),
             rec_date: dayjs(medicalData.rec_date).format('YYYY-MM-DD'),
           });
@@ -175,6 +169,33 @@ const DiagnosisForm = ({petId , appointmentId}) => {
   };
 
   const handleSubmit = async () => {
+    if (!formMedical.rec_date || !formMedical.rec_timee) {
+      setAlertMessage("กรุณากรอกวันที่และเวลาให้ครบถ้วน");
+      setAlertSeverity("warning");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return;
+    }
+  
+    if (!formMedical.rec_temperature || isNaN(parseFloat(formMedical.rec_temperature))) {
+      setAlertMessage("กรุณากรอกอุณหภูมิที่ถูกต้อง");
+      setAlertSeverity("warning");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return;
+    }
+  
+    if (!formMedical.rec_weight || isNaN(parseFloat(formMedical.rec_weight))) {
+      setAlertMessage("กรุณากรอกน้ำหนักที่ถูกต้อง");
+      setAlertSeverity("warning");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return;
+    }
+  
+    if (!selectedPersonnel || !selectedPersonnel.personnel_id) {
+      setAlertMessage("กรุณาเลือกสัตวแพทย์ที่รับผิดชอบ");
+      setAlertSeverity("warning");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return;
+    }
     // รวมวันที่และเวลา
     const timestamp = dayjs(`${formMedical.rec_date} ${formMedical.rec_timee}`).format('YYYY-MM-DD HH:mm:ss');
     // console.log('personnel_id' , selectedPersonnel)
@@ -201,13 +222,16 @@ const DiagnosisForm = ({petId , appointmentId}) => {
     try {
  
       const response = await axios.post(`${api}/treatment/diagnosis`, payload);
-      alert(response.data.message); 
-      handleReset();
-      setIsSaved(true); // อนุญาตให้กดปุ่มอื่น
+      setIsDataSaved(true);  // เมื่อบันทึกสำเร็จให้เปลี่ยนสถานะ
+      setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
+      setAlertSeverity("success");  // ประเภทของ Alert
+      setOpenSnackbar(true);
+      // handleReset();
       
     } catch (error) {
-      console.error('Error saving records:', error);
-      alert('ไม่สามารถบันทึกข้อมูลได้');
+      setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      setAlertSeverity("error");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
     }
   };
   
@@ -262,12 +286,45 @@ const DiagnosisForm = ({petId , appointmentId}) => {
       )
     );
   };
-  
+  const handleTopageAppointment =()=>{
+    if (!isDataSaved) {
+      setAlertMessage("กรุณาบันทึกข้อมูลก่อน");
+      setAlertSeverity("warning");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return; // หยุดการทำงานหากยังไม่ได้บันทึก
+    }
+
+    navigate('/appointment', { state: { locationOwnerID: ownerId , locationActiveTab: 2 ,locationPetID : petId} });
+  }
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);  // ปิด Snackbar
+  };
+
   return (
     <Paper style={{ padding: 20 }}>
       <Typography variant="h5" gutterBottom>
         Medical Record and Diagnosis
       </Typography>
+      <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000} // ปิดเองหลัง 6 วินาที
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // แสดงตรงกลาง
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={alertSeverity}
+            sx={{
+              width: '100%',
+              fontSize: '1rem',  // ปรับขนาดข้อความให้ใหญ่ขึ้น
+              padding: '10px',  // เพิ่ม padding
+              borderRadius: '8px', // ทำมุมมน
+              boxShadow: 3, // เพิ่มเงาให้ดูเด่น
+            }}
+          >
+            {alertMessage}
+          </Alert>
+        </Snackbar>
 
       {/* Medical Record Section */}
       <Box display="flex" flexDirection="row" gap={3} alignItems="center" mb={3}>
@@ -300,37 +357,57 @@ const DiagnosisForm = ({petId , appointmentId}) => {
  
 
       </Box>
+
       <Box display="flex" flexDirection="row" gap={5}>
-        <TextField
-          label="Temperature (°C)"
+      {/* Temperature */}
+      <FormControl variant="outlined" sx={{ width: '25ch' }}>
+        <InputLabel shrink>Temperature</InputLabel>
+        <OutlinedInput
           type="text"
           value={formMedical.rec_temperature}
           onChange={handleMedicalChange('rec_temperature')}
-          fullWidth
+          endAdornment={<InputAdornment position="end">°C</InputAdornment>}
+          label="Temperature"
         />
-        <TextField
-          label="Pressure (mmHg)"
+      </FormControl>
+
+      {/* Pressure */}
+      <FormControl variant="outlined" sx={{ width: '25ch' }}>
+        <InputLabel shrink>Pressure</InputLabel>
+        <OutlinedInput
           type="text"
           value={formMedical.rec_pressure}
           onChange={handleMedicalChange('rec_pressure')}
-          fullWidth
+          placeholder="ตัวอย่าง: 120/80"
+          endAdornment={<InputAdornment position="end">mmHg</InputAdornment>}
+          label="Pressure"
         />
-        <TextField
-          label="Heart Rate (bpm)"
+      </FormControl>
+
+      {/* Heart Rate */}
+      <FormControl variant="outlined" sx={{ width: '25ch' }}>
+        <InputLabel shrink>Heart Rate</InputLabel>
+        <OutlinedInput
           type="text"
           value={formMedical.rec_heartrate}
           onChange={handleMedicalChange('rec_heartrate')}
-          fullWidth
+          endAdornment={<InputAdornment position="end">bpm</InputAdornment>}
+          label="Heart Rate"
         />
-        <TextField
-          label="Weight (kg)"
+      </FormControl>
+
+      {/* Weight */}
+      <FormControl variant="outlined" sx={{ width: '25ch' }}>
+        <InputLabel shrink>Weight</InputLabel>
+        <OutlinedInput
           type="text"
           value={formMedical.rec_weight}
           onChange={handleMedicalChange('rec_weight')}
-          fullWidth
+          endAdornment={<InputAdornment position="end">kg</InputAdornment>}
+          label="Weight"
         />
-      </Box>
-
+      </FormControl>
+    </Box>
       <Box display="flex" flexDirection="row" gap={3} sx={{marginTop: '40px'}}>
         {/* Left Column: Diagnosis Form */}
         <Box flex={1}>
@@ -390,6 +467,12 @@ const DiagnosisForm = ({petId , appointmentId}) => {
           ))}
         </Box>
       </Box>
+      <Box mt={2}  display="flex" justifyContent="flex-end" gap={2} >
+          <Button variant="contained" color="primary" onClick={handleSubmit} >
+          บันทึกการตรวจรักษา
+        </Button>
+       </Box>
+
       <Typography variant="h6" gutterBottom>
          รายการตรวจรักษา (Tx) และสั่งจ่ายยา (Rx)
       </Typography>
@@ -486,17 +569,16 @@ const DiagnosisForm = ({petId , appointmentId}) => {
       )}
 
 
-
       {/* Submit Button */}
       <Box mt={2}  display="flex" justifyContent="flex-end" gap={2} >
-      <Button variant="contained" color="primary"   disabled={!isSaved}>
+      <Button variant="outlined" color="primary"  >
           ส่งเข้า Admit
         </Button>
-        <Button variant="contained" color="primary"  disabled={!isSaved}>
+        <Button variant="outlined" color="primary"  onClick={handleTopageAppointment}>
           นัดหมายล่วงหน้า
         </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit} >
-          บันทึกการตรวจรักษา
+        <Button variant="outlined" color="primary"  >
+         ส่งคิว
         </Button>
       </Box>
     </Paper>
