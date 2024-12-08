@@ -11,6 +11,7 @@ import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
+import HolidayFilter from './HolidayFilter';
 
 
 
@@ -321,7 +322,6 @@ const AddAppointment = () => {
           </FormControl>
 
           
-          
           {TypeService === 'ฝากเลี้ยง' ? (
             <>
             <Tabs 
@@ -337,47 +337,52 @@ const AddAppointment = () => {
             </Tabs>
                   
             {activeTab === 0 && (
-              <>
-                {/* Overnight Booking (ค้างคืน) */}
-                <DatePicker 
-                  label="Check-in Date"
-                  value={checkInDate}
-                  onChange={(newDate) => setCheckInDate(newDate)}
-                  renderInput={(params) => <TextField {...params} fullWidth  />}
-                  disablePast
-                  views={['year', 'month', 'day']}
-                />
-                <DatePicker
-                  label="Check-out Date"
-                  value={checkOutDate}
-                  onChange={(newDate) => setCheckOutDate(newDate)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                  disablePast
-                  views={['year', 'month', 'day']}
-                />
-                {checkInDate && checkOutDate && (
-                  <p>Total Days: {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))}</p>
-                )}
-              </>
-            )}
-        
-            {activeTab === 1 && (
-              <>
-                {/* Daytime Booking (ระหว่างวัน) */}
-                <DatePicker 
-                  label="เลือกวันที่"
-                  value={checkInDate}
-                  onChange={(newDate) => {
-                    setCheckInDate(newDate);
-                    setCheckOutDate(newDate);
-                  }}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                  disablePast
-                  views={['year', 'month', 'day']}
-                />
-              </>
-            )}
-              
+                <>
+                  {/* Overnight Booking (ค้างคืน) */}
+                  <HolidayFilter>
+                    <DatePicker 
+                      label="Check-in Date"
+                      value={checkInDate}
+                      onChange={(newDate) => setCheckInDate(newDate)}
+                      renderInput={(params) => <TextField {...params} fullWidth />}
+                      disablePast
+                      views={['year', 'month', 'day']}
+                    />
+                  </HolidayFilter>
+                  <HolidayFilter>
+                    <DatePicker
+                      label="Check-out Date"
+                      value={checkOutDate}
+                      onChange={(newDate) => setCheckOutDate(newDate)}
+                      renderInput={(params) => <TextField {...params} fullWidth />}
+                      disablePast
+                      views={['year', 'month', 'day']}
+                    />
+                  </HolidayFilter>
+                  {checkInDate && checkOutDate && (
+                    <p>Total Days: {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))}</p>
+                  )}
+                </>
+              )}
+
+              {activeTab === 1 && (
+                <>
+                  {/* Daytime Booking (ระหว่างวัน) */}
+                  <HolidayFilter>
+                    <DatePicker 
+                      label="เลือกวันที่"
+                      value={checkInDate}
+                      onChange={(newDate) => {
+                        setCheckInDate(newDate);
+                        setCheckOutDate(newDate);
+                      }}
+                      renderInput={(params) => <TextField {...params} fullWidth />}
+                      disablePast
+                      views={['year', 'month', 'day']}
+                    />
+                  </HolidayFilter>
+                </>
+              )}
 
               <TextField
                label="ประเภทสัตว์เลี้ยง"
@@ -408,14 +413,16 @@ const AddAppointment = () => {
           />
             </>
           ) : ( 
-            <DatePicker
-              label="เลือกวันที่"
-              value={appointmentDate}
-              onChange={(newDate) => setAppointmentDate(newDate)}
-              renderInput={(params) => <TextField {...params} fullWidth />}
-              disablePast
-              views={['year', 'month', 'day']}
-            />
+            <HolidayFilter>
+              <DatePicker
+                label="เลือกวันที่"
+                value={appointmentDate}
+                onChange={(newDate) => setAppointmentDate(newDate)}
+                renderInput={(params) => <TextField {...params} fullWidth />}
+                disablePast
+                views={['year', 'month', 'day']}
+              />
+            </HolidayFilter>
           )}
 
         {TypeService === 'ตรวจรักษา' && (

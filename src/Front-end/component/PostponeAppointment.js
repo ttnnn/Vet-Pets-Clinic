@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
-  Checkbox, Box, FormControlLabel,Typography,Snackbar
+  Checkbox, Box, FormControlLabel, Typography, Snackbar, Alert
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -10,39 +10,47 @@ import axios from 'axios';
 import TimeSlotPicker from './TimeSlot'; // Import TimeSlotPicker component
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
+import HolidayFilter from './HolidayFilter';
 
 dayjs.locale('th'); // Set dayjs to use Thai locale
 
 const api = 'http://localhost:8080';
 
-
 const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments }) => {
   const [appointmentDate, setAppointmentDate] = useState(null);
   const [appointmentTime, setAppointmentTime] = useState(null);
   const [isNoTime, setIsNoTime] = useState(false);
-  const [openDialog , setOpenDialog] = useState(false)
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
+
   const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+    setSnackbar({ ...snackbar, open: false });
   };
-  console.log('typeservice' , TypeService )
+
   const resetFields = () => {
     setAppointmentDate('');
     setAppointmentTime('');
     setIsNoTime(false);
   };
 
+  const validateAndOpenDialog = () => {
+    if (!appointmentDate || (!appointmentTime && !isNoTime)) {
+      setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบ', severity: 'error' });
+      return;
+    }
+    setOpenDialog(true); // Open confirmation dialog if data is valid
+  };
+
   const handlePostpone = async () => {
     try {
-      if (!appointmentDate || (!appointmentTime && !isNoTime)) {
-        alert('Please fill all required fields.');
-        return;
-      }
-
       const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
       const formatTime = (time) => {
         if (!time) return null;
@@ -57,14 +65,14 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       });
 
       if (response.status === 200) {
-        setSnackbarOpen(true);
-        updateAppointments(); // Update appointments after successful postponement
+        setSnackbar({ open: true, message: 'เลื่อนนัดสำเร็จ!', severity: 'success' });
+        updateAppointments();
         resetFields();
-        handleClose(); 
+        handleClose();
       }
     } catch (error) {
       console.error('Failed to update appointment:', error);
-      alert('Failed to update appointment');
+      setSnackbar({ open: true, message: 'ไม่สามารถเลื่อนนัดได้', severity: 'error' });
     }
     setOpenDialog(false);
   };
@@ -73,15 +81,16 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Dialog open={open} onClose={() => { resetFields(); handleClose(); }} maxWidth="md" fullWidth
         BackdropProps={{
-          style: { backgroundColor: 'rgba(0, 0, 0, 0.1)' } // ตั้งค่าโปร่งแสงของพื้นหลัง
+          style: { backgroundColor: 'rgba(0, 0, 0, 0.1)' },
         }}
-      PaperProps={{
-          sx: { boxShadow: 'none' } // ปิดเงาของ Dialog
+        PaperProps={{
+          sx: { boxShadow: 'none' },
         }}>
         <DialogTitle>เลือก วัน-เวลา นัดหมายใหม่</DialogTitle>
         <DialogContent dividers>
           {TypeService !== 'ฝากเลี้ยง' ? (
             <>
+            <HolidayFilter>
               <DatePicker
                 label="เลือกวันที่"
                 value={appointmentDate}
@@ -90,6 +99,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                 disablePast
                 views={['year', 'month', 'day']}
               />
+            </HolidayFilter>
               <Box>
                 <FormControlLabel
                   control={
@@ -112,25 +122,30 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                 />
               )}
             </>
-          ) : '' }
+          ) : ''}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { resetFields(); handleClose(); }}>ยกเลิก</Button>
-          <Button onClick={() => setOpenDialog(true)} color="primary">ยืนยัน</Button>
+          <Button onClick={validateAndOpenDialog} color="primary">ยืนยัน</Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar} message="Data updated successfully!" />
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <Dialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitle>ยืนยันการเลื่อนนัดหมาย</DialogTitle>
         <DialogContent>
-        <Typography>คุณแน่ใจหรือไม่ว่าต้องการเลื่อนนัดหมายนี้</Typography>
+          <Typography>คุณแน่ใจหรือไม่ว่าต้องการเลื่อนนัดหมายนี้</Typography>
         </DialogContent>
         <DialogActions>
-            <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
-            <Button onClick={handlePostpone} color="primary">ยืนยัน</Button>
+          <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
+          <Button onClick={handlePostpone} color="primary">ยืนยัน</Button>
         </DialogActions>
-    </Dialog>
+      </Dialog>
     </LocalizationProvider>
   );
 };

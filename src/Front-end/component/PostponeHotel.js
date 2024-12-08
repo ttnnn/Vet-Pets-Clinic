@@ -9,6 +9,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import { styled } from '@mui/material/styles';
+import HolidayFilter from './HolidayFilter';
 
 dayjs.locale('th');
 
@@ -171,6 +172,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
           {activeTab === 0 && (
             <>
             <Box sx={{ gap: 2, display: 'flex' , width :'100%' }}>
+            <HolidayFilter>
               <DatePicker
                 label="Check-in Date"
                 value={checkInDate}
@@ -180,6 +182,8 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                 views={['year', 'month', 'day']}
                 sx={{ flexGrow: 1 }} // ทำให้ขยายเต็มพื้นที่
               />
+            </HolidayFilter>
+            <HolidayFilter>
               <DatePicker
                 label="Check-out Date"
                 value={checkOutDate}
@@ -189,11 +193,13 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                 views={['year', 'month', 'day']}
                 sx={{ flexGrow: 1 }} // ทำให้ขยายเต็มพื้นที่
               />
+            </HolidayFilter>
               {checkInDate && checkOutDate && totalDays > 0 && <p>Total Days: {totalDays}</p>}
               </Box>
             </>
           )}
           {activeTab === 1 && (
+          <HolidayFilter>
             <DatePicker
               label="เลือกวันที่"
               value={checkInDate}
@@ -205,6 +211,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
               disablePast
               views={['year', 'month', 'day']}
             />
+          </HolidayFilter>
           )}
           <Autocomplete
             options={petCages}
