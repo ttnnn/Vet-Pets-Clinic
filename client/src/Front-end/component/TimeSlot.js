@@ -55,11 +55,19 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   }, [TypeService]);
 
   const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // ตรวจสอบให้แน่ใจว่า date เป็นอ็อบเจกต์ Date
+    const validDate = new Date(date); 
+    if (isNaN(validDate.getTime())) {
+      console.error('Invalid date:', date);
+      return ''; // คืนค่าเป็นสตริงว่างในกรณีที่ date ไม่ถูกต้อง
+    }
+  
+    const year = validDate.getFullYear();
+    const month = String(validDate.getMonth() + 1).padStart(2, '0');
+    const day = String(validDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+  
 
   useEffect(() => {
     const fetchBookedSlots = async () => {
