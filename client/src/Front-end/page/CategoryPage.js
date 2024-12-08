@@ -46,7 +46,7 @@ const CategoryPage = () => {
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
+  
   const resetPage = () => setPage(0);
 
   useEffect(() => {
@@ -292,7 +292,7 @@ const CategoryPage = () => {
               }}
               maxWidth="sm"
               fullWidth >
-          <DialogTitle>เพิ่มหมวดหมู่บริการ</DialogTitle>
+          <DialogTitle> {newCategory.category_id ? 'แก้ไขหมวดหมู่บริการ' : 'เพิ่มหมวดหมู่บริการ'}</DialogTitle>
           <DialogContent>
             <Select
               value={newCategory.category_type}
@@ -327,8 +327,11 @@ const CategoryPage = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose}>ยกเลิก</Button>
-            <Button onClick={newCategory.category_id ? handleUpdateCategory : handleAddCategory}>
-              บันทึก
+            <Button onClick={newCategory.category_id ? handleUpdateCategory : handleAddCategory}
+             color="primary"
+             variant="contained"
+            >
+              {newCategory.category_id ? 'บันทึก' : 'เพิ่ม'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -362,7 +365,6 @@ const CategoryPage = () => {
               padding: "12px", // เพิ่มระยะขอบใน
             },
           }}
-
         >
           <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
             {snackbar.message}
