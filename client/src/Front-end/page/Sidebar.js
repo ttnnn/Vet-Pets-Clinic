@@ -8,6 +8,8 @@ import CategoryIcon from '@mui/icons-material/Category';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Icon for log out
+import SettingsIcon from '@mui/icons-material/Settings';
+//
 
 const Sidebar = () => {
   const location = useLocation();
@@ -20,6 +22,7 @@ const Sidebar = () => {
     { text: 'หมวดหมู่บริการ',  path: '/clinic/category', icon: <CategoryIcon /> },
     { text: 'การเงิน', path: '/clinic/finance', icon: <AttachMoneyIcon /> },
     { text: 'สถิติการใช้บริการ',  path: '/clinic/dashboard', icon: <BarChartIcon /> },
+    { text: 'การตั้งค่าและสิทธิ์', path: '/admin', icon: <SettingsIcon /> },
   ];
 
   const handleLogout = () => {
