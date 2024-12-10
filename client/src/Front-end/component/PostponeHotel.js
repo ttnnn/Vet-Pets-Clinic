@@ -72,6 +72,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
       }
 
       const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
+
       // อัปเดตสถานะเป็น admit เมื่อ isAdmitBooking เป็น true
       if (isAdmitBooking) {
         await axios.put(`${api}/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', });
@@ -225,7 +226,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
                 {isExtendBooking || isAdmitBooking ? (
-                  // แสดง TextField แบบ readOnly เมื่อเป็นการจองต่อ
+                  // แสดง TextField แบบ readOnly เมื่อเป็นการจองต่อ + admit
                   <TextField
                     label="Check-in Date"
                     value={dayjs(checkInDate).format('MM/DD/YYYY')} // ฟอร์แมตวันที่
@@ -237,6 +238,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                   />
                 ) : (
                   // ใช้ DatePicker เมื่อไม่ได้จองต่อ
+                <HolidayFilter>
                   <DatePicker
                     label="Check-in Date"
                     value={checkInDate}
@@ -246,17 +248,20 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                     views={['year', 'month', 'day']}
                     sx={{  flexGrow: 1 }}
                   />
+                </HolidayFilter>
                 )}
-                <DatePicker
-                  label="Check-out Date"
-                  value={checkOutDate}
-                  onChange={(newDate) => setCheckOutDate(newDate)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                  disablePast
-                  minDate={checkInDate} //ไม่สามารถเลือก Check-out Date ที่น้อยกว่าหรือเท่ากับ Check-in Date ได้
-                  views={['year', 'month', 'day']}
-                  sx={{ flexGrow: 1 }} // ขยายเต็มพื้นที่
-                />
+                <HolidayFilter>
+                  <DatePicker
+                    label="Check-out Date"
+                    value={checkOutDate}
+                    onChange={(newDate) => setCheckOutDate(newDate)}
+                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    disablePast
+                    minDate={checkInDate} //ไม่สามารถเลือก Check-out Date ที่น้อยกว่าหรือเท่ากับ Check-in Date ได้
+                    views={['year', 'month', 'day']}
+                    sx={{ flexGrow: 1 }} // ขยายเต็มพื้นที่
+                  />
+                </HolidayFilter>
               </Box>
               <Box>
                 {checkInDate && checkOutDate && totalDays > 0 && (

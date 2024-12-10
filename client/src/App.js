@@ -14,6 +14,7 @@ import Home from './Front-end/customer/Home';
 import AppointmentDetail from './Front-end/customer/AppointmentDetail';
 import Line from './Front-end/customer/Line';
 import LineAuth from './Front-end/customer/LineAuth'
+import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 
 
 const theme = createTheme();
@@ -77,6 +78,11 @@ function App() {
             <Route 
               path="/clinic/pet-profile"
                element={<PetProfilePage />} />
+
+            <Route 
+              path="/clinic/admin" 
+              element={isAuthenticated ? <SecurityAdminPage/> : <Navigate to="/login" />} 
+            />
 
              {/* สำหรับลูกค้า */}
             <Route path="/customer/login" element={<Register />} />

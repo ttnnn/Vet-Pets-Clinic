@@ -141,7 +141,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
           </Button> //ช่วงเวลา TimeSlot ที่สร้างขึ้น
         ))
       ) : (
-        ''
+        <p style={{ textAlign: 'center', color: 'red' }}>ไม่มีช่วงเวลาที่สามารถจองได้</p>
       )}
     </div>
   );

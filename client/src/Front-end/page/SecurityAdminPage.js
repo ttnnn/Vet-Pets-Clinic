@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
-import ManageRoles from './component/ManageRoles';  // Import ManageRole
-import ManageHolidays from './component/ManageHolidays';  // Import ManageHolidays
+import ManageRoles from '../component/ManageRoles';  // Import ManageRole
+import ManageHolidays from '../component/ManageHolidays';  // Import ManageHolidays
 import Sidebar from './Sidebar';
 import { styled } from '@mui/material/styles';
 

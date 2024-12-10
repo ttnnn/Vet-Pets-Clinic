@@ -6,7 +6,7 @@ import axios from 'axios';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 
-const api = 'http://localhost:8080';
+const api = 'http://localhost:8080/api/clinic';
 
 const HolidayFilter = ({ children }) => {
   const [holidays, setHolidays] = useState([]);
@@ -31,7 +31,10 @@ const HolidayFilter = ({ children }) => {
     return holidays.some((holiday) => {
       if (holiday.dayoff_type === 'weekly') {
         // แปลง recurring_days จาก JSON string เป็น array
-        const recurringDays = JSON.parse(holiday.recurring_days || '[]');
+        // const recurringDays = JSON.parse(holiday.recurring_days || '[]');
+        const recurringDays = Array.isArray(holiday.recurring_days)
+            ? holiday.recurring_days
+            : JSON.parse(holiday.recurring_days || '[]'); // แปลง recurring_days เป็น array
         return recurringDays.includes(dayOfWeek); // ตรวจสอบว่าตรงกับวันใน recurring_days
       }
       if (holiday.dayoff_type === 'temporary') {

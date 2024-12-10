@@ -22,7 +22,7 @@ const Sidebar = () => {
     { text: 'หมวดหมู่บริการ',  path: '/clinic/category', icon: <CategoryIcon /> },
     { text: 'การเงิน', path: '/clinic/finance', icon: <AttachMoneyIcon /> },
     { text: 'สถิติการใช้บริการ',  path: '/clinic/dashboard', icon: <BarChartIcon /> },
-    { text: 'การตั้งค่าและสิทธิ์', path: '/admin', icon: <SettingsIcon /> },
+    { text: 'การตั้งค่าและสิทธิ์', path: '/clinic/admin', icon: <SettingsIcon /> },
   ];
 
   const handleLogout = () => {

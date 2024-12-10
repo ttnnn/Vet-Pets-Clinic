@@ -726,7 +726,7 @@ router.get('/pets/:pet_id', async (req, res) => {
 
 // Get personnel details
 router.get('/personnel', async (req, res) => {
-  const query = `SELECT personnel_id, first_name, last_name, role FROM personnel`;
+  const query = `SELECT personnel_id, first_name, last_name, role,user_name FROM personnel`;
 
   try {
     const result = await pool.query(query);
@@ -1090,8 +1090,92 @@ router.post('/medical/symptom', async (req, res) => {
   }
 });
 
+router.get('/dayoff', async (req, res) => {
+  console.log("/dayoff", req.body);
+
+  const query = 'SELECT * FROM dayoff'; // Query to get all dayoff records
+  try {
+    const results = await pool.query(query); // Execute the query
+    const dayOffRecords = results.rows; // Extract data from query result
+    res.json(dayOffRecords); // Send data back as JSON
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
+// Add New Day Off Record                                                                                                                                                                                                                                    app.post('/dayoff', async (req, res) => {
+
+router.post('/dayoff', async (req, res) => {
+  console.log('/dayoff', req.body);
+  const { date_start,date_end, dayoff_note, dayoff_type, recurring_days} = req.body;
+
+  // Check for missing fields
+  if (!date_start || !date_end || !dayoff_note || !dayoff_type || !recurring_days) {
+    return res.status(400).json({ error: 'Dayoff date and note are required' });
+  }
+
+  const client = await pool.connect(); // Connect to database
+  try {
+    await client.query('BEGIN'); // Begin transaction
+
+    // Insert new dayoff record into dayoff table
+    const result = await client.query(
+      'INSERT INTO dayoff (date_start, date_end, dayoff_note,  dayoff_type, recurring_days) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [date_start, date_end, dayoff_note,  dayoff_type, recurring_days]
+    );
+
+    await client.query('COMMIT'); // Commit transaction
+    res.status(201).json(result.rows[0]);  // Send back the newly created record
+  } catch (error) {
+    await client.query('ROLLBACK'); // Rollback if error occurs
+    console.error(error);
+    res.status(500).json({ error: 'Failed to add day off record' });
+  } finally {
+    client.release(); // Release the connection
+  }
+});
+
+// Update Day Off Record
+router.put('/dayoff/:id', async (req, res) => {
+  console.log('/dayoff/:id', req.body);
+  const { id } = req.params;
+  const { date_start, date_end, dayoff_note, dayoff_type, recurring_days } = req.body;
+
+  try {
+    const result = await pool.query(
+      'UPDATE dayoff SET date_start = $1, date_end = $2 ,dayoff_note = $3, dayoff_type = $4, recurring_days = $5 WHERE dayoff_id = $6',
+      [date_start, date_end, dayoff_note, dayoff_type, recurring_days, id]
+    );
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Day off not found' });
+    }
+  } catch (error) {
+    console.error('Error updating day off record:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+// Delete Day Off Record
+router.delete('/dayoff/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM dayoff WHERE dayoff_id = $1', [id]);
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Day off not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting day off record:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

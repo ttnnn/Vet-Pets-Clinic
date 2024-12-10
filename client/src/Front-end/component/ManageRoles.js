@@ -14,7 +14,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 const roles = ['เจ้าหน้าที่คลินิก', 'สัตวแพทย์'];
 
-const api = 'http://localhost:8080';
+const api = 'http://localhost:8080/api/clinic';
 
 const FormRow = styled(Box)({
   display: 'flex',

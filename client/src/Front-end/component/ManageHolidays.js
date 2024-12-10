@@ -16,7 +16,7 @@ import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
-const api = 'http://localhost:8080';
+const api = 'http://localhost:8080/api/clinic';
 
 const FormRow = styled(Box)({
   display: 'flex',
