@@ -1,0 +1,20 @@
+.line-login-btn {
+    background: url('/btn_login_base.png') no-repeat center center;
+    width: 200px; /* Adjust to the size of your button */
+    height: 50px; /* Adjust to the size of your button */
+    border: none;
+    cursor: pointer;
+  }
+  
+  .line-login-btn:hover {
+    background: url('/btn_login_hover.png') no-repeat center center;
+  }
+  
+  .line-login-btn:active {
+    background: url('/btn_login_press.png') no-repeat center center;
+  }
+  
+  .line-login-btn img {
+    visibility: hidden; /* Hide the image element */
+  }
+  
