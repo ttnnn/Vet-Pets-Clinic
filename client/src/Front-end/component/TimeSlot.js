@@ -4,22 +4,18 @@ import axios from 'axios';
 
 const api = 'http://localhost:8080/api/clinic';
 
-const generateTimeSlots = (startHour, endHour, stepMinutes, isToday) => {
+const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService) => {
   const slots = [];
-  const now = new Date();
   const start = new Date();
-
-  // ถ้าวันที่เลือกเป็นวันปัจจุบัน และเวลาปัจจุบันมากกว่า startHour ให้เริ่มสร้าง slot จากเวลาปัจจุบัน
-  if (isToday && (now.getHours() > startHour || (now.getHours() === startHour && now.getMinutes() > 0))) {
-    start.setHours(now.getHours(), Math.ceil(now.getMinutes() / stepMinutes) * stepMinutes, 0, 0);
-  } else {
-    start.setHours(startHour, 0, 0, 0);
-  }
+  start.setHours(startHour, 0, 0, 0);
 
   const end = new Date();
-  end.setHours(endHour, 30, 0, 0); // สิ้นสุดที่ 20:30
+  if (typeService === 'อาบน้ำ-ตัดขน') {
+    end.setHours(18, 0, 0, 0); // จำกัดให้สิ้นสุดที่ 18:00 สำหรับ "อาบน้ำ-ตัดขน"
+  } else {
+    end.setHours(endHour, 30, 0, 0); // สิ้นสุดที่ 20:30 สำหรับบริการอื่นๆ
+  }
 
-  
   const formatTime = (date) =>
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
@@ -38,11 +34,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
-  // console.log('TypeService' ,TypeService)
-  // console.log('selectedDate' ,selectedDate)
-  // console.log('bookedSlots' ,bookedSlots)
-  // console.log('timeSlots',timeSlots)
-  // console.log('selectedTime',selectedTime)
+
   const getStepMinutes = useCallback(() => {
     switch (TypeService) {
       case 'อาบน้ำ-ตัดขน':
@@ -55,37 +47,33 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   }, [TypeService]);
 
   const formatDate = (date) => {
-    // ตรวจสอบให้แน่ใจว่า date เป็นอ็อบเจกต์ Date
-    const validDate = new Date(date); 
+    const validDate = new Date(date);
     if (isNaN(validDate.getTime())) {
       console.error('Invalid date:', date);
       return ''; // คืนค่าเป็นสตริงว่างในกรณีที่ date ไม่ถูกต้อง
     }
-  
+
     const year = validDate.getFullYear();
     const month = String(validDate.getMonth() + 1).padStart(2, '0');
     const day = String(validDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  
 
   useEffect(() => {
     const fetchBookedSlots = async () => {
       if (selectedDate && TypeService) {
         const formattedDate = formatDate(selectedDate);
-        console.log('selectedDate',selectedDate)
-        console.log('formattedDate',formattedDate)
+        console.log('selectedDate', selectedDate);
+        console.log('formattedDate', formattedDate);
 
         try {
           const response = await axios.get(`${api}/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
           console.log('API Response:', response.data);
 
-          // const cleanedBookedSlots = response.data.map(slot => slot.replace('+07', ''));
           const cleanedBookedSlots = Array.isArray(response.data)
-          ? response.data.map(slot => (typeof slot === 'string' ? slot.replace('+07', '') : slot))
-          : [];
+            ? response.data.map(slot => (typeof slot === 'string' ? slot.replace('+07', '') : slot))
+            : [];
           setBookedSlots(cleanedBookedSlots);
-          
         } catch (error) {
           console.error('Error fetching booked time slots:', error);
         }
@@ -96,22 +84,36 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
 
     const stepMinutes = getStepMinutes();
     const isToday = selectedDate && formatDate(selectedDate) === formatDate(new Date());
-    const slots = stepMinutes === 0 ? [] : generateTimeSlots(9, 20, stepMinutes, isToday);
+    
+    let slots = generateTimeSlots(9, 20, stepMinutes, isToday, TypeService); // ใช้ slot ที่ได้จากฟังก์ชัน generateTimeSlots
+
+    // กรองช่วงเวลาที่เหลือจากเวลาปัจจุบัน
+    if (isToday) {
+      const now = new Date();
+      const nowTime = now.getHours() * 60 + now.getMinutes(); // เวลาเป็นนาที
+      slots = slots.filter(slot => {
+        const startTime = slot.split(' - ')[0];
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const slotTime = hours * 60 + minutes;
+        return slotTime > nowTime;
+      });
+    }
+
     setTimeSlots(slots);
     setSelectedTime(null);
     onTimeSelect(null);
   }, [TypeService, selectedDate, getStepMinutes, onTimeSelect]);
 
   const handleTimeSelect = (time) => {
-    if (time === selectedTime) {  //ถ้าคลิกช่วงเวลาเดิม selectedTime จะถูกตั้งค่าเป็น null เพื่อยกเลิกการเลือก
+    if (time === selectedTime) {
       setSelectedTime(null);
       onTimeSelect(null);
     } else {
-      setSelectedTime(time); //เซตเวลาที่เลือก
+      setSelectedTime(time);
       onTimeSelect(time);
     }
   };
-  //ตรวจสอบว่าช่วงเวลานั้น ๆ ถูกจองหรือไม่  includes จะเป็นการเช็คว่า array นั้นมีค่าที่เราต้องการมั้ย
+
   const isBooked = (time) => {
     const startTime = time.split(' - ')[0];
     const formattedStartTime = startTime + ':00';
@@ -124,7 +126,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
         timeSlots.map((time, index) => (
           <Button
             key={index}
-            onClick={() => handleTimeSelect(time)} //เซตเวลาที่กดเลือก
+            onClick={() => handleTimeSelect(time)}
             style={{
               margin: '5px',
               backgroundColor: selectedTime === time ? '#87CEFA' : (isBooked(time) ? 'lightgray' : 'white'),
@@ -135,10 +137,10 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
               color: isBooked(time) ? 'darkgray' : 'black',
               fontWeight: isBooked(time) ? 'normal' : 'bold',
             }}
-            disabled={isBooked(time)} //ช่วงเวลาที่ถูกจองแล้ว ปิดการใช้งานปุ่ม
+            disabled={isBooked(time)}
           >
             {time} 
-          </Button> //ช่วงเวลา TimeSlot ที่สร้างขึ้น
+          </Button>
         ))
       ) : (
         <p style={{ textAlign: 'center', color: 'red' }}>ไม่มีช่วงเวลาที่สามารถจองได้</p>

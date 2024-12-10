@@ -355,7 +355,7 @@ router.get('/appointments/booked-times', async (req, res) => {
   const query = `
     SELECT appointment_time 
     FROM appointment 
-    WHERE appointment_date = $1 AND type_service = $2
+    WHERE appointment_date = $1 AND type_service = $2 AND  status != 'ยกเลิกนัด'
   `;
 
   try {
