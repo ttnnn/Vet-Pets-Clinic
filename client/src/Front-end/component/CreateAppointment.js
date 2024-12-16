@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useMemo } from 'react';
 import { Box, Button, Typography, Paper, MenuItem, Select, FormControl, InputLabel, TextField, Autocomplete,
   Tabs, Tab,Checkbox, FormControlLabel,Snackbar  ,Dialog, DialogActions, 
   DialogContent, DialogTitle,} from '@mui/material';
@@ -170,6 +170,29 @@ const AddAppointment = () => {
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
+
+  const handleDateChange = (dateType, newDate) => {
+    if (dateType === 'checkIn') {
+      setCheckInDate(newDate);
+      if (activeTab === 1) setCheckOutDate(newDate); // สำหรับ Daytime Booking
+    } else if (dateType === 'checkOut') {
+      setCheckOutDate(newDate);
+    }
+  };
+  const filteredCages = useMemo(() => {
+    return petCages.map(cage => ({
+      label: `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)} (${cage.cage_capacity})`,
+      id: cage.pet_cage_id
+    }));
+  }, [petCages]);
+  
+  const filteredPersonnel = useMemo(() => {
+    return personnelList.map(personnel => ({
+      label: `${personnel.first_name} ${personnel.last_name} (${personnel.role})`,
+      id: personnel.personnel_id
+    }));
+  }, [personnelList]);
+  
     
   const createAppointment = async () => {
     try {
@@ -347,8 +370,8 @@ const AddAppointment = () => {
               variant="fullWidth"
               aria-label="full width tabs example"
               >
-                <StyledTab label="ค้างคืน" />
-                <StyledTab label="ระหว่างวัน" />
+                <StyledTab label="ค้างคืน" id="tab-overnight" />
+                <StyledTab label="ระหว่างวัน" id="tab-daytime" />
             </Tabs>
                   
             {activeTab === 0 && (
@@ -358,7 +381,7 @@ const AddAppointment = () => {
                     <DatePicker 
                       label="Check-in Date"
                       value={checkInDate}
-                      onChange={(newDate) => setCheckInDate(newDate)}
+                      onChange={handleDateChange}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -368,7 +391,7 @@ const AddAppointment = () => {
                     <DatePicker
                       label="Check-out Date"
                       value={checkOutDate}
-                      onChange={(newDate) => setCheckOutDate(newDate)}
+                      onChange={handleDateChange}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -387,10 +410,7 @@ const AddAppointment = () => {
                     <DatePicker 
                       label="เลือกวันที่"
                       value={checkInDate}
-                      onChange={(newDate) => {
-                        setCheckInDate(newDate);
-                        setCheckOutDate(newDate);
-                      }}
+                      onChange={handleDateChange}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -409,7 +429,7 @@ const AddAppointment = () => {
             />
               
             <Autocomplete
-            options={petCages}
+            options={filteredCages}
             getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)}  (${cage.cage_capacity}) `}
             onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
             renderInput={(params) => (
@@ -417,7 +437,7 @@ const AddAppointment = () => {
             )}
             />
             <Autocomplete
-              options={personnelList}
+              options={filteredPersonnel}
               getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name} (${personnel.role}) ` : ''}
               onChange={(event, value) => setSelectedPersonnel(value || null)}
               value={selectedPersonnel ? personnelList.find(p => p.personnel_id === selectedPersonnel.personnel_id) : null}

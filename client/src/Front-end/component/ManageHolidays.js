@@ -68,16 +68,28 @@ const ManageHolidays = () => {
     fetchHolidays();
   }, []);
   
-
   const fetchHolidays = async () => {
     try {
       const response = await axios.get(`${api}/dayoff`);
-      const data = response.data.map((holiday) => ({
-        ...holiday,
-        recurring_days: Array.isArray(holiday.recurring_days)
-          ? holiday.recurring_days
-          : JSON.parse(holiday.recurring_days || '[]'), // แปลงจาก JSON string เป็น array
-      }));
+      const data = response.data.map((holiday) => {
+        let recurringDays = [];
+        try {
+          // ตรวจสอบว่า recurring_days เป็น JSON string และสามารถแปลงได้
+          recurringDays = Array.isArray(holiday.recurring_days)
+            ? holiday.recurring_days
+            : holiday.recurring_days && typeof holiday.recurring_days === 'string'
+            ? JSON.parse(holiday.recurring_days)
+            : [];
+        } catch (e) {
+          console.error('Error parsing recurring_days:', e);
+          recurringDays = []; // ถ้าเกิดข้อผิดพลาดในการแปลงเป็น array ให้ใช้ array ว่าง
+        }
+  
+        return {
+          ...holiday,
+          recurring_days: recurringDays,
+        };
+      });
       setHolidays(data);
     } catch (error) {
       console.error('Error fetching holidays:', error);
@@ -86,7 +98,6 @@ const ManageHolidays = () => {
       setLoading(false);
     }
   };
-  
   
 
   const handleSnackbarClose = () => {
@@ -272,6 +283,8 @@ const ManageHolidays = () => {
                     <TableCell align="center">
                         {holiday.dayoff_type === 'weekly' 
                         ? holiday.recurring_days.join(', ') // แสดง recurring_days เป็นข้อความ
+                        : holiday.date_start === holiday.date_end
+                        ? formatDate(holiday.date_start) //  ถ้าเป็นวันเดียวกันให้แสดงแค่วันที่เริ่มต้น
                         : `${formatDate(holiday.date_start)} - ${formatDate(holiday.date_end)}`} {/* แสดงช่วงวันที่สำหรับวันหยุดเฉพาะกิจ */}
                     </TableCell>
                     <TableCell align="center">

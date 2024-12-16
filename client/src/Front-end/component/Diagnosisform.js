@@ -12,6 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
+import { debounce } from 'lodash';
+
 
 dayjs.locale('th'); // Set dayjs to use Thai locale
 const api = 'http://localhost:8080/api/clinic';
@@ -36,7 +38,8 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   // const [appointmentHotel, setAppointmentHotel] = useState([]);
   const [openAdmitDialog, setOpenAdmitDialog] = useState(false);
   const [selectedPetId, setSelectedPetId] = useState(null);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
+  const [isQueueSent, setIsQueueSent] = useState(false); // Track if the queue is sent
 
 
   const navigate = useNavigate();
@@ -120,6 +123,15 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   useEffect(() => {
     const fetchMedicalAndPersonnel = async () => {
       try {
+        // ตรวจสอบว่า appointmentId ไม่เป็น null ก่อนเรียก API
+        if (!appointmentId) {
+          setFormMedical('');
+          setFormData('');
+          setPersonnelList([]);
+          setCategories([]);
+          return; // หยุดการทำงานของฟังก์ชัน
+        }
+  
         // Fetch Medical Data
         setLoading();
         const medicalResponse = await axios.get(`${api}/medical/form/${appointmentId}`);
@@ -137,24 +149,27 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
             diag_cc: medicalData.diag_cc || '',
           });
         } else {
-          alert('ไม่พบข้อมูลการรักษานี้');
+          // กรณีไม่พบข้อมูล ไม่ต้อง alert แต่ตั้งค่าฟอร์มให้ว่างเปล่า
+          setFormMedical(null);
+          setFormData(null);
         }
-
+  
         // Fetch Personnel Data
         const personnelResponse = await axios.get(`${api}/personnel`);
         setPersonnelList(personnelResponse.data);
-
+  
+        // Fetch Service Categories
         const response = await axios.get(`${api}/servicecategory`);
-          // console.log('servicecategory' ,response.data )
-          setCategories(response.data);
-
+        setCategories(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
-        alert('ไม่สามารถดึงข้อมูลได้');
+        // แสดงข้อความใน console เท่านั้น ไม่ alert
       }
     };
+  
     fetchMedicalAndPersonnel();
   }, [appointmentId]);
+  
 
   // ตั้งค่าเริ่มต้น (วันที่และเวลา)
   useEffect(() => {
@@ -286,31 +301,72 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       )
     );
   };
-  const handleTopageAppointment =()=>{
+  const showAlert = (message, severity) => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setOpenSnackbar(true);
+  };
+
+
+  const handleTopageAppointment = debounce(async () => {
     if (!isDataSaved) {
-      setAlertMessage("กรุณาบันทึกข้อมูลก่อน");
-      setAlertSeverity("warning");  // ประเภทของ Alert
-      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      showAlert("กรุณาบันทึกข้อมูลก่อน", "warning");
       return; // หยุดการทำงานหากยังไม่ได้บันทึก
     }
+  
+    if (!isQueueSent) {
+      showAlert("กรุณาส่งคิวนัดหมายปัจจุบันก่อน", "warning");
+      return; // หยุดการทำงานหากคิวยังไม่ได้ส่ง
+    }
 
-    navigate('/appointment', { state: { locationOwnerID: ownerId , locationActiveTab: 2 ,locationPetID : petId} });
-  }
+    navigate('/clinic/appointment', { state: { locationOwnerID: ownerId , locationActiveTab: 2 ,locationPetID : petId} });
+  },300)
+
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);  // ปิด Snackbar
   };
-  const handleToAdmit =()=>{
+
+  const handleToAdmit = debounce(() => {
     if (!isDataSaved) {
-      setAlertMessage("กรุณาบันทึกข้อมูลก่อน");
-      setAlertSeverity("warning");  // ประเภทของ Alert
-      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      showAlert("กรุณาบันทึกข้อมูลก่อน", "warning");
       return; // หยุดการทำงานหากยังไม่ได้บันทึก
     }
-                
-      setSelectedAppointmentId(appointmentId);
-      setSelectedPetId(petId);
-      setOpenAdmitDialog(true);
-  }
+    
+    console.log('appointmentId', appointmentId);
+    console.log('petId', petId);
+    console.log('openAdmitDialog', openAdmitDialog);
+    
+    setSelectedAppointmentId(appointmentId);
+    setSelectedPetId(petId);
+    setOpenAdmitDialog(true);
+  }, 300); // ปรับระยะเวลาตามความเหมาะสม
+
+
+  const handleSendQueue = debounce(async () => {
+    try {
+      if (!isDataSaved) {
+        showAlert("กรุณาบันทึกข้อมูลก่อน", "warning");
+        return; // หยุดการทำงานหากยังไม่ได้บันทึก
+      }
+      if (isQueueSent) {  // ตรวจสอบว่าเคยส่งคิวไปแล้วหรือไม่
+        showAlert("คุณกดส่งคิวไปแล้ว", "warning");
+        return; // หยุดการทำงานหากเคยส่งคิวไปแล้ว
+      }
+
+      const statusUpdates = {
+        appointment_id: appointmentId,
+        pet_id: petId,
+        status: 'อนุมัติ',
+        queue_status: 'รอชำระเงิน'
+      };
+      await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
+      showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
+      setIsQueueSent(true); // กำหนดสถานะคิวว่าได้ถูกส่งไปแล้ว
+    } catch (error) {
+      showAlert("เกิดข้อผิดพลาดในการส่งข้อมูลเข้าคิว", "error");
+    }
+  }, 300);  // กำหนดเวลาหน่วง 300ms
+
 
   return (
     <Paper style={{ padding: 20 }}>
@@ -594,7 +650,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         <Button variant="outlined" color="primary"  onClick={handleTopageAppointment}>
           นัดหมายล่วงหน้า
         </Button>
-        <Button variant="outlined" color="primary"  >
+        <Button variant="outlined" color="primary"  onClick={handleSendQueue}>
          ส่งคิว
         </Button>
       </Box>

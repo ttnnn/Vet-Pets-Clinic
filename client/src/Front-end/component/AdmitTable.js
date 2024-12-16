@@ -4,7 +4,7 @@ import {  Box, Paper, Button,  TableCell,
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 
 // Categories for filtering
 const api = 'http://localhost:8080/api/clinic';
@@ -31,6 +31,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const [orderBy, setOrderBy] = useState('appointment_date');
     const [appointmentHotel, setAppointmentHotel] = useState([]);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const formatAppointmentDate = (date) => dayjs(date).format('DD/MM/YYYY');
     const fetchAppointments = async () => {
@@ -65,8 +66,26 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
       console.log('filteredAppointments',filteredAppointments)
       console.log('appointmentHotel:', appointmentHotel);
 
+    const handleButtonAction = async (appointment) => {
+      try {
+        // console.log('ownerId', appointment.owner_id)
+        if (appointment.type_service === 'ตรวจรักษา') {
+          const pet = {
+            petId: appointment.pet_id,
+          };
+          const owner = {
+            ownerId: appointment.owner_id,
+          };
+          navigate('/clinic/pet-profile', {
+            state: { pet, owner, appointmentId: appointment.appointment_id },
+          });
+        }
+      } catch (error) {
+        console.error('Error handling button action:', error);
+      }
+    };
+    
 
-      
       return (
         <Box>
           {/* แสดงข้อความแสดงชื่อ IPD Admit */}
@@ -167,7 +186,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                                 ปล่อยกลับ
                               </Button>
                               
-                              <Button variant="contained" color="primary">
+                              <Button variant="contained" color="primary"  onClick={() => handleButtonAction(appointment)}>
                                 บันทึกพักรักษา
                               </Button>
                             </Box>

@@ -11,6 +11,7 @@ import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
 import DiagnosisForm from '../component/Diagnosisform';
 import TableHistory from '../component/Tablehistory';
+import RecordMedical from '../component/recordAdmit';
 
 
 
@@ -78,6 +79,7 @@ const PetProfilePage = () => {
     const { pet, owner } = location.state; // ดึงค่า pet และ owner จาก location.state
     const petId = pet?.petId;
     const ownerId = owner?.ownerId;
+    
   
     if (petId && ownerId) {
       fetchPetAndOwnerDetails(petId, ownerId);
@@ -225,16 +227,16 @@ const handleUpdate = async (updatedData, type) => {
     setSnackbarOpen(false);
   };
   const tabToTypeServiceMap = {
+    1: 'บันทึกพักรักษา',
     2: 'ตรวจรักษา', // "ประวัติการรักษา"
     3: 'วัคซีน', // "ประวัติการรับวัคซีน"
     4: 'อาบน้ำ-ตัดขน', // "ประวัติการอาบน้ำตัดขน"
     5: 'ฝากเลี้ยง', // "ประวัติการฝากเลี้ยง"
+   
   };
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-
-      {/* Main Content Area with Gray Background */}
       <Box sx={{ flexGrow: 1, padding: 3, backgroundColor: '#f5f5f5' }}>
         {/* Header */}
         <Box
@@ -369,6 +371,16 @@ const handleUpdate = async (updatedData, type) => {
            appointmentId={appointmentId} 
            ownerId={owner.owner_id}
         />}
+        {activeTab === 1 &&
+          <RecordMedical
+          appointments={appointments}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          activeTabLabel={tabToTypeServiceMap[activeTab]}
+          selectedPetId={pet.pet_id}
+          
+          />
+        }
          {activeTab >= 2 && (
          <TableHistory
           appointments={appointments}

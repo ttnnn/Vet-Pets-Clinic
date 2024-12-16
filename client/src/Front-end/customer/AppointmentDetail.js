@@ -1,9 +1,9 @@
 import React from 'react';
-import { useParams,  useNavigate } from 'react-router-dom';
+import {  useNavigate } from 'react-router-dom';
 import { Container, Typography, Button } from '@mui/material';
 
 const AppointmentDetail = () => {
-  const { id } = useParams();
+  // const { id } = useParams();
   const Navigate = useNavigate
   // Mock data for demonstration
   const appointment = {

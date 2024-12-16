@@ -6,6 +6,9 @@ const dayjs = require('dayjs');
 const express = require('express');
 const router = express.Router();
 require('dotenv').config();
+const bcrypt = require('bcrypt'); 
+
+
 const pool = require('../db.js');
 
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
@@ -213,6 +216,27 @@ router.get('/vaccines', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+router.post('/appointment/vaccien', async (req, res) => {
+  const { ids } = req.body;
+  const query = `
+    SELECT
+      historyvaccine.appointment_id,
+      servicecategory.category_name
+    FROM historyvaccine
+    LEFT JOIN servicecategory ON historyvaccine.category_id = servicecategory.category_id
+    WHERE historyvaccine.appointment_id = ANY($1)
+  `;
+
+  try {
+    const result = await pool.query(query, [ids]);
+    res.json(result.rows); // ส่งข้อมูลกลับในรูปแบบ { appointment_id, category_name }  ตอบกลับข้อมูลหลายตัว
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 router.post('/appointments/:appointmentId/vaccines', async (req, res) => {
   console.log('/appointments/:appointmentId/vaccines' , req.body )
@@ -902,6 +926,7 @@ router.get('/appointment/hotel', async (req, res) => {
       pets.pet_name,
       pets.pet_id,
       pets.pet_species,
+      owner.owner_id,
       owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
       petshotel.start_date,
       petshotel.end_date,
@@ -926,6 +951,7 @@ router.get('/appointment/hotel', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 router.post('/create-appointment', async (req, res) => {
@@ -1105,7 +1131,7 @@ router.get('/dayoff', async (req, res) => {
 });
 
 
-// Add New Day Off Record                                                                                                                                                                                                                                    app.post('/dayoff', async (req, res) => {
+// Add New Day Off Record                                                                                                                                                                                                                                    router.post('/dayoff', async (req, res) => {
 
 router.post('/dayoff', async (req, res) => {
   console.log('/dayoff', req.body);
@@ -1146,7 +1172,7 @@ router.put('/dayoff/:id', async (req, res) => {
   try {
     const result = await pool.query(
       'UPDATE dayoff SET date_start = $1, date_end = $2 ,dayoff_note = $3, dayoff_type = $4, recurring_days = $5 WHERE dayoff_id = $6',
-      [date_start, date_end, dayoff_note, dayoff_type, recurring_days, id]
+      [date_start, date_end, dayoff_note, dayoff_type, JSON.stringify(recurring_days), id]
     );
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Updated successfully' });
@@ -1173,6 +1199,195 @@ router.delete('/dayoff/:id', async (req, res) => {
     }
   } catch (error) {
     console.error('Error deleting day off record:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.post('/admitrecord', async (req, res) => {
+  const {
+    admit_temp,
+    admit_pressure,
+    admit_heartrate,
+    record_time,
+    record_medical,
+    record_medicine,
+    appointment_id,
+  } = req.body;
+  console.log('/admitrecord' , req.body )
+  // ตรวจสอบข้อมูลก่อนเพิ่ม
+  if (!admit_temp || !record_medical || !appointment_id) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
+  }
+
+  try {
+    const query = `
+      INSERT INTO admitrecord (
+        admit_temp, admit_pressure, admit_heartrate, record_time,
+        record_medical, record_medicine, appointment_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+    const values = [
+      admit_temp,
+      admit_pressure || null,
+      admit_heartrate || null,
+      record_time,
+      record_medical,
+      record_medicine || null,
+      appointment_id,
+    ];
+
+    const result = await pool.query(query, values);
+
+    res.status(201).json({
+      message: 'เพิ่มข้อมูลสำเร็จ',
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Error inserting data:', error);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล' });
+  }
+});
+
+//ข้อมูล admit
+
+router.get("/admitrecord", (req, res) => {
+  const appointmentId = req.query.appointment_id; // รับค่าจาก query string
+  
+  if (!appointmentId) {
+    return res.status(400).json({ error: "Appointment ID is required" });
+  }
+
+  const query = `SELECT * FROM admitrecord WHERE appointment_id = $1`; // ใช้ placeholder สำหรับค่าที่ปลอดภัย
+  
+  pool.query(query, [appointmentId], (err, results) => {
+    if (err) {
+      console.error("Database query error: ", err);
+      return res.status(500).json({ error: "Failed to retrieve data" });
+    }
+
+    if (results.rows.length === 0) {
+      return res.status(404).json({ message: "No admit record found for this appointment" });
+    }
+
+    return res.json({ data: results.rows });
+  });
+});
+router.put('/personnel/change-password', async (req, res) => {
+  const { user_name, oldPassword, newPassword } = req.body;
+
+  if (!user_name || !oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบ' });
+  }
+
+  try {
+    const userResult = await pool.query('SELECT password_encrip FROM personnel WHERE user_name = $1', [user_name]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'ไม่พบผู้ใช้งาน' });
+    }
+
+    const validPassword = await bcrypt.compare(oldPassword, userResult.rows[0].password_encrip);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: 'รหัสผ่านเก่าไม่ถูกต้อง' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query('UPDATE personnel SET password_encrip = $1 WHERE user_name = $2', [hashedPassword, user_name]);
+
+    res.json({ message: 'เปลี่ยนรหัสผ่านสำเร็จ' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน' });
+  }
+});
+
+router.post('/personnel', async (req, res) => {
+  console.log('/personnel',req.body)
+  const { first_name, last_name, user_name, password_encrip, role } = req.body;
+
+  console.log("data", req.body);
+
+  if (!first_name || !last_name || !user_name || !password_encrip || !role) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
+  try {
+    await client.query('BEGIN'); // เริ่มต้น Transaction
+
+    // บันทึกข้อมูลในตาราง personnel
+    const result = await client.query(
+      'INSERT INTO personnel (first_name, last_name, user_name, password_encrip, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [first_name, last_name, user_name, password_encrip, role]
+    );
+
+    await client.query('COMMIT'); // Commit transaction
+    res.status(201).json(result.rows[0]); // ส่งข้อมูลกลับไปในรูป JSON
+  } catch (error) {
+    await client.query('ROLLBACK'); // Rollback transaction หากเกิดข้อผิดพลาด
+    console.error(error);
+    res.status(500).json({ error: 'Failed to create personnel' });
+  } finally {
+    client.release(); // ปล่อยการเชื่อมต่อกลับ
+  }
+});
+
+router.get('/personnel', async (req, res) => { 
+  console.log("/personnel", req.body);
+
+  const query = 
+    'SELECT * FROM personnel'
+  ;
+
+  try {
+    const results = await pool.query(query);
+
+    // แปลงผลลัพธ์เป็นอาร์เรย์ของหมวดหมู่บริการ
+    const personnel = results.rows;
+    res.json(personnel);
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.delete('/personnel/:id', async (req, res) => {
+  console.log('id', req.params)
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM personnel WHERE personnel_id = $1', [id]);
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Category not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.put('/personnel/:id', async (req, res) => {
+  const { id } = req.params;
+  const { first_name, last_name, user_name, password_encrip,role  } = req.body;
+
+  try {
+    const result = await pool.query(
+      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, password_encrip = $4,  role = $5 WHERE personnel_id = $6',
+      [first_name, last_name, user_name, password_encrip, role, id]
+    );
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Category not found' });
+    }
+  } catch (error) {
+    console.error('Error updating category:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });

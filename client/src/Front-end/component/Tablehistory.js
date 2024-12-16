@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Paper, Button, TextField, Box, Typography
+  TableSortLabel, Paper, Button, TextField, Box, Typography,
 } from '@mui/material';
-import FolderIcon from '@mui/icons-material/Folder';
+import axios from 'axios';
 import dayjs from 'dayjs';
-import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
+import 'dayjs/locale/th';
+import FolderIcon from '@mui/icons-material/Folder';
 
-dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+dayjs.locale('th');
+const api = 'http://localhost:8080/api/clinic';
+
+const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
+const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
+const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) return -1;
@@ -20,11 +26,6 @@ function getComparator(order, orderBy) {
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
-
-
-const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
-const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
-const formatTime = (timeString) => timeString.split(':').slice(0, 2).join(':');
 
 const CardLayout = ({ appointment }) => (
   <Box
@@ -54,6 +55,41 @@ const CardLayout = ({ appointment }) => (
 const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabel, selectedPetId }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
+  const [mergedAppointments, setMergedAppointments] = useState([]);
+
+  useEffect(() => {
+    const fetchVaccines = async () => {
+      if (activeTabLabel === 'วัคซีน') {
+        try {
+          const ids = appointments
+            .filter((appointment) => appointment.type_service === 'วัคซีน')
+            .map((appointment) => appointment.appointment_id);
+  
+          const response = await axios.post(`${api}/appointment/vaccien`, { ids });
+          const vaccineDataMap = response.data.reduce((acc, curr) => {
+            acc[curr.appointment_id] = curr.category_name;
+            return acc;
+          }, {});
+  
+          const updatedAppointments = appointments.map((appointment) => ({
+            ...appointment,
+            category_name: vaccineDataMap[appointment.appointment_id] || 'ไม่มีข้อมูลวัคซีน',
+          }));
+  
+          setMergedAppointments(updatedAppointments);
+        } catch (error) {
+          console.error('Error fetching vaccines:', error);
+        }
+      } else {
+        setMergedAppointments(appointments);
+      }
+    };
+  
+    fetchVaccines();
+  }, [appointments, activeTabLabel]);
+
+  
+  
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -61,7 +97,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setOrderBy(property);
   };
 
-  const filteredAppointments = appointments.filter((appointment) => {
+  const filteredAppointments = mergedAppointments.filter((appointment) => {
     const matchesPetAndTypeService =
       appointment.pet_id === selectedPetId &&
       appointment.type_service === activeTabLabel &&
@@ -89,7 +125,11 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         </Button>
       </Box>
 
-      {activeTabLabel === 'ตรวจรักษา' ? (
+      {filteredAppointments.length === 0 ? (
+        <Typography variant="h6" align="center" sx={{ mt: 4 }}>
+          ไม่มีประวัติ
+        </Typography>
+      ) : activeTabLabel === 'ตรวจรักษา' ? (
         <Box>
           {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
             <CardLayout key={index} appointment={appointment} />
@@ -119,19 +159,23 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                     เวลา
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>นัดมา</TableCell>
                 <TableCell>รายละเอียด</TableCell>
+                {activeTabLabel === 'วัคซีน' && <TableCell>ชื่อวัคซีน</TableCell>}
                 <TableCell>สถานะ</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
+              {filteredAppointments.sort((a, b) => (order === 'asc' ? a[orderBy] < b[orderBy] : a[orderBy] > b[orderBy])).map((appointment, index) => (
                 <TableRow key={index}>
                   <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
                   <TableCell>{appointment.appointment_id}</TableCell>
-                  <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
-                  <TableCell>{appointment.detail_service || '-'}</TableCell>
+                  <TableCell>
+                    {appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}
+                  </TableCell>
                   <TableCell>{appointment.reason || '-'}</TableCell>
+                  {activeTabLabel === 'วัคซีน' && (
+                    <TableCell>{appointment.category_name || 'ไม่มีข้อมูลวัคซีน'}</TableCell>
+                  )}
                   <TableCell>{appointment.status}</TableCell>
                 </TableRow>
               ))}

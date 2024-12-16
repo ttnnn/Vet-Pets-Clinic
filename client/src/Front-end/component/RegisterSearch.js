@@ -172,7 +172,7 @@ const RegisterSearch = () => {
                     }}
                     onClick={() => {
                       const owner = owners.find(owner => owner.owner_id === selectedOwnerId);
-                      navigate('/clinic/pet-profile', { state: { pet, owner } });
+                      navigate('/clinic/pet-profile', { state: { pet, owner ,appointmentId:null } });
                     }}
                   >
                     โปรไฟล์

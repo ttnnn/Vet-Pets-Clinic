@@ -36,12 +36,14 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
   };
 
   const resetFields = () => {
-    setAppointmentDate('');
-    setAppointmentTime('');
+    setAppointmentDate(null);
+    setAppointmentTime(null);
     setIsNoTime(false);
   };
 
   const validateAndOpenDialog = () => {
+    console.log('validateAndOpenDialog')
+
     if (!appointmentDate || (!appointmentTime && !isNoTime)) {
       setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบ', severity: 'error' });
       return;
@@ -50,12 +52,14 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
   };
 
   const handlePostpone = async () => {
+
     try {
       const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
       const formatTime = (time) => {
         if (!time) return null;
         const [startTime] = time.split(' - ');
         const [hours, minutes] = startTime.split(':');
+        console.log(`${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`)
         return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       };
 
@@ -69,9 +73,20 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       // return;
     // }
 
+      const date_format = formatDate(appointmentDate) ;
+
+      let time_format = null; // Use let instead of const
+      if (isNoTime === false) {
+        // console.log('appointmentTime', appointmentTime);
+        time_format = formatTime(appointmentTime);
+      }
+
+
+      console.log("format",date_format, " ",time_format)
+
       const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
-        appointment_date: formatDate(appointmentDate),
-        appointment_time: isNoTime ? null : formatTime(appointmentTime),
+        appointment_date: date_format,
+        appointment_time: time_format,
       });
 
       if (response.status === 200) {
