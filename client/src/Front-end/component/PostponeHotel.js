@@ -91,10 +91,8 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
         setSnackbarOpen(true);
         setSnackbarMessage("ข้อมูลถูกอัปเดตสำเร็จ!");
         setSnackbarColor("green");  // Success color (green)
-
-        if (!isAdmitBooking) {
-          updateAppointments();
-        }
+        updateAppointments();
+        
         resetFields();
         handleClose(); 
       }

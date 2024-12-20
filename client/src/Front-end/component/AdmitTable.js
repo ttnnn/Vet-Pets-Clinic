@@ -5,6 +5,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import PostponeHotel from './PostponeHotel';
+import { debounce } from 'lodash';
+
 
 // Categories for filtering
 const api = 'http://localhost:8080/api/clinic';
@@ -31,6 +34,9 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const [orderBy, setOrderBy] = useState('appointment_date');
     const [appointmentHotel, setAppointmentHotel] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [openAdmitDialog, setOpenAdmitDialog] = useState(false);
+    const [selectedPetId, setSelectedPetId] = useState(null);
+    const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
     const navigate = useNavigate();
 
     const formatAppointmentDate = (date) => dayjs(date).format('DD/MM/YYYY');
@@ -58,6 +64,17 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
       setOrderBy(property);
     };
       
+    const handleToAdmit = debounce( async (appointment) =>  {
+      
+      console.log('appointmentId', appointment.appointment_id);
+      console.log('petId', appointment.pet_id);
+      console.log('openAdmitDialog', openAdmitDialog);
+      
+      setSelectedAppointmentId(appointment.appointment_id);
+      setSelectedPetId(appointment.pet_id);
+      setOpenAdmitDialog(true);
+
+    }, 300); // ปรับระยะเวลาตามความเหมาะสม
       
     const filteredAppointments = appointmentHotel.filter(appointment => {
         return appointment.queue_status === 'admit' && appointment.status === 'อนุมัติ';
@@ -159,7 +176,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                                   sx={{
                                     bgcolor: backgroundColor, // สีพื้นหลังตามเงื่อนไข
                                     fontWeight: isPastEndDate || isEndDateToday ? 'bold' : 'normal', // เน้นข้อความถ้าเป็นเงื่อนไขสีแดง
-                                    width: '60%', // ขนาดของกล่องเป็น 60% ของช่อง
+                                    width: '100%', // ขนาดของกล่องเป็น 60% ของช่อง
                                     padding: '4px', 
                                     borderRadius: '4px' 
                                 }}>
@@ -185,10 +202,16 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                               >
                                 ปล่อยกลับ
                               </Button>
-                              
-                              <Button variant="contained" color="primary"  onClick={() => handleButtonAction(appointment)}>
-                                บันทึกพักรักษา
+                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleToAdmit(appointment)}>
+                                ขยายเวลา
                               </Button>
+                              
+                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleButtonAction(appointment)}>
+                                บันทึกรักษา
+                              </Button>
+                              
+                              
+                              
                             </Box>
                           </TableCell>
                         </TableRow>
@@ -199,6 +222,14 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
               </TableContainer>
             </Paper>
           )}
+          <PostponeHotel
+            open={openAdmitDialog}
+            handleClose={() => setOpenAdmitDialog(false)}
+            appointmentId={selectedAppointmentId}
+            updateAppointments={fetchAppointments}
+            petId={selectedPetId}
+            isAdmitBooking={true} 
+          />
         </Box>
       );
       

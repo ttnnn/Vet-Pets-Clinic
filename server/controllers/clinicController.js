@@ -760,7 +760,7 @@ router.get('/personnel', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
+//อัปเดตคิว
 router.put('/appointment/:id', async (req, res) => {
   const { id } = req.params;
   const { status, queue_status } = req.body;
@@ -828,7 +828,7 @@ router.put('/appointment/:id', async (req, res) => {
   }
 });
 
-
+//เลื่อนนนัด
 router.put('/postpone/appointment/:id', async (req, res) => {  
   const { id } = req.params;
   const { appointment_date, appointment_time } = req.body;
@@ -915,6 +915,7 @@ router.get('/appointments/:appointmentId', async (req, res) => {
   }
 });
 
+//ข้อมูลฝากเลี้ยง
 router.get('/appointment/hotel', async (req, res) => {
   const query = `
     SELECT 
@@ -1274,6 +1275,26 @@ router.get("/admitrecord", (req, res) => {
     return res.json({ data: results.rows });
   });
 });
+
+router.get('/admitrecord/update', async (req, res) => { 
+  console.log("/admitrecord/update", req.body);
+
+  const query = 
+    'SELECT * FROM admitrecord'
+  ;
+
+  try {
+    const results = await pool.query(query);
+
+    // แปลงผลลัพธ์เป็นอาร์เรย์ของหมวดหมู่บริการ
+    const personnel = results.rows;
+    res.json(personnel);
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 router.put('/personnel/change-password', async (req, res) => {
   const { user_name, oldPassword, newPassword } = req.body;
 
@@ -1391,6 +1412,59 @@ router.put('/personnel/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+router.get('/history/vaccine/:appointment_id', async (req, res) => {
+  const appointment_id = req.params.appointment_id; // Get pet_id from req.params
+  const query = `SELECT historyvaccine.category_id , servicecategory.category_name , servicecategory.price_service FROM historyvaccine
+  JOIN servicecategory on  servicecategory.category_id = historyvaccine.category_id
+  WHERE appointment_id = $1`;
+
+  try {
+    const result = await pool.query(query, [appointment_id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'No found ' });
+    }
+
+    // res.json(result.rows[0]); // Send the result as an object (first row)
+    res.json(result.rows); // Sends all rows as an array
+
+  } catch (err) {
+    console.error('Error executing query:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/appointment/hotel/:appointment_id', async (req, res) => {
+  const appointment_id = req.params.appointment_id;
+  const query = `
+    SELECT 
+      appointment.appointment_id,
+      petshotel.start_date,
+      petshotel.end_date,
+      petshotel.num_day,
+      petshotel.status AS status_hotel,
+      petshotel.pet_cage_id,
+      personnel.first_name || ' ' || personnel.last_name AS personnel_name,
+      CASE 
+        WHEN petshotel.end_date < CURRENT_DATE THEN CURRENT_DATE - petshotel.end_date
+        ELSE 0
+      END AS days_overdue
+    FROM appointment
+    JOIN personnel ON appointment.personnel_id = personnel.personnel_id
+    LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+    WHERE appointment.appointment_id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [appointment_id]);
+    res.json(result.rows); // Return result rows as JSON
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

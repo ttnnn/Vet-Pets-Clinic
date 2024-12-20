@@ -4,10 +4,10 @@ import {
   TableSortLabel, Paper, Button, TextField, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, 
   FormControl, InputAdornment, InputLabel,  OutlinedInput, Alert,Snackbar ,Collapse,
   List,
-  ListItem,
-  ListItemText,
+  ListItem, IconButton
 } from '@mui/material';
 
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import FolderIcon from '@mui/icons-material/Folder';
 import dayjs from 'dayjs';
@@ -58,105 +58,178 @@ const RecordCard = ({ record }) => (
     flexDirection="column"
     border="1px solid #ddd"
     borderRadius="8px"
-    padding="16px"
+    padding="10px"
     marginBottom="8px"
-    backgroundColor="#f9f9f9"
+    backgroundColor="#fffffc"
+    flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
       วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
     </Typography>
-    <Typography variant="body2" color="textSecondary">
-      {record.record_medical}
-    </Typography>
+
   </Box>
 );
-
-const CardLayout = ({ appointment, onOpenDialog }) => {
+const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
   const [records, setRecords] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [filteredRecords, setFilteredRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // ฟังก์ชันดึงข้อมูลจาก API ตาม appointment_id
+  useEffect(() => {
+    if (updatedRecords && updatedRecords.length > 0) {
+      setRecords(updatedRecords);
+      setFilteredRecords(updatedRecords);
+    }
+  }, [updatedRecords]);
+
   useEffect(() => {
     const fetchRecords = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`${api}/admitrecord?appointment_id=${appointment.appointment_id}`);
         const data = await response.json();
-
-        // กรองข้อมูลให้เลขนัดหมายที่ซ้ำกันแสดงแค่ครั้งเดียว
-        const filteredRecords = data.data.reduce((acc, record) => {
-          if (!acc.some((r) => r.appointment_id === record.appointment_id)) {
-            acc.push(record);
-          }
-          return acc;
-        }, []);
-
-        setRecords(filteredRecords);
+        setRecords(data.data);
+        setFilteredRecords(data.data);
       } catch (error) {
         console.error("Error fetching records:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchRecords();
-  }, [appointment.appointment_id]);
+    if (!updatedRecords || updatedRecords.length === 0) {
+      fetchRecords();
+    }
+  }, [appointment.appointment_id, updatedRecords]);
 
-  // ฟังก์ชันเปิด/ปิดดูรายละเอียด
   const toggleDetails = () => {
     setIsExpanded(!isExpanded);
   };
 
+  const handleCardClick = (record) => {
+    setSelectedRecord(record); // กำหนดข้อมูลการ์ดที่ถูกเลือก
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedRecord(null); // ล้างข้อมูลการเลือก
+  };
+
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      border="1px solid #ddd"
-      borderRadius="8px"
-      padding="16px"
-      marginBottom="8px"
-      backgroundColor="#f9f9f9"
-    >
-      {/* Main card content */}
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box display="flex" alignItems="center">
-          <FolderIcon style={{ marginRight: '12px', color: '#757575' }} />
-          <Typography variant="body1" fontWeight="bold">
-          {formatDate2(appointment.appointment_date)}
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="textSecondary">
-          {appointment.appointment_id}
-        </Typography>
-        <Box>
-          <Typography variant="body2" color="textSecondary">
-            {appointment.queue_status || 'ไม่มีรายละเอียด'}
-          </Typography>
-        </Box>
-        <AddRecordButton onClick={() => onOpenDialog(appointment)} />
-      </Box>
-
-      {/* Sub-cards section */}
-      <Collapse in={isExpanded}>
-        <List>
-          {records.length > 0 ? (
-            records.map((record) => (
-              <ListItem key={record.appointment_id}>
-                <RecordCard record={record} />
-              </ListItem>
-            ))
-          ) : (
-            <Typography variant="body2" color="textSecondary" padding="8px">
-              ยังไม่มีการบันทึก
+    <Box display="flex">
+      {/* Main section on the left */}
+      <Box
+        display="flex"
+        flexDirection="column"
+        border="1px solid #ddd"
+        borderRadius="8px"
+        padding="16px"
+        marginBottom="8px"
+        backgroundColor="#f9f9f9"
+        flex="1"
+      >
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box display="flex" alignItems="center">
+            <FolderIcon style={{ marginRight: '12px', color: '#757575' }} />
+            <Typography variant="body1" fontWeight="bold">
+              {formatDate2(appointment.appointment_date)}
             </Typography>
-          )}
-        </List>
-      </Collapse>
+          </Box>
+          <Typography variant="body2" color="textSecondary">
+            {appointment.appointment_id}
+          </Typography>
+          <AddRecordButton onClick={() => onOpenDialog(appointment)} />
+        </Box>
 
-      {/* Button to toggle the expansion of sub-cards */}
-      <Button variant="text" size="small" onClick={toggleDetails}>
-        {isExpanded ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
-      </Button>
+        <Collapse in={isExpanded}>
+          <Box display="flex" flexDirection="row" justifyContent="space-between">
+            <List style={{ flex: 1 }}>
+              {isLoading ? (
+                <Typography variant="body2" color="textSecondary" padding="8px">
+                  กำลังโหลดข้อมูล...
+                </Typography>
+              ) : filteredRecords.length > 0 ? (
+                filteredRecords.map((record, index) => (
+                  <ListItem
+                    key={`${record.record_time}-${index}`}
+                    style={{ marginBottom: '8px', borderRadius: '8px' }}
+                  >
+                    <RecordCard record={record} />
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => handleCardClick(record)}
+                      style={{
+                        marginLeft: '8px',
+                        backgroundColor:
+                          selectedRecord?.record_time === record.record_time ? '#2196f3' : '#e0e0e0',
+                        color:
+                          selectedRecord?.record_time === record.record_time ? '#fff' : '#000',
+                      }}
+                    >
+                      เพิ่มเติม
+                    </Button>
+                  </ListItem>
+                ))
+              ) : (
+                <Typography variant="body2" color="textSecondary" padding="8px">
+                  ไม่มีข้อมูลที่จะแสดง
+                </Typography>
+              )}
+            </List>
+
+            {selectedRecord && (
+              <Box
+                display="flex"
+                flexDirection="column"
+                border="1px solid #ddd"
+                borderRadius="8px"
+                padding="16px"
+                marginLeft="8px"
+                marginTop='10px'
+                backgroundColor="#fff"
+                flex="0.6"
+                position="relative" // ใช้ relative เพื่อจัดตำแหน่งไอคอน
+              >
+                 <IconButton
+                  onClick={handleCloseDetails}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    zIndex: 10,
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+                <Typography variant="h6" fontWeight="bold" marginBottom="16px">
+                  ข้อมูลการบันทึก
+                </Typography>
+                <Typography variant="body1">
+                  <strong>วันที่บันทึก: </strong>{formatDateAdmit(selectedRecord.record_time)}
+                </Typography>
+                <Typography variant="body1">
+                  <strong>เวลา: </strong>{formatAdmit(selectedRecord.record_time)}
+                </Typography>
+                <Typography><strong>อุณหภูมิ: </strong>{selectedRecord.admit_temp} °C</Typography>
+                <Typography><strong>ความดัน: </strong>{selectedRecord.admit_pressure} mmHg</Typography>
+                <Typography><strong>อัตราการเต้นของหัวใจ: </strong>{selectedRecord.admit_heartrate} bpm</Typography>
+                <Typography><strong>บันทึกติดตามอาการ: </strong>{selectedRecord.record_medical}</Typography>
+                <Typography><strong>บันทึกการจ่ายยา: </strong>{selectedRecord.record_medicine}</Typography>
+
+              </Box>
+            )}
+          </Box>
+        </Collapse>
+
+        <Button variant="text" size="small" onClick={toggleDetails}>
+          {isExpanded ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
+        </Button>
+      </Box>
     </Box>
   );
 };
+
 
 const RecordMedical = ({
   appointments,
@@ -172,6 +245,7 @@ const RecordMedical = ({
   const [alertMessage, setAlertMessage] = useState("");   // ข้อความสำหรับ Alert
   const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
   const [openSnackbar, setOpenSnackbar] = useState(false); 
+  const [recordUpdate, setUpdateRecords] = useState([]);
 
   const [formMedical, setFormMedical] = useState({
     admit_temp: null,
@@ -215,6 +289,16 @@ const RecordMedical = ({
       rec_date: now.format('YYYY-MM-DD'),
     });}
 
+    const updateAdmitrecord = () => {
+      axios
+        .get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
+        .then((response) => {
+          setUpdateRecords(response.data.data); // อัปเดตข้อมูลใน state
+        })
+        .catch((error) => console.error('Error fetching updated records:', error));
+    };
+      
+
   const handleSubmit = async () => {
   
     if (!formMedical.admit_temp ) {
@@ -252,6 +336,8 @@ const RecordMedical = ({
       setAlertSeverity("success");  // ประเภทของ Alert
       setOpenSnackbar(true);
       handleCloseDialog();
+
+      updateAdmitrecord();
       
     } catch (error) {
       setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -328,6 +414,7 @@ const RecordMedical = ({
               key={index}
               appointment={appointment}
               onOpenDialog={handleOpenDialog}
+              updatedRecords={recordUpdate  }
             />
           ))}
         </Box>

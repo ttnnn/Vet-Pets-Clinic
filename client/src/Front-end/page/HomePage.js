@@ -139,16 +139,32 @@ const HomeDashboard = () => {
 
   //จำนวนคิวที่กำลังให้บริการ
   const ongoingAppointments = appointments.filter((a) => {
-    if (a.type_service !== 'ฝากเลี้ยง') {
-      return (
-        (a.queue_status === 'กำลังให้บริการ' || a.queue_status === 'admit') &&
-        dayjs(a.appointment_date).isSame(today, 'day') &&
-        a.status === 'อนุมัติ'
-      );
-    } else {
-      return a.queue_status === 'กำลังให้บริการ' &&  a.status === 'อนุมัติ';
+    const isToday = dayjs(a.appointment_date).isSame(today, 'day');
+    const isApproved = a.status === 'อนุมัติ';
+  
+    if (a.type_service === 'ตรวจรักษา') {
+      // ถ้าเป็นตรวจรักษาและสถานะ admit ให้ไม่สนใจวัน
+      if (a.queue_status === 'admit' && isApproved) {
+        return true;
+      }
+      // ถ้าเป็นตรวจรักษาและสถานะกำลังให้บริการ ให้นับเฉพาะวันนี้
+      return a.queue_status === 'กำลังให้บริการ' && isToday && isApproved;
     }
+  
+    if (a.type_service === 'ฝากเลี้ยง') {
+      // นับเฉพาะกำลังให้บริการสำหรับฝากเลี้ยง
+      return a.queue_status === 'กำลังให้บริการ' && isApproved;
+    }
+  
+    // นับทั้งกำลังให้บริการและ admit สำหรับบริการอื่น ๆ
+    return (
+      (a.queue_status === 'กำลังให้บริการ' || a.queue_status === 'admit') &&
+      isToday &&
+      isApproved
+    );
   }).length;
+  
+  
   
 //ถ้ายังไม่ชำระเงินจะยังขึ้นแสดงไว้
   const pendingPayment = appointments.filter(
@@ -239,6 +255,9 @@ const HomeDashboard = () => {
           />
           <AdmitTable
             appointments={filteredAppointments('admit')}
+            onMoveToPending={(appointment_id) =>
+              updateAppointmentStatus(appointment_id, { status: 'อนุมัติ' ,queue_status: 'รอชำระเงิน' })
+            }
           />
           </>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useCallback  } from 'react';
 import {
   Box,
   Paper,
@@ -26,6 +26,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
 
+import { debounce } from 'lodash';
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 const api = 'http://localhost:8080/api/clinic';
@@ -82,9 +83,6 @@ const PendingAppointments = ({ appointments }) => {
     setSearchTerm(event.target.value);
     resetPage();
   };
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -115,26 +113,6 @@ const PendingAppointments = ({ appointments }) => {
     });
   };
   
-  const handleIncreaseQuantity = (id) => {
-    console.log(id);
-
-    setSelectedItems((prevItems) =>
-      prevItems.map((item) =>
-        item.category_id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
-  
-  const handleDecreaseQuantity = (id) => {
-    setSelectedItems((prevItems) =>
-      prevItems
-        .map((item) =>
-          item.category_id === id ? { ...item, quantity: item.quantity - 1 } : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
-  };
-
 
   const calculateTotal = () => {
     return selectedItems.reduce(
@@ -143,28 +121,109 @@ const PendingAppointments = ({ appointments }) => {
     );
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(`${api}/servicecategory`);
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${api}/servicecategory`);
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleClickOpen = (appointment) => {
-    setSelectedAppointment({
-      name: appointment.full_name,
-      pet: appointment.pet_name,
-      orderNumber: appointment.appointment_id,
-      date: appointment.appointment_date,
-      species:appointment.pet_species
-    });
-    setOpenPopup(true);
-  };
+    fetchCategories(); // Call function when component mounts
+  }, []);
 
+
+  const handleClickOpen = useCallback(
+    debounce(async (appointment) => {
+      setSelectedAppointment({
+        name: appointment.full_name,
+        pet: appointment.pet_name,
+        orderNumber: appointment.appointment_id,
+        date: appointment.appointment_date,
+        species: appointment.pet_species,
+        type: appointment.type_service,
+        weight: appointment.rec_weight,
+      });
+
+      if (appointment.type_service === "วัคซีน") {
+        try {
+          setLoading(true);
+          const response = await fetch(`${api}/history/vaccine/${appointment.appointment_id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data)) {
+              const validatedData = data.map((item) => ({
+                ...item,
+                price_service: parseFloat(item.price_service) || 0,
+                quantity: item.quantity || 1,
+              }));
+              setSelectedItems(validatedData);
+            } else {
+              console.error("Unexpected data format", data);
+              setSelectedItems([]);
+            }
+          } else {
+            console.error("Failed to fetch vaccine data", response.status);
+            setSelectedItems([]);
+          }
+        } catch (error) {
+          console.error("Error fetching vaccine data", error);
+          setSelectedItems([]);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setSelectedItems([]);
+      }
+
+      if (appointment.type_service === "ฝากเลี้ยง" || appointment.type_service === "ตรวจรักษา") {
+        try {
+          setLoading(true);
+          const response = await fetch(`${api}/appointment/hotel/${appointment.appointment_id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.length > 0) {
+              const hotelInfo = data[0];
+              setSelectedAppointment((prev) => ({
+                ...prev,
+                start_date: hotelInfo.start_date || null,
+                end_date: hotelInfo.end_date || null,
+                days_overdue: hotelInfo.days_overdue || 0,
+                personnel_name: hotelInfo.personnel_name || '',
+                num_day: hotelInfo.num_day || 0,
+              }));
+            }
+          } else {
+            console.error("Error fetching hotel info:", response.status);
+          }
+        } catch (error) {
+          console.error("Error fetching hotel info:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+      setOpenPopup(true);
+    }, 300), // Debounce delay
+    [] // empty dependency array to ensure debounce is stable
+  );
+
+
+  
+  const handleQuantityChange = (categoryId, value) => {
+    const quantity = Math.max(0, parseInt(value, 10) || 0); // ป้องกันค่าติดลบหรือค่าไม่ใช่ตัวเลข
+    setSelectedItems((prevItems) =>
+      prevItems.map((item) =>
+        item.category_id === categoryId
+          ? { ...item, quantity }
+          : item
+      )
+    );
+  };
+  
   const handleCategoryChange = (event) => {
     setSelectedCategory(event.target.value);
     resetPage();
@@ -175,6 +234,7 @@ const PendingAppointments = ({ appointments }) => {
     setOpenPopup(false);
     setSelectedAppointment(null);
     setSelectedCategory('');
+    setSearchTerm('');
   };
 
   const handlePay = () => {
@@ -296,7 +356,55 @@ const PendingAppointments = ({ appointments }) => {
       <Box display="flex" gap={2}>
         {/* รายการบริการ */}
         <Box flex={1} display="flex" flexDirection="column" gap={2}>
-          <Typography variant="h6" gutterBottom>
+        {selectedAppointment  && (
+            <Box
+              display="flex"
+              flexDirection="column"
+              mb={2}
+              p={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              marginBottom={0}
+            >
+              <Typography variant="h6" gutterBottom>
+                รายละเอียดนัดหมาย
+              </Typography>
+              <Typography>
+                <strong>เลขที่นัดหมาย:</strong> {selectedAppointment.orderNumber} ({selectedAppointment.type})
+              </Typography>
+              <Typography>
+                <strong>ชื่อสัตว์:</strong> {selectedAppointment.pet} ({selectedAppointment.species})
+              </Typography>
+              <Typography>
+                <strong>ชื่อเจ้าของ:</strong> {selectedAppointment.name}
+              </Typography>
+              <Typography>
+                <strong>วันที่นัดหมาย:</strong>{' '}
+                {dayjs(selectedAppointment.date).format('DD MMMM YYYY')}
+              </Typography>
+              <Typography>
+                <strong>น้ำหนักล่าสุด:</strong> {selectedAppointment.weight} kg
+              </Typography>
+              <Typography>
+                <strong>
+                  {selectedAppointment.type === 'ตรวจรักษา' ? 'วันแอดมิด:' : 'วันเข้าพัก:'}
+                </strong>{' '}
+                {dayjs(selectedAppointment.start_date).format('DD MMMM YYYY')}
+              </Typography>
+              <Typography>
+                <strong>กำหนดออก:</strong> {dayjs(selectedAppointment.end_date).format('DD MMMM YYYY')}
+              </Typography>
+              {selectedAppointment.days_overdue > 0 && (
+                <Typography>
+                  <strong style={{ color: 'red' }}>เกินกำหนด:</strong> {selectedAppointment.days_overdue} วัน{' '}
+                  <strong>รวมเข้าพัก:</strong> {(selectedAppointment?.num_day ?? 0) + (selectedAppointment?.days_overdue ?? 0)} วัน
+                </Typography>
+              )}
+            </Box>
+          )}
+  
+          <Typography variant="h8" gutterBottom  >
             เลือกบริการ
           </Typography>
           <TextField
@@ -304,22 +412,36 @@ const PendingAppointments = ({ appointments }) => {
             value={searchTerm}
             onChange={handleSearchChange}
             variant="outlined"
-            sx={{ flex: 1, minWidth: 250 }}
-            />
-          <Select //ค้นหาบริการ
+            sx={{
+              flex: 0.2,
+              minWidth: 250,
+              height: '30px',  // Set height to reduce size
+              input: {
+                padding: '6px',  // Reduce padding inside the input
+                fontSize: '0.875rem',  // Optional: smaller text inside the input
+              }
+            }}
+          />
+          <Select
             value={selectedCategory}
             onChange={handleCategoryChange}
             displayEmpty
             variant="outlined"
-            sx={{ mb: 2, width: '100%'  }}
+            sx={{
+              mb: 2,
+              width: '100%',
+              height: '30px',  // Set height to reduce size
+              padding: '6px',  // Adjust padding to make the select shorter
+              fontSize: '0.875rem',  // Optional: smaller font size inside the select
+            }}
           >
-            <MenuItem value="">ทั้งหมด</MenuItem>
-            {[...new Set(categories.map((cat) => cat.category_type))].map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </Select>
+          <MenuItem value="">ทั้งหมด</MenuItem>
+                  {[...new Set(categories.map((cat) => cat.category_type))].map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
           <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '60vh', overflowY: 'auto' }}>
             <Table>
               <TableHead>
@@ -363,42 +485,13 @@ const PendingAppointments = ({ appointments }) => {
         {/* รายการที่เลือก */}
         <Box flex={1} display="flex" flexDirection="column" gap={2}>
         <Typography variant="h6" gutterBottom>  ชำระเงิน </Typography>
-
-        {selectedAppointment && (
-            <Box
-                display="flex"
-                flexDirection="column"
-                mb={2}
-                p={2}
-                border={1}
-                borderColor="grey.300"
-                borderRadius={2}
-            >
-            <Typography variant="h6" gutterBottom>
-                 รายละเอียดนัดหมาย
-            </Typography>
-            <Typography>
-                <strong>เลขที่นัดหมาย:</strong> {selectedAppointment.orderNumber}
-            </Typography>
-            <Typography>
-                <strong>ชื่อสัตว์:</strong> {selectedAppointment.pet} ({selectedAppointment.species})
-            </Typography>
-            <Typography>
-            <strong>ชื่อเจ้าของ:</strong> {selectedAppointment.name}
-            </Typography>
-            <Typography>
-                <strong>วันที่นัดหมาย:</strong>{' '}
-                {dayjs(selectedAppointment.date).format('DD MMMM YYYY')}
-            </Typography>
-            </Box>
-         )}
         <Typography variant="h6" gutterBottom>
             รายการที่เลือก
         </Typography>
         {selectedItems.length === 0 ? (
             <Typography>ไม่มีรายการ</Typography>
         ) : (
-            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '40vh', overflowY: 'auto' }}>
+            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '100vh', overflowY: 'auto' }}>
             <Table>
                 <TableHead>
                 <TableRow>
@@ -413,10 +506,14 @@ const PendingAppointments = ({ appointments }) => {
                     <TableRow key={item.category_id}>
                     <TableCell>{item.category_name}</TableCell>
                     <TableCell>
-                        <Button onClick={() => handleDecreaseQuantity(item.category_id)}>-</Button>
-                        {item.quantity}
-                        <Button onClick={() => handleIncreaseQuantity(item.category_id)}>+</Button>
-                    </TableCell>
+                    <TextField
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                      inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                      sx={{ width: '80px' }}
+                    />
+                  </TableCell>
                     <TableCell>{item.quantity * item.price_service} บาท</TableCell>
                     <TableCell>
                         <Button
