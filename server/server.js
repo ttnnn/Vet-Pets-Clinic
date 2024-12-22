@@ -3,8 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const app = express();
 require('./cronAppointment.js')
-const clinicController = require('./controllers/clinicController');  // นำเข้า controller
-// const customerController = require('./controllers/customerController');
+const clinicController = require('./controllers/clinicController'); 
+const customerController = require('./controllers/customerController');
 // Middleware
 app.use(cors());
 app.use(express.json()); 
@@ -23,13 +23,13 @@ app.use('/clinic', express.static(staticFolder, { index: 'index.html' }));
 
 
 app.use('/public', express.static(path.join(__dirname, '../client/public')));
-
+app.use('/public', express.static(path.join(__dirname, '../customer/public')));
 
 
   // Routes + เส้นทาง API สำหรับคลินิกและลูกค้า
 app.use('/api/clinic', clinicController);
-// app.use('/api/customer', customerController);
-// 
+app.use('/api/customer', customerController);
+
 // เริ่มเซิร์ฟเวอร์
 app.listen(8080, function () {
     console.log('Server running on port 8080' );

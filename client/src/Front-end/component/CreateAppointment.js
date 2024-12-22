@@ -44,7 +44,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   
 }));
 
-const AddAppointment = () => {
+const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [owners, setOwners] = useState([]);
   const [selectedOwnerId, setSelectedOwnerId] = useState('');
   const [pets, setPets] = useState([]);
@@ -74,7 +74,10 @@ const AddAppointment = () => {
   // console.log("locationOwnerID : ",locationOwnerID)
   // console.log("locationPetID : ",locationPetID)
 
+ console.log('isCustomerAppointment',isCustomerAppointment)
 
+  const user = JSON.parse(sessionStorage.getItem('user')); 
+  // console.log('user',user)
   useEffect(() => {
     if (locationOwnerID !== undefined && locationOwnerID !== selectedOwnerId) {
       setSelectedOwnerId(locationOwnerID);
@@ -104,7 +107,8 @@ const AddAppointment = () => {
     fetchPersonnel();
  
   }, []);
-
+ 
+  
   useEffect(() => {
     const fetchFilteredOwners = async () => {
       try {
@@ -117,7 +121,13 @@ const AddAppointment = () => {
     searchOwner.length > 0 ? fetchFilteredOwners() : setOwners([]);
   }, [searchOwner]);
 
-
+  //กรณีที่ isCustomerAppointment = true ดึงค่า owner_id มาเซตค่า เพื่อเสริชสัตว์เลี้ยง
+  useEffect(() => {
+    if (isCustomerAppointment && ownerID) {
+      setSelectedOwnerId(ownerID); // ตั้งค่า selectedOwnerId ด้วยค่า ownerID ที่ได้รับ
+    }
+  }, [isCustomerAppointment, ownerID]);
+  
 
   useEffect(() => {
     const fetchPets = async () => {
@@ -265,6 +275,14 @@ const AddAppointment = () => {
     setTimePickerKey(timePickerKey + 1);
     setIsNoTime(false)
   };
+  useEffect(() => {
+    if (isCustomerAppointment) {
+      const fullName = `${user.first_name} ${user.last_name}`;
+      setSearchOwner(fullName); // เซ็ตชื่อเต็มลงใน setSearchOwner
+    } else {
+      setSearchOwner(''); // ล้างค่าหากไม่ใช่ Customer Appointment
+    }
+  }, [isCustomerAppointment, user.first_name, user.last_name]);
   
 
   return (
@@ -285,24 +303,41 @@ const AddAppointment = () => {
         </Snackbar>
 
         <Box display="flex" flexDirection="column" gap={2}>
+         
           <Autocomplete
-            options={owners}
+            options={isCustomerAppointment ? [] : owners} // หาก isCustomerAppointment เป็น true จะไม่แสดงตัวเลือกจาก owners
             getOptionLabel={(owner) => `${owner.first_name} ${owner.last_name}`}
             onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : '')}
-            value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) : null}
+            value={
+              isCustomerAppointment
+                ? { first_name: user.first_name, last_name: user.last_name } // เมื่อ isCustomerAppointment เป็น true ให้แสดงชื่อ user
+                : selectedOwnerId
+                ? owners.find(owner => owner.owner_id === selectedOwnerId) // หากเลือกเจ้าของจากรายการ
+                : null
+            }
+            isOptionEqualToValue={(option, value) =>
+              option.first_name === value.first_name && option.last_name === value.last_name
+            }
             renderInput={(params) => 
               <TextField {...params} 
                 label="Select Owner" 
                 variant="outlined" 
                 fullWidth
-                onChange={(e) => setSearchOwner(e.target.value)} />}
-                getOptionSelected={(option, value) => option.owner_id === value.owner_id}  
-                renderOption={(props, option) => (
-              <li {...props} key={option.owner_id}> {/* Set unique key here */}
+                onChange={(e) => {
+                  if (!isCustomerAppointment) {
+                    setSearchOwner(e.target.value); // อนุญาตให้ค้นหาผู้เป็นเจ้าของเมื่อ isCustomerAppointment เป็น false
+                  }
+                }}
+              />}
+            getOptionSelected={(option, value) => option.owner_id === value.owner_id}
+            renderOption={(props, option) => (
+              <li {...props} key={option.owner_id}>
                 {`${option.first_name} ${option.last_name}`}
               </li>
             )}
+            disabled={isCustomerAppointment} //ปิดกล่องไม่ให้เลือก
           />
+
           <Autocomplete
             options={pets}
             getOptionLabel={(pet) => pet.pet_name}
