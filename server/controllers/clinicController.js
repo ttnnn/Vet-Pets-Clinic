@@ -1445,6 +1445,7 @@ router.get('/appointment/hotel/:appointment_id', async (req, res) => {
       petshotel.num_day,
       petshotel.status AS status_hotel,
       petshotel.pet_cage_id,
+      admitrecord.record_medicine,
       personnel.first_name || ' ' || personnel.last_name AS personnel_name,
       CASE 
         WHEN petshotel.end_date < CURRENT_DATE THEN CURRENT_DATE - petshotel.end_date
@@ -1453,6 +1454,7 @@ router.get('/appointment/hotel/:appointment_id', async (req, res) => {
     FROM appointment
     JOIN personnel ON appointment.personnel_id = personnel.personnel_id
     LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+    LEFT JOIN admitrecord ON appointment.appointment_id = admitrecord.appointment_id
     WHERE appointment.appointment_id = $1
   `;
 
@@ -1465,6 +1467,82 @@ router.get('/appointment/hotel/:appointment_id', async (req, res) => {
   }
 });
 
+router.post('/create-invoice', async (req, res) => {
+  const {
+    appointmentId,
+    selectedItems,
+    totalAmount,
+  } = req.body;
+
+  console.log('/create-invoice',req.body)
+  const client = await pool.connect(); // Connect to database
+
+  try {
+    // 1. บันทึกการชำระเงิน
+    const paymentQuery = 'INSERT INTO payment (total_payment, payment_date, status_pay) VALUES ($1, $2, $3) RETURNING payment_id';
+    const paymentResult = await client.query(paymentQuery, [totalAmount, new Date(), 'pending']);
+    const paymentId = paymentResult.rows[0].payment_id;
+
+    // 2. บันทึกใบเสร็จ
+    const invoiceQuery = 'INSERT INTO invoice (payment_id, appointment_id, invoice_date, total_pay_invoice) VALUES ($1, $2, $3, $4) RETURNING invoice_id';
+    const invoiceResult = await client.query(invoiceQuery, [paymentId, appointmentId, new Date(), totalAmount]);
+    const invoiceId = invoiceResult.rows[0].invoice_id;
+
+    // 3. บันทึกรายการสินค้า
+    for (const item of selectedItems) {
+      const serviceInvoiceQuery = 'INSERT INTO serviceinvoice (invoice_id, category_id, amount, subtotal_price) VALUES ($1, $2, $3, $4)';
+      await client.query(serviceInvoiceQuery, [invoiceId, item.category_id, item.amount, item.amount * item.price_service]);
+    }
+
+    // 4. อัปเดตสถานะคิว (appointment)
+    const updateAppointmentQuery = 'UPDATE appointment SET  queue_status = $1 WHERE appointment_id = $2';
+    await client.query(updateAppointmentQuery, ['รอชำระเงิน', appointmentId]);
+
+    await client.query('COMMIT'); // ยืนยันการทำ transaction
+    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' });
+  } catch (error) {
+    await client.query('ROLLBACK'); // ยกเลิก transaction หากเกิดข้อผิดพลาด
+    console.error('Error during transaction:', error);
+    res.status(500).json({ status: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
+  }
+});
+
+
+router.get('/medical/invoice/:appointment_id', async (req, res) => {
+  const appointment_id = req.params.appointment_id;
+  const query = `
+      SELECT 
+      appointment.appointment_id,
+      petshotel.start_date,
+      petshotel.end_date,
+      petshotel.num_day,
+      servicecategory.category_name,
+      serviceinvoice.amount,
+      serviceinvoice.subtotal_price,
+      invoice.total_pay_invoice,
+   
+      CASE 
+        WHEN petshotel.end_date < CURRENT_DATE THEN CURRENT_DATE - petshotel.end_date
+        ELSE 0
+      END AS days_overdue
+   
+    FROM appointment
+    JOIN invoice ON appointment.appointment_id = invoice.appointment_id
+    JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
+    JOIN servicecategory ON serviceinvoice.category_id = servicecategory.category_id 
+    JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+   
+    WHERE appointment.appointment_id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [appointment_id]);
+    res.json(result.rows); // Return result rows as JSON
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

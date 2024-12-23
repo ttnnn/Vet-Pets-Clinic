@@ -70,15 +70,22 @@ const RecordCard = ({ record }) => (
   </Box>
 );
 const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
-  const [records, setRecords] = useState([]);
+  // const [records, setRecords] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  // useEffect(() => {
+    // if (updatedRecords && updatedRecords.length > 0) {
+      // setRecords(updatedRecords);
+      // setFilteredRecords(updatedRecords);
+    // }
+  // }, [updatedRecords]);
+
   useEffect(() => {
-    if (updatedRecords && updatedRecords.length > 0) {
-      setRecords(updatedRecords);
+    if (Array.isArray(updatedRecords) && updatedRecords.length > 0) {
+      // setRecords(updatedRecords);
       setFilteredRecords(updatedRecords);
     }
   }, [updatedRecords]);
@@ -89,7 +96,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
       try {
         const response = await fetch(`${api}/admitrecord?appointment_id=${appointment.appointment_id}`);
         const data = await response.json();
-        setRecords(data.data);
+        // setRecords(data.data);
         setFilteredRecords(data.data);
       } catch (error) {
         console.error("Error fetching records:", error);
@@ -148,7 +155,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
                 <Typography variant="body2" color="textSecondary" padding="8px">
                   กำลังโหลดข้อมูล...
                 </Typography>
-              ) : filteredRecords.length > 0 ? (
+              ) : Array.isArray(filteredRecords) && filteredRecords.length > 0 ? (
                 filteredRecords.map((record, index) => (
                   <ListItem
                     key={`${record.record_time}-${index}`}
@@ -331,7 +338,7 @@ const RecordMedical = ({
     console.log("data:",payload);
     try {
  
-      const response = await axios.post(`${api}/admitrecord`, payload);
+      await axios.post(`${api}/admitrecord`, payload);
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert
       setOpenSnackbar(true);

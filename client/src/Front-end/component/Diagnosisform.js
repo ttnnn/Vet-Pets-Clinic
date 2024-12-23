@@ -3,7 +3,9 @@ import { TextField, Button, Paper, Box, Typography,
   FormControl, FormLabel, RadioGroup, FormControlLabel, 
   Radio, Autocomplete, Select, MenuItem, List, 
   ListItem, ListItemText, InputAdornment, InputLabel, 
-  OutlinedInput , Alert,Snackbar} from '@mui/material';
+  OutlinedInput , Alert,Snackbar , Table,
+  TableBody,TableCell,TableContainer,
+  TableHead,TableRow,Pagination} from '@mui/material';
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
@@ -30,7 +32,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
+  // const [selectedService, setSelectedService] = useState(null);
   const [isDataSaved, setIsDataSaved] = useState(false); //ใช้เช็คว่าเซฟรึยัง
   const [alertMessage, setAlertMessage] = useState("");   // ข้อความสำหรับ Alert
   const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
@@ -79,46 +81,16 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     phy_mucous_membranes: 'no exam',
     phy_dental: 'no exam',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // จำนวนรายการต่อหน้า
 
-  // const handleReset = () => {
-    // const now = dayjs();
-    // setFormMedical({
-      // rec_temperature: '',
-      // rec_pressure: '',
-      // rec_heartrate: '',
-      // rec_weight: '',
-      // rec_timee: now.format('HH:mm'),
-      // rec_date: now.format('YYYY-MM-DD'),
-    // });
-    // setFormData({
-      // diag_cc: '',
-      // diag_ht: '',
-      // diag_pe: '',
-      // diag_majorproblem: '',
-      // diag_dx: '',
-      // diag_tentative: '',
-      // diag_final: '',
-      // diag_treatment: '',
-      // diag_client: '',
-      // diag_note: '',
-    // });
-    // setFormphysical({
-      // phy_general: 'no exam',
-      // phy_integumentary: 'no exam',
-      // phy_musculo_skeletal: 'no exam',
-      // phy_circulatory: 'no exam',
-      // phy_respiratory: 'no exam',
-      // phy_digestive: 'no exam',
-      // phy_genito_urinary: 'no exam',
-      // phy_eyes: 'no exam',
-      // phy_ears: 'no exam',
-      // phy_neural_system: 'no exam',
-      // phy_lymph_nodes: 'no exam',
-      // phy_mucous_membranes: 'no exam',
-      // phy_dental: 'no exam',
-    // });
-    // setSelectedPersonnel(null);
-  // };
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   useEffect(() => {
     const fetchMedicalAndPersonnel = async () => {
@@ -236,7 +208,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     console.log("data:",payload);
     try {
  
-      const response = await axios.post(`${api}/treatment/diagnosis`, payload);
+      await axios.post(`${api}/treatment/diagnosis`, payload);
       setIsDataSaved(true);  // เมื่อบันทึกสำเร็จให้เปลี่ยนสถานะ
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert
@@ -274,14 +246,18 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   });
 
   //เพิ่มรายการที่เลือก
-  const handleServiceSelect = (event, value) => {
-    if (value && !selectedItems.some((item) => item.category_id === value.category_id)) {
-      setSelectedItems([...selectedItems, { ...value, quantity: 1 }]);
-      setSelectedService(null); // รีเซตค่าที่เลือกใน Autocomplete
-      setSearchTerm(''); // รีเซตค่าในกล่องค้นหา
-    }
-  };
-  
+  // const handleServiceSelect = (event, value) => {
+    // if (value && !selectedItems.some((item) => item.category_id === value.category_id)) {
+      // setSelectedItems([...selectedItems, { ...value, quantity: 1 }]);
+      // setSelectedService(null); // รีเซตค่าที่เลือกใน Autocomplete
+      // setSearchTerm(''); // รีเซตค่าในกล่องค้นหา
+    // }
+  // };
+
+  const paginatedServices = filteredServices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleRemoveItem = (category_id) => {
     setSelectedItems(selectedItems.filter((item) => item.category_id !== category_id)); // ลบรายการที่เลือก
@@ -294,13 +270,33 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   };
 
   //จำนวนสินค้าที่ต้องการ 
-  const handleQuantityChange = (category_id, quantity) => {
+  // const handleQuantityChange = (category_id, quantity) => {
+    // setSelectedItems((prevItems) =>
+      // prevItems.map((item) =>
+        // item.category_id === category_id ? { ...item, quantity: Number(quantity) } : item
+      // )
+    // );
+  // };
+  const handleQuantityChange = (categoryId, value) => {
+    // เช็คว่าเป็นค่าว่างหรือไม่ และเปลี่ยนให้เป็น 0 ถ้าเป็นค่าว่าง
+    const quantity = value === '' ? 0 : Math.max(0, parseInt(value)); // ตรวจสอบให้มีค่าต่ำสุดที่ 0
+  
     setSelectedItems((prevItems) =>
       prevItems.map((item) =>
-        item.category_id === category_id ? { ...item, quantity: Number(quantity) } : item
+        item.category_id === categoryId
+          ? { ...item, quantity } // อัพเดตจำนวนของ item ที่เลือก
+          : item
       )
     );
   };
+
+  const calculateTotalPrice = (selectedItems) => {
+    return selectedItems.reduce((total, item) => {
+      // คำนวณราคาของแต่ละรายการโดยคูณราคาต่อหน่วยกับจำนวน
+      return total + (item.price_service * item.quantity);
+    }, 0); // เริ่มต้นที่ 0
+  };
+  
   const showAlert = (message, severity) => {
     setAlertMessage(message);
     setAlertSeverity(severity);
@@ -341,32 +337,95 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     setOpenAdmitDialog(true);
   }, 300); // ปรับระยะเวลาตามความเหมาะสม
 
-
+  //ส่งคิว
   const handleSendQueue = debounce(async () => {
     try {
       if (!isDataSaved) {
         showAlert("กรุณาบันทึกข้อมูลก่อน", "warning");
         return; // หยุดการทำงานหากยังไม่ได้บันทึก
       }
-      if (isQueueSent) {  // ตรวจสอบว่าเคยส่งคิวไปแล้วหรือไม่
+      if (isQueueSent) { // ตรวจสอบว่าเคยส่งคิวไปแล้วหรือไม่
         showAlert("คุณกดส่งคิวไปแล้ว", "warning");
         return; // หยุดการทำงานหากเคยส่งคิวไปแล้ว
       }
-
+       // 1. ถ้าไม่มีการเลือกรายการสินค้า ให้ทำแค่การอัปเดตสถานะคิว
+    if (selectedItems.length === 0) {
+      // อัปเดตสถานะคิว
       const statusUpdates = {
         appointment_id: appointmentId,
         pet_id: petId,
         status: 'อนุมัติ',
-        queue_status: 'รอชำระเงิน'
+        queue_status: 'รอชำระเงิน',
       };
+
       await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
       showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
       setIsQueueSent(true); // กำหนดสถานะคิวว่าได้ถูกส่งไปแล้ว
+      return; // หยุดการทำงานเมื่อไม่มีรายการสินค้า
+    }
+
+  
+      // 2. ถ้ามีการเลือกรายการสินค้า ให้บันทึกข้อมูลทั้งหมด (ใบเสร็จ, การชำระเงิน, รายการสินค้า)
+      const selectedItemsData = selectedItems.map((item) => ({
+        category_id: item.category_id,
+        amount: item.quantity,
+        price_service: item.price_service,
+      }));
+      
+      console.log('selectedItemsData',selectedItemsData)
+      const paymentData = {
+        total_payment: calculateTotalPrice(selectedItems), // คำนวณราคา
+        payment_date: new Date(),
+      };
+      console.log('paymentData',paymentData)
+      // 2. เรียก API เพื่อบันทึกข้อมูลทั้งหมด (ใบเสร็จ, การชำระเงิน, รายการสินค้า)
+      const response = await axios.post(`${api}/create-invoice`, {
+        appointmentId,
+        selectedItems: selectedItemsData,
+        totalAmount: paymentData.total_payment,
+      });
+
+  
+      if (response.data.status === 'success') {
+        showAlert("ข้อมูลถูกบันทึกสำเร็จ", "success");
+        setIsQueueSent(true); // กำหนดสถานะคิวว่าได้ถูกส่งไปแล้ว
+        setSelectedItems(null)
+        // 3. อัปเดตสถานะคิว
+        // const statusUpdates = {
+          // appointment_id: appointmentId,
+          // pet_id: petId,
+          // status: 'อนุมัติ',
+          // queue_status: 'รอชำระเงิน',
+        // };
+  
+        // await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
+        // showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
+  
+
+      } else {
+        showAlert("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "error");
+      }
+  
     } catch (error) {
       showAlert("เกิดข้อผิดพลาดในการส่งข้อมูลเข้าคิว", "error");
     }
-  }, 300);  // กำหนดเวลาหน่วง 300ms
+  }, 300); // กำหนดเวลาหน่วง 300ms
+  
 
+  const handleAddItem = (service) => {
+    // ตรวจสอบว่า item นั้นๆ ยังไม่อยู่ใน selectedItems
+    const existingItemIndex = selectedItems.findIndex((item) => item.category_id === service.category_id);
+    if (existingItemIndex !== -1) {
+      // ถ้ามีแล้วเพิ่มจำนวน
+      const updatedItems = [...selectedItems];
+      updatedItems[existingItemIndex].quantity += 1; // เพิ่มจำนวนในรายการที่มีอยู่
+      setSelectedItems(updatedItems); // อัพเดต state
+    } else {
+      // ถ้าไม่มีให้เพิ่ม item ใหม่
+      setSelectedItems([...selectedItems, { ...service, quantity: 1 }]);
+    }
+  };
+  
 
   return (
     <Paper style={{ padding: 20 }}>
@@ -545,20 +604,24 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
          รายการตรวจรักษา (Tx) และสั่งจ่ายยา (Rx)
       </Typography>
 
+      <Box display="flex" flexDirection="column" gap={3}>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 200 }}>
           <Typography>กำลังโหลดข้อมูล...</Typography>
         </Box>
       ) : (
-        <Box display="flex" flexDirection="column" gap={3}>
-          {/* Dropdown and Search Section */}
-          <Box display="flex" gap={2} alignItems="center">
+        <Box display="flex" gap={3}>
+          {/* ตารางรายการทั้งหมด */}
+          <Box flex={1}>
+            <Typography variant="h6" gutterBottom>
+              รายการทั้งหมด
+            </Typography>
             <Select
               value={selectedCategory}
               onChange={handleCategoryChange}
               displayEmpty
               variant="outlined"
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 200, marginBottom: 2 }}
             >
               <MenuItem value="">ทั้งหมด</MenuItem>
               {[...new Set(categories.map((service) => service.category_type))].map((type) => (
@@ -567,58 +630,74 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
                 </MenuItem>
               ))}
             </Select>
-            <Autocomplete
-              options={filteredServices}
-              getOptionLabel={(option) => option.category_name}
-              onChange={handleServiceSelect}
-              value={selectedService}
-              sx={{ width: '100%', maxWidth: 600 }}
-              isOptionEqualToValue={(option, value) => option.category_id === value.category_id}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="ค้นหาบริการ"
-                  placeholder="ค้นหา..."
-                  variant="outlined"
-                  sx={{ flex: 1 }}
-                />
-              )}
-
+            <TextField
+              label="ค้นหาบริการ"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              variant="outlined"
+              sx={{ width: '100%', maxWidth: 600, marginBottom: 2 }}
             />
-
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ชื่อบริการ</TableCell>
+                    <TableCell>ประเภท</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedServices.map((service) => (
+                    <TableRow key={service.category_id}>
+                      <TableCell>{service.category_name}</TableCell>
+                      <TableCell>{service.category_type}</TableCell>
+                      <TableCell>
+                        <Button onClick={() => handleAddItem(service)}>เพิ่ม</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box display="flex" justifyContent="center" marginTop={2}>
+              <Pagination
+                count={Math.ceil(filteredServices.length / itemsPerPage)}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
           </Box>
 
-          {/* เลือกรายการ+สั่งยา */}
-          <Box>
+          {/* รายการที่เลือก */}
+          <Box flex={1}>
             <Typography variant="h6" gutterBottom>
               รายการที่เลือก
             </Typography>
             {selectedItems.length > 0 ? (
               <List>
-                {selectedItems.map((item,index) => (
+                {selectedItems.map((item, index) => (
                   <ListItem
-                   key={`${item.category_id}-${index}`} 
+                    key={`${item.category_id}-${index}`}
                     secondaryAction={
                       <Box display="flex" gap={2} alignItems="center">
-                      <Typography>จำนวน</Typography>
-                      <TextField
-                        // label="จำนวน"
-                        type="number"
-                        variant="outlined"
-                        size="small"
-                        value={item.quantity || 1} // ค่าจำนวนเริ่มต้นเป็น 0
-                        onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
-                        sx={{ width: 70 }}
-                      />
-                      <IconButton
-                        edge="end"
-                        color="error"
-                        onClick={() => handleRemoveItem(item.category_id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                    
+                        <Typography>จำนวน</Typography>
+                        <TextField
+                          type="number"
+                          variant="outlined"
+                          size="small"
+                          value={item.quantity || ''}
+                          onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                          inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                          sx={{ width: 70 }}
+                        />
+                        <IconButton
+                          edge="end"
+                          color="error"
+                          onClick={() => handleRemoveItem(item.category_id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     }
                   >
                     <ListItemText
@@ -632,9 +711,10 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
               <Typography color="textSecondary">ไม่มีรายการที่เลือก</Typography>
             )}
           </Box>
-
         </Box>
       )}
+    </Box>
+
 
 
       {/* Submit Button */}

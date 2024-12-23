@@ -26,7 +26,6 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
 
-import { debounce } from 'lodash';
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 const api = 'http://localhost:8080/api/clinic';
@@ -121,6 +120,23 @@ const PendingAppointments = ({ appointments }) => {
     );
   };
 
+  const calculateTotalInvoice = () => {
+    // ดึงค่าผลรวมจากฐานข้อมูล
+    const selectedItemsData = selectedItems.reduce(
+      (sum, item) => sum + (item.amount || 0) * (item.subtotal_price || 0),
+      0
+    );
+
+    const selectedItemsTotal = selectedItems.reduce(
+      (sum, item) => sum + (item.quantity || 0) * (item.price_service || 0),
+      0
+    );
+
+    return selectedItemsTotal + selectedItemsData;
+  
+  };
+  
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -136,9 +152,26 @@ const PendingAppointments = ({ appointments }) => {
     fetchCategories(); // Call function when component mounts
   }, []);
 
-
-  const handleClickOpen = useCallback(
-    debounce(async (appointment) => {
+  // ฟังก์ชันดึงข้อมูล
+  const fetchData = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error("Failed to fetch data", response.status);
+        return null;
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      return null;
+    }
+  };
+  
+  // ฟังก์ชันหลัก
+  const handleClickOpen = useCallback((appointment) => {
+    setLoading(true);
+    const updateAppointmentDetails = async () => {
+      // ตั้งค่าเบื้องต้นของ SelectedAppointment
       setSelectedAppointment({
         name: appointment.full_name,
         pet: appointment.pet_name,
@@ -148,68 +181,75 @@ const PendingAppointments = ({ appointments }) => {
         type: appointment.type_service,
         weight: appointment.rec_weight,
       });
-
-      if (appointment.type_service === "วัคซีน") {
-        try {
-          setLoading(true);
-          const response = await fetch(`${api}/history/vaccine/${appointment.appointment_id}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) {
-              const validatedData = data.map((item) => ({
-                ...item,
-                price_service: parseFloat(item.price_service) || 0,
-                quantity: item.quantity || 1,
-              }));
-              setSelectedItems(validatedData);
-            } else {
-              console.error("Unexpected data format", data);
-              setSelectedItems([]);
-            }
-          } else {
-            console.error("Failed to fetch vaccine data", response.status);
-            setSelectedItems([]);
+  
+      // ดึงข้อมูลตามประเภทบริการ
+      let selectedItems = [];
+      let additionalData = {};
+  
+      switch (appointment.type_service) {
+        case 'วัคซีน':
+          selectedItems = await fetchData(`${api}/history/vaccine/${appointment.appointment_id}`);
+          if (selectedItems) {
+            selectedItems = selectedItems.map((item) => ({
+              ...item,
+              price_service: parseFloat(item.price_service) || 0,
+              quantity: item.quantity || 1,
+            }));
           }
-        } catch (error) {
-          console.error("Error fetching vaccine data", error);
+          break;
+  
+        case 'ฝากเลี้ยง':
+          additionalData = await fetchData(`${api}/appointment/hotel/${appointment.appointment_id}`);
+          if (additionalData && additionalData.length > 0) {
+            const hotelInfo = additionalData[0];
+            setSelectedAppointment((prev) => ({
+              ...prev,
+              start_date: hotelInfo.start_date || null,
+              end_date: hotelInfo.end_date || null,
+              days_overdue: hotelInfo.days_overdue || 0,
+              personnel_name: hotelInfo.personnel_name || '',
+              num_day: hotelInfo.num_day || 0,
+            }));
+          }
+          break;
+  
+        case 'ตรวจรักษา':
+          // ดึงข้อมูล invoice
+          selectedItems = await fetchData(`${api}/medical/invoice/${appointment.appointment_id}`);
+          if (selectedItems) {
+            selectedItems = selectedItems.map((item) => ({
+              ...item,
+              amount: parseFloat(item.amount) || 1,
+              subtotal_price: parseFloat(item.subtotal_price) || 0,
+            }));
+            setSelectedItems((prevItems) => [
+              ...selectedItems,
+              ...prevItems.filter((item) => !selectedItems.some((d) => d.id === item.id)),
+            ]);
+          }
+  
+          // ดึงข้อมูล record_medicine
+          const recordMedicineData = await fetchData(`${api}/appointment/hotel/${appointment.appointment_id}`);
+          if (recordMedicineData) {
+            setSelectedAppointment((prev) => ({
+              ...prev,
+              record_medicine: recordMedicineData.map((item) => item.record_medicine) || [],
+            }));
+          }
+          console.log('recordMedicineData',recordMedicineData)
+          break;
+  
+        default:
           setSelectedItems([]);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setSelectedItems([]);
       }
-
-      if (appointment.type_service === "ฝากเลี้ยง" || appointment.type_service === "ตรวจรักษา") {
-        try {
-          setLoading(true);
-          const response = await fetch(`${api}/appointment/hotel/${appointment.appointment_id}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.length > 0) {
-              const hotelInfo = data[0];
-              setSelectedAppointment((prev) => ({
-                ...prev,
-                start_date: hotelInfo.start_date || null,
-                end_date: hotelInfo.end_date || null,
-                days_overdue: hotelInfo.days_overdue || 0,
-                personnel_name: hotelInfo.personnel_name || '',
-                num_day: hotelInfo.num_day || 0,
-              }));
-            }
-          } else {
-            console.error("Error fetching hotel info:", response.status);
-          }
-        } catch (error) {
-          console.error("Error fetching hotel info:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
+  
+      setLoading(false);
       setOpenPopup(true);
-    }, 300), // Debounce delay
-    [] // empty dependency array to ensure debounce is stable
-  );
+    };
+  
+    updateAppointmentDetails();
+  }, [setLoading, setSelectedItems, setSelectedAppointment, setOpenPopup ]);
+  
 
 
   
@@ -252,7 +292,8 @@ const PendingAppointments = ({ appointments }) => {
   };
 
 
- 
+  console.log("record_medicine:", selectedAppointment?.record_medicine);
+
   const filteredAppointments = appointments.filter((appointment) => {
     if (activeCategory === 'คิวทั้งหมด') {
       return (
@@ -386,20 +427,25 @@ const PendingAppointments = ({ appointments }) => {
               <Typography>
                 <strong>น้ำหนักล่าสุด:</strong> {selectedAppointment.weight} kg
               </Typography>
-              <Typography>
-                <strong>
-                  {selectedAppointment.type === 'ตรวจรักษา' ? 'วันแอดมิด:' : 'วันเข้าพัก:'}
-                </strong>{' '}
-                {dayjs(selectedAppointment.start_date).format('DD MMMM YYYY')}
-              </Typography>
-              <Typography>
-                <strong>กำหนดออก:</strong> {dayjs(selectedAppointment.end_date).format('DD MMMM YYYY')}
-              </Typography>
-              {selectedAppointment.days_overdue > 0 && (
-                <Typography>
-                  <strong style={{ color: 'red' }}>เกินกำหนด:</strong> {selectedAppointment.days_overdue} วัน{' '}
-                  <strong>รวมเข้าพัก:</strong> {(selectedAppointment?.num_day ?? 0) + (selectedAppointment?.days_overdue ?? 0)} วัน
-                </Typography>
+              
+              {['ตรวจรักษา', 'ฝากเลี้ยง'].includes(selectedAppointment.type) && (
+              <>
+                  <Typography>
+                    <strong>
+                      {selectedAppointment.type === 'ตรวจรักษา' ? 'วันแอดมิด:' : 'วันเข้าพัก:'}
+                    </strong>{' '}
+                    {dayjs(selectedAppointment.start_date).format('DD MMMM YYYY')}
+                  </Typography>
+                  <Typography>
+                    <strong>กำหนดออก:</strong> {dayjs(selectedAppointment.end_date).format('DD MMMM YYYY')}
+                  </Typography>
+                  {selectedAppointment.days_overdue > 0 && (
+                    <Typography>
+                      <strong style={{ color: 'red' }}>เกินกำหนด:</strong> {selectedAppointment.days_overdue} วัน{' '}
+                      <strong>รวมเข้าพัก:</strong> {(selectedAppointment?.num_day ?? 0) + (selectedAppointment?.days_overdue ?? 0)} วัน
+                    </Typography>
+                  )}
+                </>
               )}
             </Box>
           )}
@@ -481,65 +527,201 @@ const PendingAppointments = ({ appointments }) => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 />
         </Box>
-
         {/* รายการที่เลือก */}
-        <Box flex={1} display="flex" flexDirection="column" gap={2}>
-        <Typography variant="h6" gutterBottom>  ชำระเงิน </Typography>
-        <Typography variant="h6" gutterBottom>
-            รายการที่เลือก
-        </Typography>
-        {selectedItems.length === 0 ? (
-            <Typography>ไม่มีรายการ</Typography>
-        ) : (
-            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '100vh', overflowY: 'auto' }}>
-            <Table>
-                <TableHead>
-                <TableRow>
-                    <TableCell>ชื่อบริการ</TableCell>
-                    <TableCell>จำนวน</TableCell>
-                    <TableCell>ราคา</TableCell>
-                    <TableCell></TableCell>
-                </TableRow>
-                </TableHead>
-                <TableBody>
-                {selectedItems.map((item) => (
-                    <TableRow key={item.category_id}>
-                    <TableCell>{item.category_name}</TableCell>
-                    <TableCell>
-                    <TextField
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
-                      inputProps={{ min: 0, style: { textAlign: 'center' } }}
-                      sx={{ width: '80px' }}
-                    />
-                  </TableCell>
-                    <TableCell>{item.quantity * item.price_service} บาท</TableCell>
-                    <TableCell>
-                        <Button
-                        color="error"
-                        onClick={() =>
-                            setSelectedItems((prevItems) =>
-                            prevItems.filter((i) => i.category_id !== item.category_id)
-                            )
-                        }
-                        >
-                        ลบ
-                        </Button>
-                    </TableCell>
-                    </TableRow>
+      <Box flex={1} display="flex" flexDirection="column" gap={2}>
+      <Typography variant="h6" gutterBottom>ชำระเงิน</Typography>
+        
+        <Typography variant="h6" gutterBottom>รายการที่เลือก</Typography>
+        {selectedAppointment && selectedAppointment.type === "ตรวจรักษา" && (
+          <>
+          <Typography>
+            <strong>รายการยาที่ใช้ ระหว่างการพักรักษาตัว</strong>
+          </Typography>
+          {Array.isArray(selectedAppointment.record_medicine) &&
+          selectedAppointment.record_medicine.filter((medicine) => medicine !== null).length > 0 ? (
+            <ul style={{ paddingLeft: "1rem" }}>
+              {selectedAppointment.record_medicine
+                .filter((medicine) => medicine !== null)
+                .map((medicine, index) => (
+                  <li key={index}>{medicine}</li>
                 ))}
-                </TableBody>
-            </Table>
-            </TableContainer>
-        )}
+            </ul>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              ไม่มีรายการยา
+            </Typography>
+          )}
+        </>
+      )}
+
+    {selectedItems.length === 0 ? (
+      <Typography>ไม่มีรายการ</Typography>
+    ) : selectedAppointment.type === "ตรวจรักษา" ? (
+      <>
+      <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ชื่อบริการ</TableCell>
+              <TableCell>จำนวน</TableCell>
+              <TableCell>ราคารวม</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+          {selectedItems.map((item, index) => (
+          <TableRow key={index}>
+            <TableCell>{item.category_name}</TableCell>
+            <TableCell>{item.quantity || item.amount || 1}</TableCell>
+            <TableCell>
+            {(item.subtotal_price !== undefined && item.subtotal_price !== null)
+              ? item.subtotal_price
+              : (item.quantity || 0) * (item.price_service || 0)} บาท
+            </TableCell>
+          </TableRow>
+        ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
         <Box mt={2} display="flex" justifyContent="space-between">
-            <Typography variant="h6">ยอดรวม:</Typography>
-            <Typography variant="h6">{calculateTotal()} บาท</Typography>
-        </Box>
-        </Box>
+        <Typography variant="h6">ยอดรวม:</Typography>
+        <Typography variant="h6">{calculateTotalInvoice()} บาท</Typography>
     </Box>
+    </>
+    ) : (
+      <>
+      <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ชื่อบริการ</TableCell>
+              <TableCell>จำนวน</TableCell>
+              <TableCell>ราคา</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {selectedItems.map((item) => (
+              <TableRow key={item.category_id}>
+                <TableCell>{item.category_name}</TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    value={item.quantity || ''}
+                    onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                    inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                    sx={{ width: '80px' }}
+                  />
+                </TableCell>
+                <TableCell>{item.quantity * item.price_service} บาท</TableCell>
+                <TableCell>
+                  <Button
+                    color="error"
+                    onClick={() =>
+                      setSelectedItems((prevItems) =>
+                        prevItems.filter((i) => i.category_id !== item.category_id)
+                      )
+                    }
+                  >
+                    ลบ
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+     <Box mt={2} display="flex" justifyContent="space-between">
+        <Typography variant="h6">ยอดรวม:</Typography>
+        <Typography variant="h6">{calculateTotal()} บาท</Typography>
+    </Box>
+    </>
     )}
+    </Box>
+</Box>
+)}  
+ 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     </DialogContent>
     <DialogActions>
         <Button onClick={handleClose} variant="outlined">
