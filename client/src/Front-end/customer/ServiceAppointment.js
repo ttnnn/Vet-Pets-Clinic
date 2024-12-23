@@ -12,7 +12,7 @@ import AddAppointment from '../component/CreateAppointment';
 
 // const api = 'http://localhost:8080/api/customer';
 
-const Servicetreat = () => {
+const ServiceAppointment = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
   const navigate = useNavigate();
@@ -28,21 +28,18 @@ const Servicetreat = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      {/* ใช้ Box แทน Paper */}
-      <Box sx={{ p: 3, mt: 8 }}>
+      <Box sx={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', mt: 3 }}>
         <AppBar position="fixed">
           <Toolbar>
             <IconButton edge="start" color="inherit" onClick={handleBackToHome}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              รายละเอียดสัตว์เลี้ยง
+            <Typography variant="h6" sx={{ flexGrow: 1 , textAlign: 'center'}}>
+              จองคิวเข้าใช้บริการ
             </Typography>
           </Toolbar>
         </AppBar>
-        <Typography variant="h6" gutterBottom>
-          เพิ่มการนัดหมายใหม่
-        </Typography>
+  
         {alertMessage && (
           <Alert severity={alertSeverity} icon={alertSeverity === 'success' ? <CheckIcon fontSize="inherit" /> : undefined}>
             {alertMessage}
@@ -63,4 +60,4 @@ const Servicetreat = () => {
   );
 };
 
-export default Servicetreat;
+export default ServiceAppointment;
