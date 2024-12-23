@@ -1,41 +1,54 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Container, Typography, Card, CardContent, Button, Box, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Container, Typography, Card, CardContent, Button, Box, AppBar, Toolbar, IconButton, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Postpone from '../component/PostponeAppointment';
+import PostponeHotel from '../component/PostponeHotel';
 
 
 dayjs.locale('th'); // ใช้ locale ภาษาไทย
 
 const api = 'http://localhost:8080/api/customer';
 
-const AppointmentDetail = () => {
+const AppointmentDetail = ({setAppointments }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [appointment, setAppointment] = useState(null); // เริ่มต้นเป็น null เพื่อใช้ตรวจสอบสถานะของข้อมูล
+  const [appointment, setAppointment] = useState(null); 
   const { appointmentId } = location.state;
+  
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [openRescheduleDialog, setOpenRescheduleDialog] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [selectedTypeService, setSelectedTypeService] = useState(null);
+  const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
+  const [selectedPetId, setSelectedPetId] = useState(null); // State for pet_id
+  
+  // เพิ่ม state สำหรับ Dialog ยืนยันการยกเลิกนัด
+  const [openDialog, setOpenDialog] = useState(false);
 
-  // ฟังก์ชันดึงข้อมูลการนัดหมาย
   const fetchAppointmentDetail = useCallback(async () => {
     try {
-      if (!appointmentId) return; // ป้องกันการเรียกหากไม่มี appointmentId
+      if (!appointmentId) return;
 
       const response = await axios.get(`${api}/appointments/detail/${appointmentId}`);
-      if (response.data.success) {
-        setAppointment(response.data.data); // ใช้ข้อมูลจาก response.data.data
+      if (response.data.success && response.data.data.queue_status !== 'ยกเลิกนัด') {
+        setAppointment(response.data.data);
       } else {
-        console.error(response.data.message); // หากไม่มีข้อมูล
+        console.error('ไม่พบข้อมูลการนัดหมาย หรือการนัดหมายถูกยกเลิก');
+        setAppointment(null);
       }
     } catch (error) {
       console.error('Error fetching appointment details:', error.message);
     }
-  }, [appointmentId]); // ใช้ appointmentId เป็น dependency เพื่อให้ฟังก์ชันนี้เรียกใหม่เมื่อ appointmentId เปลี่ยนแปลง
-  
+  }, [appointmentId]);
+
   useEffect(() => {
     fetchAppointmentDetail();
-  }, []); // เรียก fetchAppointmentDetail เมื่อมันถูกสร้างใหม่
+  }, [fetchAppointmentDetail]);
 
   // ถ้ายังไม่ได้ข้อมูลจาก API
   if (appointment === null) {
@@ -45,10 +58,13 @@ const AppointmentDetail = () => {
   // ฟังก์ชันสำหรับยกเลิกนัด
   const handleCancelAppointment = async () => {
     try {
-      const response = await axios.post(`${api}/appointments/cancel`, { appointmentId });
+      const response = await axios.post(`${api}/appointment/cancel`, { appointmentId });
+
       if (response.data.success) {
-        alert('การนัดหมายถูกยกเลิกแล้ว');
-        navigate('/customer/home'); // หลังจากยกเลิกแล้วกลับไปหน้า home
+        setSnackbarMessage('การนัดหมายถูกยกเลิกแล้ว');
+        setOpenSnackbar(true);
+        setAppointment(null); // ซ่อนการแสดงผลการนัดหมายที่ถูกยกเลิก
+        navigate('/customer/home');
       } else {
         console.error(response.data.message);
       }
@@ -57,14 +73,25 @@ const AppointmentDetail = () => {
     }
   };
 
-  // ฟังก์ชันสำหรับเลื่อนนัด
-  const handleRescheduleAppointment = () => {
-    navigate(`/customer/reschedule/${appointmentId}`); // เปลี่ยนเส้นทางไปหน้าที่สามารถเลือกเวลาใหม่ได้
+  // ฟังก์ชันสำหรับเปิด Dialog
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  // ฟังก์ชันสำหรับปิด Dialog
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  // ฟังก์ชันสำหรับยืนยันการยกเลิกนัด
+  const handleConfirmCancel = () => {
+    handleCancelAppointment();
+    handleCloseDialog();
   };
 
   // ฟังก์ชันสำหรับการกลับไปหน้าก่อนหน้า
   const handleBack = () => {
-    const from = location.state?.from; // อ่านข้อมูลจาก state ที่ส่งมาจากหน้าก่อนหน้า
+    const from = location.state?.from; 
     if (from === 'history') {
       navigate('/customer/history'); 
     } else {
@@ -72,12 +99,29 @@ const AppointmentDetail = () => {
     }
   };
 
+  const updateAppointments = () => {
+    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
+      .then((response) => setAppointments(response.data))
+      .catch((error) => console.error('Error fetching updated appointments:', error));
+  };
+
+  const handlePostponeClick = (appointmentId, typeService, petId) => {
+    setSelectedAppointmentId(appointmentId);
+    setSelectedTypeService(typeService);
+    setSelectedPetId(petId); // Store pet_id
+    setOpenPostponeDialog(true);
+
+    console.log('appointment:', appointmentId);
+    console.log('typeService:', typeService);
+    console.log('petId:', petId);
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Navbar */}
       <AppBar position="fixed" sx={{ zIndex: 1100, backgroundColor: '#1976d2' }}>
         <Toolbar>
-         <IconButton edge="start" color="inherit" onClick={handleBack} aria-label="back">
+          <IconButton edge="start" color="inherit" onClick={handleBack} aria-label="back">
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
@@ -103,30 +147,81 @@ const AppointmentDetail = () => {
                 ? dayjs(`2024-01-01T${appointment.appointment_time}`).format('HH:mm')
                 : 'ไม่ระบุเวลา'}
             </Typography>
-
-
             <Typography><strong>เหตุผล:</strong> {appointment.reason || 'ไม่ระบุ'}</Typography>
             <Typography><strong>สถานะ:</strong> {appointment.status}</Typography>
 
             <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleCancelAppointment} 
-                sx={{ flex: 1, marginRight: 1 }}>
-                ยกเลิกนัด
-              </Button>
-              <Button 
-                variant="contained" 
-                color="secondary" 
-                onClick={handleRescheduleAppointment} 
-                sx={{ flex: 1, marginLeft: 1 }}>
-                เลื่อนนัด
-              </Button>
+              {location.state?.from !== 'history' && (
+                <>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={handleOpenDialog} 
+                    sx={{ flex: 1, marginRight: 1 }}>
+                    ยกเลิกนัด
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="secondary" 
+                    onClick={handlePostponeClick} 
+                    sx={{ flex: 1, marginLeft: 1 }}>
+                    เลื่อนนัด
+                  </Button>
+                </>
+              )}
             </Box>
           </CardContent>
         </Card>
       </Container>
+
+        {/* Popup เดียวที่แสดงตามเงื่อนไข */}
+      {selectedAppointmentId && (
+        selectedTypeService === 'ฝากเลี้ยง' ? (
+          <PostponeHotel
+            open={openPostponeDialog}
+            handleClose={() => setOpenPostponeDialog(false)}
+            appointmentId={selectedAppointmentId}
+            petId={selectedPetId}
+            updateAppointments={updateAppointments}
+          />
+        ) : (
+          <Postpone
+            open={openPostponeDialog}
+            handleClose={() => setOpenPostponeDialog(false)}
+            appointmentId={selectedAppointmentId}
+            TypeService={selectedTypeService}
+            updateAppointments={updateAppointments}
+          />
+        )
+      )}
+        
+
+      {/* Dialog ยืนยันการยกเลิกนัด */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>ยืนยันการยกเลิกนัดหมาย</DialogTitle>
+        <DialogContent>
+          <Typography>คุณแน่ใจว่าต้องการยกเลิกการนัดหมายนี้หรือไม่?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            ยกเลิก
+          </Button>
+          <Button onClick={handleConfirmCancel} color="primary">
+            ยืนยัน
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity="success">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

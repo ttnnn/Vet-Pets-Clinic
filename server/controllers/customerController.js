@@ -81,7 +81,8 @@ router.get('/appointments', async (req, res) => {
     // ดึงข้อมูลการนัดหมาย
     const appointments = await pool.query(
       `SELECT pets.pet_name, pets.image_url, appointment.appointment_date, appointment.appointment_time, 
-              appointment.status, appointment.appointment_id, appointment.type_service ,appointment.owner_id
+              appointment.status, appointment.appointment_id, appointment.type_service ,appointment.owner_id,
+              appointment.queue_status
        FROM appointment 
        JOIN pets ON appointment.pet_id = pets.pet_id 
        WHERE appointment.owner_id = $1
@@ -226,6 +227,30 @@ router.get('/pets/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// API สำหรับยกเลิกนัดหมาย
+router.post('/appointment/cancel', async (req, res) => {
+  const { appointmentId } = req.body; // รับ appointmentId จาก request body
+
+  try {
+    // อัพเดตสถานะการนัดหมายในฐานข้อมูล
+    const query = 'UPDATE appointment SET queue_status = $1 WHERE appointment_id = $2';
+    const values = ['ยกเลิกนัด', appointmentId];
+
+    const result = await pool.query(query, values);
+
+    if (result.rowCount > 0) {
+      // ถ้าสำเร็จ ส่งผลลัพธ์กลับไปที่ frontend
+      res.json({ success: true, message: 'การนัดหมายถูกยกเลิกแล้ว' });
+    } else {
+      res.status(404).json({ success: false, message: 'ไม่พบการนัดหมายที่ต้องการยกเลิก' });
+    }
+  } catch (error) {
+    console.error('Error canceling appointment:', error.message);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการยกเลิกนัด' });
+  }
+});
+
 
 
 module.exports = router;
