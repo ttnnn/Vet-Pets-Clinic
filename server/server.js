@@ -2,12 +2,13 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
-require('./cronAppointment.js')
 // Middleware
 app.use(cors());
 app.use(express.json()); 
 const path = require('path');
 const pool = require('./db');
+const clinicController = require('./controllers/clinicController');  // นำเข้า controller
+const customerController = require('./controllers/customerController'); 
 
 // การเชื่อมต่อฐานข้อมูล
 pool.connect()

@@ -298,14 +298,15 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     setTimePickerKey(timePickerKey + 1);
     setIsNoTime(false)
   };
+
   useEffect(() => {
     if (isCustomerAppointment) {
-      const fullName = `${user.first_name} ${user.last_name}`;
+      const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim(); // ตรวจสอบค่า null และลบช่องว่างที่ไม่จำเป็น
       setSearchOwner(fullName); // เซ็ตชื่อเต็มลงใน setSearchOwner
     } else {
       setSearchOwner(''); // ล้างค่าหากไม่ใช่ Customer Appointment
     }
-  }, [isCustomerAppointment, user.first_name, user.last_name]);
+  }, [isCustomerAppointment, user?.first_name, user?.last_name]);
   
 
   return (
