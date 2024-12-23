@@ -130,15 +130,15 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
             <Typography color={alertSeverity === "error" ? "error" : "success"} variant="subtitle1" sx={{ mb: 2 }}>
               {alertMessage}
             </Typography>
-          )}
-  <Box
-    component="form"
-    sx={{
-      display: 'flex',
-      flexDirection: 'row',
-      gap: 2,
-    }}
-  >
+            )}
+    <Box
+      component="form"
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 2,
+      }}
+    >
     <Box sx={{ flex: 2 }}>
       <TextField
         label="ชื่อสัตว์เลี้ยง"
@@ -165,41 +165,41 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       <MenuItem value="อื่นๆ">อื่นๆ</MenuItem>
     </TextField>
     {petSpecies === "อื่นๆ" ? (
-  <TextField
-    label="กรุณาระบุประเภทสัตว์เลี้ยง"
-    value={otherPetSpecies}
-    fullWidth
-    required
-    onChange={(e) => setOtherPetSpecies(e.target.value)}
-    sx={{ mb: 2 }}
-  />
-) : (
-  <Autocomplete
-    options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
-    value={petBreed}
-    onChange={(event, newValue) => {
-      setPetBreed(newValue);
-    }}
-    renderInput={(params) => (
-      <TextField 
-        {...params} 
-        label="พันธุ์ของสัตว์เลี้ยง" 
-        variant="outlined" 
-        required
-        fullWidth 
+    <TextField
+      label="กรุณาระบุประเภทสัตว์เลี้ยง"
+      value={otherPetSpecies}
+      fullWidth
+      required
+      onChange={(e) => setOtherPetSpecies(e.target.value)}
+      sx={{ mb: 2 }}
+    />
+  ) : (
+      <Autocomplete
+        options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
+        value={petBreed}
+        onChange={(event, newValue) => {
+          setPetBreed(newValue);
+        }}
+        renderInput={(params) => (
+          <TextField 
+            {...params} 
+            label="พันธุ์ของสัตว์เลี้ยง" 
+            variant="outlined" 
+            required
+            fullWidth 
+          />
+        )}
+        freeSolo // Allow custom input
+        sx={{ 
+          '& .MuiAutocomplete-listbox': {
+            maxHeight: '200px', 
+            overflowY: 'auto',
+          }
+        }}
+        isOptionEqualToValue={(option, value) => option === value}
+        getOptionLabel={(option) => option}
       />
     )}
-    freeSolo // Allow custom input
-    sx={{ 
-      '& .MuiAutocomplete-listbox': {
-        maxHeight: '200px', 
-        overflowY: 'auto',
-      }
-    }}
-    isOptionEqualToValue={(option, value) => option === value}
-    getOptionLabel={(option) => option}
-  />
-)}
 
       <TextField
         label="สี/ตำหนิ"
@@ -248,7 +248,6 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     />  
       </Box>
       
-      
       <ToggleButtonGroup
         value={gender}
         exclusive
@@ -259,10 +258,13 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         <ToggleButton value="male"  >
           <Typography>♂ male</Typography>
         </ToggleButton>
+
         <ToggleButton value="female">
           <Typography>♀ female</Typography>
         </ToggleButton>
+
       </ToggleButtonGroup>
+
       <TextField
         label="MicrochipNumber"
         value={petMicrochip}
