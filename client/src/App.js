@@ -13,12 +13,13 @@ import Register from './Front-end/customer/Register';
 import Home from './Front-end/customer/Home';
 import HistoryPage from './Front-end/customer/HistoryPage';
 import PetsPage from './Front-end/customer/PetsPage';
-import PestsDetail from './Front-end/customer/PetsDetail';
+import PetsDetail from './Front-end/customer/PetsDetail';
 import AppointmentDetail from './Front-end/customer/AppointmentDetail';
 import Line from './Front-end/customer/Line';
 import LineAuth from './Front-end/customer/LineAuth'
 import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 import ServiceAppointment from './Front-end/customer/ServiceAppointment';
+import PrivateRoute from './Front-end/customer/PrivateRoute'; 
 
 const theme = createTheme();
 
@@ -89,15 +90,16 @@ function App() {
 
              {/* สำหรับลูกค้า */}
             <Route path="/customer/login" element={<Register />} />
-            <Route path="/customer/home" element={<Home/>} />
-            <Route path="/customer/history" element={<HistoryPage/>} />
-            <Route path="/customer/pets" element={<PetsPage/>} />
-            <Route path="/customer/serviceappointment" element={<ServiceAppointment/>} />
-            <Route path="/customer/appointment" element={<AppointmentDetail />} />
-            <Route path="/customer/petsdetail" element={<PestsDetail />} />
-            <Route path="/customer/line" element={<LineAuth />} />
-            <Route path="/customer/line-login" element={<Line />} />
-           
+              <Route element={<PrivateRoute />}>
+                <Route path="/customer/home" element={<Home />} />
+                <Route path="/customer/history" element={<HistoryPage />} />
+                <Route path="/customer/pets" element={<PetsPage />} />
+                <Route path="/customer/serviceappointment" element={<ServiceAppointment />} />
+                <Route path="/customer/appointment" element={<AppointmentDetail />} />
+                <Route path="/customer/petsdetail" element={<PetsDetail />} />
+                <Route path="/customer/line" element={<LineAuth />} />
+                <Route path="/customer/line-login" element={<Line />} />
+              </Route>
           </Routes>
         </div>
       </div>
