@@ -75,7 +75,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
 
       // อัปเดตสถานะเป็น admit เมื่อ isAdmitBooking เป็น true
       if (isAdmitBooking) {
-        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', });
+        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', reason: 'admit' });
       }
 
       const response = await axios.put(`${api}/postpone/hotels/${appointmentId}`, {

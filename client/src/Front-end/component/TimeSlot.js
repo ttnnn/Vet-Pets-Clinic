@@ -13,7 +13,7 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService
   if (typeService === 'อาบน้ำ-ตัดขน') {
     end.setHours(18, 0, 0, 0); // จำกัดให้สิ้นสุดที่ 18:00 สำหรับ "อาบน้ำ-ตัดขน"
   } else {
-    end.setHours(endHour, 30, 0, 0); // สิ้นสุดที่ 20:30 สำหรับบริการอื่นๆ
+    end.setHours(endHour, 0, 0, 0); // สิ้นสุดที่ 20:30 สำหรับบริการอื่นๆ
   }
 
   const formatTime = (date) =>

@@ -80,7 +80,7 @@ const RegisterPage = () => {
   const location = useLocation();
   const { locationActiveTab } = location.state || {};
 
-  console.log("locationActiveTab : ",locationActiveTab)
+  // console.log("locationActiveTab : ",locationActiveTab)
 
   useEffect(() => {
     if (locationActiveTab !== undefined) {

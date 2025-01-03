@@ -12,7 +12,7 @@ import 'dayjs/locale/th'; // Import Thai locale for dayjs
 import axios from 'axios';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , useLocation } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
 import { debounce } from 'lodash';
 
@@ -42,8 +42,13 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   const [selectedPetId, setSelectedPetId] = useState(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
   const [isQueueSent, setIsQueueSent] = useState(false); // Track if the queue is sent
+  const [appointmentHotel, setAppointmentHotel] = useState([]);
 
+  const location = useLocation();
+  const fromOngoing = location.state?.fromOngoing || false;  //สำหรับเช็คว่าถ้ามาจากการกดส่งคิวรักษาจะสามารถกดปุ่มต่างๆได้ แต่ถ้ามาจากการแก้ประวัติจะบันทึกข้อมูลได้อย่างเดียว
+  // console.log('Is from ongoing:', fromOngoing);
 
+  // console.log('Appointment ID:', appointmentId);
   const navigate = useNavigate();
   // State for medical record
   const [formMedical, setFormMedical] = useState({
@@ -107,6 +112,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         // Fetch Medical Data
         setLoading();
         const medicalResponse = await axios.get(`${api}/medical/form/${appointmentId}`);
+        // console.log('medicalResponse',medicalResponse)
         if (medicalResponse.data && medicalResponse.data.length > 0) {
           const medicalData = medicalResponse.data[0];
           setFormMedical({
@@ -119,13 +125,37 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
           });
           setFormData({
             diag_cc: medicalData.diag_cc || '',
+            diag_ht: medicalData.diag_ht || '',
+            diag_pe: medicalData.diag_pe || '',
+            diag_majorproblem: medicalData.diag_majorproblem || '',
+            diag_tentative: medicalData.diag_tentative || '',
+            diag_final: medicalData.diag_final || '',
+            diag_treatment: medicalData.diag_treatment || '',
+            diag_note: medicalData.diag_note || '',
+
           });
+          setFormphysical({
+            phy_general: medicalData.phy_general || 'no exam',
+            phy_integumentary: medicalData.phy_integumentary || 'no exam',
+            phy_musculo_skeletal: medicalData.phy_musculo_skeletal || 'no exam',
+            phy_circulatory: medicalData.phy_circulatory || 'no exam',
+            phy_respiratory: medicalData.phy_respiratory || 'no exam',
+            phy_digestive: medicalData.phy_digestive || 'no exam',
+            phy_genito_urinary: medicalData.phy_genito_urinary || 'no exam',
+            phy_eyes: medicalData.phy_eyes || 'no exam',
+            phy_ears: medicalData.phy_ears || 'no exam',
+            phy_neural_system: medicalData.phy_neural_system || 'no exam',
+            phy_lymph_nodes: medicalData.phy_lymph_nodes || 'no exam',
+            phy_mucous_membranes: medicalData.phy_mucous_membranes || 'no exam',
+            phy_dental: medicalData.phy_dental || 'no exam',
+          });
+          
         } else {
           // กรณีไม่พบข้อมูล ไม่ต้อง alert แต่ตั้งค่าฟอร์มให้ว่างเปล่า
           setFormMedical(null);
           setFormData(null);
         }
-  
+    
         // Fetch Personnel Data
         const personnelResponse = await axios.get(`${api}/personnel`);
         setPersonnelList(personnelResponse.data);
@@ -141,7 +171,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   
     fetchMedicalAndPersonnel();
   }, [appointmentId]);
-  
+
 
   // ตั้งค่าเริ่มต้น (วันที่และเวลา)
   useEffect(() => {
@@ -389,17 +419,18 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       if (response.data.status === 'success') {
         showAlert("ข้อมูลถูกบันทึกสำเร็จ", "success");
         setIsQueueSent(true); // กำหนดสถานะคิวว่าได้ถูกส่งไปแล้ว
-        setSelectedItems(null)
+        setSelectedItems([]);
+
         // 3. อัปเดตสถานะคิว
-        // const statusUpdates = {
-          // appointment_id: appointmentId,
-          // pet_id: petId,
-          // status: 'อนุมัติ',
-          // queue_status: 'รอชำระเงิน',
-        // };
+        const statusUpdates = {
+          appointment_id: appointmentId,
+          pet_id: petId,
+          status: 'อนุมัติ',
+          queue_status: 'รอชำระเงิน',
+        };
   
-        // await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
-        // showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
+        await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
+        showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
   
 
       } else {
@@ -425,13 +456,26 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       setSelectedItems([...selectedItems, { ...service, quantity: 1 }]);
     }
   };
-  
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${api}/appointment/hotel`);
+      setAppointmentHotel(response.data);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Paper style={{ padding: 20 }}>
       <Typography variant="h5" gutterBottom>
         Medical Record and Diagnosis
       </Typography>
+      <Typography variant="h6" gutterBottom>
+        เลขที่นัดหมาย : {appointmentId || ''}
+    </Typography>
       <Snackbar
           open={openSnackbar}
           autoHideDuration={6000} // ปิดเองหลัง 6 วินาที
@@ -673,7 +717,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
             <Typography variant="h6" gutterBottom>
               รายการที่เลือก
             </Typography>
-            {selectedItems.length > 0 ? (
+            {selectedItems.length > 0 ?(
               <List>
                 {selectedItems.map((item, index) => (
                   <ListItem
@@ -723,14 +767,15 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
           variant="outlined" 
           color="primary" 
           onClick={handleToAdmit}
+          disabled={!fromOngoing} 
         >
           ส่งเข้า Admit
         </Button>
 
-        <Button variant="outlined" color="primary"  onClick={handleTopageAppointment}>
+        <Button variant="outlined" color="primary"  onClick={handleTopageAppointment} disabled={!fromOngoing} >
           นัดหมายล่วงหน้า
         </Button>
-        <Button variant="outlined" color="primary"  onClick={handleSendQueue}>
+        <Button variant="outlined" color="primary"  onClick={handleSendQueue} disabled={!fromOngoing} >
          ส่งคิว
         </Button>
       </Box>
@@ -741,6 +786,8 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         appointmentId={selectedAppointmentId}
         petId={selectedPetId}
         isAdmitBooking={true} 
+        updateAppointments={fetchAppointments}
+        
       />
     </Paper>
   );

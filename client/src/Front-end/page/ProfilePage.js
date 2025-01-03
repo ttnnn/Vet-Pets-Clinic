@@ -21,7 +21,7 @@ const PetProfilePage = () => {
   const navigate = useNavigate();
   // const { pet, owner } = location.state; // pet and owner data from route state
   const { pet: initialPet, owner: initialOwner  } = location.state; // Get initial data from route state
-  const { appointmentId } = location.state;
+  let { appointmentId } = location.state;
   const [pet, setPet] = useState(initialPet);
   const [owner, setOwner] = useState(initialOwner);
   const [age, setAge] = useState('');
@@ -33,10 +33,12 @@ const PetProfilePage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  console.log("Owner state before rendering:", owner);
+  const [Id, setId] = useState(null);
 
-  
-  console.log('Location state:', location.state);
+  // console.log("Owner state before rendering:", owner);
+  // console.log('Location state:', location.state);
+// 
+
 
   //ดึงข้อมูลทั้งหมดจาก API และอัปเดตสถานะ (state) ของ pet และ owner
   
@@ -222,10 +224,18 @@ const handleUpdate = async (updatedData, type) => {
     console.error('Error:', error.response ? error.response.data : error.message);
   }
 };
+const handleEditClick = (id) => {
+  setId(id);   // กำหนด appointmentId ที่จะส่งไปยังคอมโพเนนต์
+  setActiveTab(0);        // เปลี่ยน activeTab ไปที่แท็บ 0 (หรือแท็บที่คุณต้องการ)
+  console.log('Appointment ID:', id);
+
+};
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
+
+  
   const tabToTypeServiceMap = {
     1: 'บันทึกพักรักษา',
     2: 'ตรวจรักษา', // "ประวัติการรักษา"
@@ -368,7 +378,7 @@ const handleUpdate = async (updatedData, type) => {
         {activeTab === 0 &&
          <DiagnosisForm 
            petId={pet.pet_id}
-           appointmentId={appointmentId} 
+           appointmentId={appointmentId || Id} 
            ownerId={owner.owner_id}
         />}
         {activeTab === 1 &&
@@ -388,6 +398,8 @@ const handleUpdate = async (updatedData, type) => {
           setSearchQuery={setSearchQuery}
           activeTabLabel={tabToTypeServiceMap[activeTab]} // Pass the corresponding type_service
           selectedPetId={pet.pet_id}
+          onEditClick={handleEditClick} 
+          
         />
       )}
 

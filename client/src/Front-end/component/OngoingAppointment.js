@@ -181,7 +181,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
           const owner = {
             ownerId: appointment.owner_id,
           };
-          navigate('/clinic/pet-profile' ,  { state: { pet, owner , appointmentId: appointment.appointment_id,}}
+          navigate('/clinic/pet-profile' ,  { state: { pet, owner , appointmentId: appointment.appointment_id, fromOngoing: true,}}
           )
           break;
   

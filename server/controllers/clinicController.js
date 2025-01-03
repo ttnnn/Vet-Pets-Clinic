@@ -8,9 +8,7 @@ const router = express.Router();
 require('dotenv').config();
 const bcrypt = require('bcrypt'); 
 
-
 const pool = require('../db.js');
-
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
 
 
@@ -154,13 +152,12 @@ router.get('/medical/form/:appointmentId', async (req, res) => {
   const query = `
     SELECT 
       mr.*,  
-      d.diag_cc
+      d.*, 
+      p.*
     FROM 
       medicalrecord AS mr
-    LEFT JOIN 
-      diagnosis AS d 
-    ON 
-      mr.diagnosis_id = d.diagnosis_id
+    LEFT JOIN  diagnosis AS d  ON mr.diagnosis_id = d.diagnosis_id
+    LEFT JOIN physicalcheckexam AS p ON mr.physical_check_id = p.physical_check_id
     WHERE 
       mr.appointment_id = $1
   `;
@@ -760,10 +757,10 @@ router.get('/personnel', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-//อัปเดตคิว
+
 router.put('/appointment/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, queue_status } = req.body;
+  const { status, queue_status, reason } = req.body;
 
   console.log('Updating appointment with ID:', id);
   console.log('Received status:', status, 'queue_status:', queue_status);
@@ -776,7 +773,7 @@ router.put('/appointment/:id', async (req, res) => {
 
     // Fetch current appointment details
     const currentQuery = `
-      SELECT status, queue_status, type_service 
+      SELECT status, queue_status, type_service, reason
       FROM appointment 
       WHERE appointment_id = $1
     `;
@@ -787,7 +784,7 @@ router.put('/appointment/:id', async (req, res) => {
       return res.status(404).send({ message: 'Appointment not found' });
     }
 
-    const { type_service } = currentResult.rows[0];
+    const { type_service, reason: currentReason } = currentResult.rows[0];
 
     // Check if type_service is 'ฝากเลี้ยง'
     if (type_service === 'ฝากเลี้ยง') {
@@ -807,13 +804,16 @@ router.put('/appointment/:id', async (req, res) => {
       }
     }
 
+    // Use currentReason if reason is not provided
+    const updatedReason = reason || currentReason;
+
     // Update appointment table
     const appointmentUpdateQuery = `
       UPDATE appointment 
-      SET queue_status = $1 , status = $2
-      WHERE appointment_id = $3
+      SET queue_status = $1, status = $2, reason = $3
+      WHERE appointment_id = $4
     `;
-    await client.query(appointmentUpdateQuery, [queue_status,status, id]);
+    await client.query(appointmentUpdateQuery, [queue_status, status, updatedReason, id]);
 
     // Commit transaction
     await client.query('COMMIT');
@@ -827,6 +827,7 @@ router.put('/appointment/:id', async (req, res) => {
     client.release();
   }
 });
+
 
 //เลื่อนนนัด
 router.put('/postpone/appointment/:id', async (req, res) => {  
@@ -884,7 +885,8 @@ router.get('/appointment', async (req, res) => {
       appointment.detail_service,
       appointment.queue_status,
       medicalrecord.rec_weight,
-      medicalrecord.med_id
+      medicalrecord.med_id,
+      medicalrecord.rec_time
     FROM appointment
     JOIN pets ON appointment.pet_id = pets.pet_id
     JOIN owner ON appointment.owner_id = owner.owner_id
@@ -1517,8 +1519,10 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
       petshotel.end_date,
       petshotel.num_day,
       servicecategory.category_name,
+      servicecategory.price_service,
       serviceinvoice.amount,
-      serviceinvoice.subtotal_price,
+      serviceinvoice.invoice_id,
+      serviceinvoice.category_id,
       invoice.total_pay_invoice,
    
       CASE 
@@ -1527,10 +1531,10 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
       END AS days_overdue
    
     FROM appointment
-    JOIN invoice ON appointment.appointment_id = invoice.appointment_id
-    JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
-    JOIN servicecategory ON serviceinvoice.category_id = servicecategory.category_id 
-    JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+    LEFT JOIN invoice ON appointment.appointment_id = invoice.appointment_id
+    LEFT JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
+    LEFT JOIN servicecategory ON serviceinvoice.category_id = servicecategory.category_id 
+    LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
    
     WHERE appointment.appointment_id = $1
   `;
@@ -1543,6 +1547,243 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+router.delete('/delete/item/:category_id/:invoice_id', async (req, res) => {
+  const { category_id, invoice_id } = req.params;
+  console.log('req.params',req.params)
+  const client = await pool.connect(); // เชื่อมต่อ Client เพื่อใช้ Transaction
+
+  try {
+    await client.query('BEGIN'); // เริ่ม Transaction
+
+    // 1. ลบรายการสินค้า
+    await client.query('DELETE FROM serviceinvoice WHERE category_id = $1 AND invoice_id = $2', [category_id, invoice_id]);
+
+    // 2. รวมราคาสินค้าที่ยังเหลือ
+    const result = await client.query(
+      'SELECT SUM(subtotal_price) AS total FROM serviceinvoice WHERE invoice_id = $1',
+      [invoice_id]
+    );
+    const totalPrice = result.rows[0].total || 0;
+
+    // 3. อัปเดตราคาในตาราง invoice
+    await client.query('UPDATE invoice SET total_pay_invoice = $1 WHERE invoice_id = $2', [totalPrice, invoice_id]);
+
+    // 4. อัปเดตราคาในตาราง payment
+    await client.query(
+      'UPDATE payment SET total_payment = $1 WHERE payment_id = (SELECT payment_id FROM invoice WHERE invoice_id = $2)',
+      [totalPrice, invoice_id]
+    );
+
+    await client.query('COMMIT'); // ยืนยันการเปลี่ยนแปลง
+    res.status(200).json({ message: 'Item deleted and invoice updated successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK'); // ยกเลิกการเปลี่ยนแปลงทั้งหมด
+    console.error('Error during transaction:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release(); // ปิดการเชื่อมต่อ
+  }
+});
+
+router.post('/create-invoice/payment', async (req, res) => {
+  const {
+    appointmentId,
+    selectedItems,
+    totalAmount,
+  } = req.body;
+
+  console.log('/create-invoice', req.body);
+  const client = await pool.connect(); // Connect to database
+
+  try {
+    await client.query('BEGIN'); // เริ่ม transaction
+
+    // ตรวจสอบว่า appointment_id มีอยู่ในฐานข้อมูลหรือไม่
+    const existingInvoiceQuery = 'SELECT invoice_id FROM invoice WHERE appointment_id = $1';
+    const existingInvoiceResult = await client.query(existingInvoiceQuery, [appointmentId]);
+
+    let invoiceId;
+    let paymentId;
+
+    if (existingInvoiceResult.rowCount > 0) {
+      // มีข้อมูล invoice เดิม -> อัปเดตข้อมูล
+      invoiceId = existingInvoiceResult.rows[0].invoice_id;
+
+      const updateInvoiceQuery = 'UPDATE invoice SET total_pay_invoice = $1, invoice_date = $2 WHERE invoice_id = $3';
+      await client.query(updateInvoiceQuery, [totalAmount, new Date(), invoiceId]);
+
+      // ดึง payment_id ที่เกี่ยวข้องกับ invoice
+      const paymentQuery = 'SELECT payment_id FROM invoice WHERE invoice_id = $1';
+      const paymentResult = await client.query(paymentQuery, [invoiceId]);
+      paymentId = paymentResult.rows[0].payment_id;
+
+      const updatePaymentQuery = 'UPDATE payment SET total_payment = $1, payment_date = $2 WHERE payment_id = $3';
+      await client.query(updatePaymentQuery, [totalAmount, new Date(), paymentId]);
+    } else {
+      // ไม่มีข้อมูล -> สร้างใหม่
+      const paymentQuery = 'INSERT INTO payment (total_payment, payment_date, status_pay) VALUES ($1, $2, $3) RETURNING payment_id';
+      const paymentResult = await client.query(paymentQuery, [totalAmount, new Date(), 'Paid']);
+      paymentId = paymentResult.rows[0].payment_id;
+
+      const invoiceQuery = 'INSERT INTO invoice (payment_id, appointment_id, invoice_date, total_pay_invoice) VALUES ($1, $2, $3, $4) RETURNING invoice_id';
+      const invoiceResult = await client.query(invoiceQuery, [paymentId, appointmentId, new Date(), totalAmount]);
+      invoiceId = invoiceResult.rows[0].invoice_id;
+    }
+    // อัปเดตรายการสินค้า
+    for (const item of selectedItems) {
+      const checkServiceInvoiceQuery = 'SELECT * FROM serviceinvoice WHERE invoice_id = $1 AND category_id = $2';
+      const serviceInvoiceResult = await client.query(checkServiceInvoiceQuery, [invoiceId, item.category_id]);
+
+      if (serviceInvoiceResult.rowCount > 0) {
+        // มีรายการสินค้าซ้ำ -> อัปเดต
+        const updateServiceInvoiceQuery = `
+          UPDATE serviceinvoice 
+          SET amount = $1, subtotal_price = $2 
+          WHERE invoice_id = $3 AND category_id = $4
+        `;
+        await client.query(updateServiceInvoiceQuery, [
+          item.amount,
+          item.amount * item.price_service,
+          invoiceId,
+          item.category_id,
+        ]);
+      } else {
+        // ไม่มี -> สร้างใหม่
+        const insertServiceInvoiceQuery = `
+          INSERT INTO serviceinvoice (invoice_id, category_id, amount, subtotal_price) 
+          VALUES ($1, $2, $3, $4)
+        `;
+        await client.query(insertServiceInvoiceQuery, [
+          invoiceId,
+          item.category_id,
+          item.amount,
+          item.amount * item.price_service,
+        ]);
+      }
+    }
+
+    // อัปเดตสถานะคิว (appointment)
+    const updateAppointmentQuery = 'UPDATE appointment SET queue_status = $1 WHERE appointment_id = $2';
+    const updateHotelStatusQuery = 'UPDATE petshotel SET status = $1 WHERE appointment_id = $2';
+    await client.query(updateAppointmentQuery, ['เสร็จสิ้น', appointmentId]);
+
+    const checkHotelStatusQuery = 'SELECT status FROM petshotel WHERE appointment_id = $1';
+    const hotelResult = await client.query(checkHotelStatusQuery, [appointmentId]);
+
+  if (hotelResult.rows.length > 0) {
+    await client.query(updateHotelStatusQuery, ['checkout', appointmentId]);
+  }
+
+
+    await client.query('COMMIT'); // ยืนยัน transaction
+    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' });
+  } catch (error) {
+    await client.query('ROLLBACK'); // ยกเลิก transaction หากเกิดข้อผิดพลาด
+    console.error('Error during transaction:', error);
+    res.status(500).json({ status: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
+  } finally {
+    client.release();
+  }
+});
+
+router.get('/history/medical/:appointmentId', async (req, res) => {
+  const { appointmentId } = req.params;
+  const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
+
+  try {
+    const query = `
+      SELECT 
+        m.med_id,
+        m.pet_id,
+        m.appointment_id,
+        m.rec_temperature,
+        m.rec_pressure,
+        m.rec_heartrate,
+        m.rec_weight,
+        m.rec_time,
+        d.diagnosis_id,
+        d.diag_cc,
+        d.diag_ht,
+        d.diag_pe,
+        d.diag_majorproblem,
+        d.diag_dx,
+        d.diag_tentative,
+        d.diag_final,
+        d.diag_treatment,
+        d.diag_client,
+        d.diag_note,
+        p.physical_check_id,
+        p.phy_general,
+        p.phy_integumentary,
+        p.phy_musculo_skeletal,
+        p.phy_circulatory,
+        p.phy_respiratory,
+        p.phy_digestive,
+        p.phy_genito_urinary,
+        p.phy_eyes,
+        p.phy_ears,
+        p.phy_neural_system,
+        p.phy_lymph_nodes,
+        p.phy_mucous_membranes,
+        p.phy_dental,
+        pets.pet_name,
+        personnel.first_name || ' ' || personnel.last_name AS personnel_name ,
+        owner.owner_id
+      FROM medicalrecord m
+      LEFT JOIN pets ON m.pet_id = pets.pet_id
+      LEFT JOIN owner ON pets.owner_id = owner.owner_id 
+      LEFT JOIN personnel ON  m.personnel_id = personnel.personnel_id
+      LEFT JOIN diagnosis d ON m.diagnosis_id = d.diagnosis_id
+      LEFT JOIN physicalcheckexam p ON m.physical_check_id = p.physical_check_id
+      WHERE m.appointment_id = $1
+    `;
+    const result = await client.query(query, [appointmentId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No records found for the given appointment ID' });
+    }
+
+    res.status(200).json(result.rows[0]); // ส่งข้อมูลกลับในรูป JSON
+  } catch (error) {
+    console.error('Error fetching treatment details:', error);
+    res.status(500).json({ message: 'Failed to fetch treatment details', error: error.message });
+  } finally {
+    client.release(); // ปล่อย connection กลับสู่ pool
+  }
+});
+
+
+router.get('/finance', async (req, res) => {
+  const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
+  try {
+    const query = `
+      SELECT 
+      i.*,
+      pay.*,
+      owner.first_name ||' ' || owner.last_name AS fullname
+
+      FROM invoice i
+      LEFT JOIN appointment a  ON i.appointment_id = a.appointment_id
+      LEFT JOIN owner ON a.owner_id = owner.owner_id 
+      LEFT JOIN payment pay ON i.payment_id = pay.payment_id
+   
+    `;
+    const result = await client.query(query);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No records found for the given appointment ID' });
+    }
+
+    res.status(200).json(result.rows); // ส่งข้อมูลกลับในรูป JSON
+  } catch (error) {
+    console.error('Error fetching treatment details:', error);
+    res.status(500).json({ message: 'Failed to fetch treatment details', error: error.message });
+  } finally {
+    client.release(); // ปล่อย connection กลับสู่ pool
+  }
+});
+
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

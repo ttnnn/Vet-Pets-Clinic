@@ -92,10 +92,30 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
 
   useEffect(() => {
     const fetchRecords = async () => {
+      if (!appointment.appointment_id) {
+        console.warn("Appointment ID is missing.");
+        return;
+      }
+      
       setIsLoading(true);
       try {
         const response = await fetch(`${api}/admitrecord?appointment_id=${appointment.appointment_id}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.log("No records found for this appointment.");
+            setFilteredRecords([]); // ตั้งค่าว่างสำหรับกรณีไม่มีข้อมูล
+          } else {
+            console.error(`Error fetching records: ${response.statusText}`);
+          }
+          return;
+        }
+  
         const data = await response.json();
+        if (!data.data || data.data.length === 0) {
+          console.log("No records found for this appointment.");
+          setFilteredRecords([]);
+          return;
+        }
         // setRecords(data.data);
         setFilteredRecords(data.data);
       } catch (error) {
@@ -139,12 +159,9 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
           <Box display="flex" alignItems="center">
             <FolderIcon style={{ marginRight: '12px', color: '#757575' }} />
             <Typography variant="body1" fontWeight="bold">
-              {formatDate2(appointment.appointment_date)}
+              {formatDate2(appointment.appointment_date)} ({appointment.appointment_id})
             </Typography>
           </Box>
-          <Typography variant="body2" color="textSecondary">
-            {appointment.appointment_id}
-          </Typography>
           <AddRecordButton onClick={() => onOpenDialog(appointment)} />
         </Box>
 
@@ -296,8 +313,8 @@ const RecordMedical = ({
       rec_date: now.format('YYYY-MM-DD'),
     });}
 
-    const updateAdmitrecord = () => {
-      axios
+  const updateAdmitrecord = () => {
+    axios
         .get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
         .then((response) => {
           setUpdateRecords(response.data.data); // อัปเดตข้อมูลใน state
@@ -365,7 +382,7 @@ const RecordMedical = ({
     .filter((appointment) =>
       appointment.pet_id === selectedPetId &&
       appointment.status !== 'รออนุมัติ' &&
-      appointment.queue_status === 'admit' &&
+      (appointment.queue_status === 'admit' || appointment.reason === 'admit' )&&
       (appointment.appointment_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (appointment.appointment_date &&
           appointment.appointment_date.includes(searchQuery)))

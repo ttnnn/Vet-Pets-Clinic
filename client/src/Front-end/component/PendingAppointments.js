@@ -19,7 +19,7 @@ import {
   MenuItem,
   Select,
   TablePagination,
-  TextField,
+  TextField, Alert,Snackbar ,DialogTitle
 } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
@@ -75,6 +75,12 @@ const PendingAppointments = ({ appointments }) => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selectedItems, setSelectedItems] = useState([]); // จัดการสินค้าที่เลือก
   const [searchTerm, setSearchTerm] = useState('');
+  const [alertMessage, setAlertMessage] = useState("");   // ข้อความสำหรับ Alert
+  const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
+  const [openSnackbar, setOpenSnackbar] = useState(false); 
+  const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+
 
 
   const resetPage = () => setPage(0);
@@ -113,30 +119,27 @@ const PendingAppointments = ({ appointments }) => {
   };
   
 
-  const calculateTotal = () => {
-    return selectedItems.reduce(
-      (sum, item) => sum + item.quantity * item.price_service,
-      0
-    );
-  };
-
-  const calculateTotalInvoice = () => {
-    // ดึงค่าผลรวมจากฐานข้อมูล
-    const selectedItemsData = selectedItems.reduce(
-      (sum, item) => sum + (item.amount || 0) * (item.subtotal_price || 0),
-      0
-    );
-
-    const selectedItemsTotal = selectedItems.reduce(
-      (sum, item) => sum + (item.quantity || 0) * (item.price_service || 0),
-      0
-    );
-
-    return selectedItemsTotal + selectedItemsData;
-  
+  const calculateTotalAmount = () => {
+    return selectedItems.reduce((sum, item) => {
+      // ตรวจสอบว่ารายการเป็นบริการตรวจรักษาหรือไม่
+      if (selectedAppointment.type === "ตรวจรักษา") {
+        // const selectedItemsData = selectedItems.reduce(
+          // (sum, item) => sum + (item.amount || 0) * (item.price_service|| 0),
+          // 0
+        // );
+        const selectedItemsTotal = selectedItems.reduce(
+          (sum, item) => sum + (item.quantity || 0) * (item.price_service || 0),
+          0
+        );
+        const total = selectedItemsTotal ;
+        return total;
+      } else {
+        // ใช้ quantity และ price_service สำหรับบริการอื่นๆ
+        return sum + (item.quantity || 1) * (item.price_service || 0);
+      }
+    }, 0);
   };
   
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -189,13 +192,15 @@ const PendingAppointments = ({ appointments }) => {
       switch (appointment.type_service) {
         case 'วัคซีน':
           selectedItems = await fetchData(`${api}/history/vaccine/${appointment.appointment_id}`);
-          if (selectedItems) {
+          console.log('Fetched vaccine items:', selectedItems); 
+          if (selectedItems && selectedItems.length > 0) {
             selectedItems = selectedItems.map((item) => ({
               ...item,
               price_service: parseFloat(item.price_service) || 0,
               quantity: item.quantity || 1,
             }));
           }
+          setSelectedItems(selectedItems || []);
           break;
   
         case 'ฝากเลี้ยง':
@@ -216,11 +221,12 @@ const PendingAppointments = ({ appointments }) => {
         case 'ตรวจรักษา':
           // ดึงข้อมูล invoice
           selectedItems = await fetchData(`${api}/medical/invoice/${appointment.appointment_id}`);
+          console.log('Fetched items medical:', selectedItems); 
           if (selectedItems) {
             selectedItems = selectedItems.map((item) => ({
               ...item,
               amount: parseFloat(item.amount) || 1,
-              subtotal_price: parseFloat(item.subtotal_price) || 0,
+              subtotal_price: item.amount *  item.price_service,
             }));
             setSelectedItems((prevItems) => [
               ...selectedItems,
@@ -250,7 +256,45 @@ const PendingAppointments = ({ appointments }) => {
     updateAppointmentDetails();
   }, [setLoading, setSelectedItems, setSelectedAppointment, setOpenPopup ]);
   
-
+  const handleDelete = async (item) => {
+    try {
+      if (item.category_id && item.invoice_id) {
+        // กรณีเป็นรายการที่มาจากฐานข้อมูล
+        const response = await axios.delete(`${api}/delete/item/${item.category_id}/${item.invoice_id}`);
+        if (response.status === 200) {
+          console.log('Deleted item from database');
+  
+          // ดึงข้อมูลใหม่จากฐานข้อมูลหลังจากการลบ
+          const updatedItems = await fetchData(`${api}/medical/invoice/${item.appointment_id}`);
+  
+          // กรองรายการใน UI ที่ไม่ได้ถูกลบออกจาก selectedItems
+          setSelectedItems((prevItems) => {
+            // กรองข้อมูลที่ไม่ถูกลบออก
+            const remainingItems = prevItems.filter((i) => i.category_id !== item.category_id);
+  
+            // รวมข้อมูลที่ดึงใหม่จากฐานข้อมูล (ตรวจสอบข้อมูลที่ไม่มีใน remainingItems)
+            const uniqueUpdatedItems = updatedItems.filter(
+              (newItem) => !remainingItems.some((existingItem) => existingItem.category_id === newItem.category_id)
+            );
+            // รวมรายการที่ไม่ได้ถูกลบกับข้อมูลที่ดึงใหม่
+            return [...remainingItems, ...uniqueUpdatedItems];
+            
+            
+            
+          });
+        } else {
+          console.error('Failed to delete item from database');
+        }
+      } else {
+        // กรณีเป็นรายการใหม่ที่เพิ่มใน UI
+        setSelectedItems((prevItems) => prevItems.filter((i) => i !== item));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+  
+  
 
   
   const handleQuantityChange = (categoryId, value) => {
@@ -269,18 +313,6 @@ const PendingAppointments = ({ appointments }) => {
     resetPage();
   };
 
-  const handleClose = () => {
-    setSelectedItems([])
-    setOpenPopup(false);
-    setSelectedAppointment(null);
-    setSelectedCategory('');
-    setSearchTerm('');
-  };
-
-  const handlePay = () => {
-    // Logic to handle payment
-    handleClose(); // Close popup after payment action
-  };
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(+event.target.value);
@@ -291,18 +323,29 @@ const PendingAppointments = ({ appointments }) => {
     setPage(newPage);
   };
 
+  // const filteredAppointments = appointments.filter((appointment) => {
+    // if (activeCategory === 'คิวทั้งหมด') {
+      // return (
+        // appointment.queue_status === 'รอชำระเงิน' &&
+        // appointment.status === 'อนุมัติ'
+      // );
+    // }
+    // return true;
+  // });
 
-  console.log("record_medicine:", selectedAppointment?.record_medicine);
 
-  const filteredAppointments = appointments.filter((appointment) => {
-    if (activeCategory === 'คิวทั้งหมด') {
-      return (
-        appointment.queue_status === 'รอชำระเงิน' &&
-        appointment.status === 'อนุมัติ'
-      );
-    }
-    return true;
-  });
+  const filterAppointments = (appointments) => {
+    const updatedAppointments = appointments.filter((appointment) => {
+      if (activeCategory === 'คิวทั้งหมด') {
+        return (
+          appointment.queue_status === 'รอชำระเงิน' &&
+          appointment.status === 'อนุมัติ'
+        );
+      }
+      return true;
+    });
+    setFilteredAppointments(updatedAppointments);
+  };
   // console.log('filteredAppointments',filteredAppointments)
 
   const filteredCategories = categories.filter(service => 
@@ -313,9 +356,84 @@ const PendingAppointments = ({ appointments }) => {
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
+  
+  const handlePay = async () => {
+    const totalAmount = calculateTotalAmount();
+  
+    const requestData = {
+      appointmentId: selectedAppointment.orderNumber, // ใช้ ID จาก selectedAppointment
+      type: selectedAppointment.type,
+      selectedItems: selectedItems.map(item => ({
+        category_id: item.category_id,
+        amount: item.quantity || item.amount || 1,
+        price_service:  item.price_service || item.quantity ,
+      })),
+      totalAmount,
+    };
 
+    if (!requestData.appointmentId || !requestData.selectedItems.length ) {
+      setAlertMessage("ข้อมูลไม่ครบถ้วน กรุณาตรวจสอบอีกครั้ง");
+      setAlertSeverity("error"); // ประเภทของ Alert
+      setOpenSnackbar(true); // เปิดการแสดง Snackbar
+      return; // ยกเลิกการทำงานถ้าข้อมูลไม่ครบ
+    }
+     console.log('requestData' , requestData)
+    try {
+      const response = await axios.post(`${api}/create-invoice/payment`, requestData);
+      console.log("Response:", response.data);
+      setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
+      setAlertSeverity("success");  // ประเภทของ Alert
+      setOpenSnackbar(true);
+      handleClose();
+      handleCloseConfirmDialog();
+    
+      await filterAppointments(appointments);
+
+    } catch (error) {
+      // console.error("Error saving invoice:", error);
+      setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      setAlertSeverity("error");  // ประเภทของ Alert
+      setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+    }
+  };
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);  // ปิด Snackbar
+  };
+  // const handleCloseMainDialog = () => setMainDialogOpen(false);
+  const handleOpenConfirmDialog = () => setConfirmDialogOpen(true);
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false); // ปิด Dialog
+  };
+  
+  const handleClose = () => {
+    setSelectedItems([])
+    setOpenPopup(false);
+    setSelectedAppointment(null);
+    setSelectedCategory('');
+    setSearchTerm('');
+  };
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
+       <Snackbar
+     open={openSnackbar}
+     autoHideDuration={6000} // ปิดเองหลัง 6 วินาที
+     onClose={handleCloseSnackbar}
+     anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // แสดงตรงกลาง
+   >
+     <Alert
+       onClose={handleCloseSnackbar}
+       severity={alertSeverity}
+       sx={{
+         width: '100%',
+         fontSize: '1rem',  // ปรับขนาดข้อความให้ใหญ่ขึ้น
+         padding: '10px',  // เพิ่ม padding
+         borderRadius: '8px', // ทำมุมมน
+         boxShadow: 3, // เพิ่มเงาให้ดูเด่น
+       }}
+     >
+       {alertMessage}
+     </Alert>
+   </Snackbar>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={activeCategory}
@@ -492,7 +610,7 @@ const PendingAppointments = ({ appointments }) => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ชื่อบริการ</TableCell>
+                  <TableCell sx={{ width: '20%' }}>ชื่อบริการ</TableCell>
                   <TableCell>ราคา</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
@@ -531,207 +649,165 @@ const PendingAppointments = ({ appointments }) => {
       <Box flex={1} display="flex" flexDirection="column" gap={2}>
       <Typography variant="h6" gutterBottom>ชำระเงิน</Typography>
         
-        <Typography variant="h6" gutterBottom>รายการที่เลือก</Typography>
-        {selectedAppointment && selectedAppointment.type === "ตรวจรักษา" && (
-          <>
-          <Typography>
-            <strong>รายการยาที่ใช้ ระหว่างการพักรักษาตัว</strong>
-          </Typography>
-          {Array.isArray(selectedAppointment.record_medicine) &&
-          selectedAppointment.record_medicine.filter((medicine) => medicine !== null).length > 0 ? (
-            <ul style={{ paddingLeft: "1rem" }}>
-              {selectedAppointment.record_medicine
-                .filter((medicine) => medicine !== null)
-                .map((medicine, index) => (
-                  <li key={index}>{medicine}</li>
-                ))}
-            </ul>
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              ไม่มีรายการยา
-            </Typography>
-          )}
-        </>
-      )}
+              <Typography variant="h6" gutterBottom>รายการที่เลือก</Typography>
+              {selectedAppointment && selectedAppointment.type === "ตรวจรักษา" && (
+                <>
+                <Typography>
+                  <strong>รายการยาที่ใช้ ระหว่างการพักรักษาตัว</strong>
+                </Typography>
+                {Array.isArray(selectedAppointment.record_medicine) &&
+                selectedAppointment.record_medicine.filter((medicine) => medicine !== null).length > 0 ? (
+                  <ul style={{ paddingLeft: "1rem" }}>
+                    {selectedAppointment.record_medicine
+                      .filter((medicine) => medicine !== null)
+                      .map((medicine, index) => (
+                        <li key={index}>{medicine}</li>
+                      ))}
+                  </ul>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    ไม่มีรายการยาที่เพิ่ม
+                  </Typography>
+                )}
+              </>
+            )}
 
-    {selectedItems.length === 0 ? (
-      <Typography>ไม่มีรายการ</Typography>
-    ) : selectedAppointment.type === "ตรวจรักษา" ? (
-      <>
-      <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ชื่อบริการ</TableCell>
-              <TableCell>จำนวน</TableCell>
-              <TableCell>ราคารวม</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-          {selectedItems.map((item, index) => (
-          <TableRow key={index}>
-            <TableCell>{item.category_name}</TableCell>
-            <TableCell>{item.quantity || item.amount || 1}</TableCell>
-            <TableCell>
-            {(item.subtotal_price !== undefined && item.subtotal_price !== null)
-              ? item.subtotal_price
-              : (item.quantity || 0) * (item.price_service || 0)} บาท
-            </TableCell>
-          </TableRow>
-        ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-        <Box mt={2} display="flex" justifyContent="space-between">
-        <Typography variant="h6">ยอดรวม:</Typography>
-        <Typography variant="h6">{calculateTotalInvoice()} บาท</Typography>
-    </Box>
-    </>
-    ) : (
-      <>
-      <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ชื่อบริการ</TableCell>
-              <TableCell>จำนวน</TableCell>
-              <TableCell>ราคา</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {selectedItems.map((item) => (
-              <TableRow key={item.category_id}>
-                <TableCell>{item.category_name}</TableCell>
-                <TableCell>
-                  <TextField
-                    type="number"
-                    value={item.quantity || ''}
-                    onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
-                    inputProps={{ min: 0, style: { textAlign: 'center' } }}
-                    sx={{ width: '80px' }}
-                  />
-                </TableCell>
-                <TableCell>{item.quantity * item.price_service} บาท</TableCell>
-                <TableCell>
-                  <Button
-                    color="error"
-                    onClick={() =>
-                      setSelectedItems((prevItems) =>
-                        prevItems.filter((i) => i.category_id !== item.category_id)
-                      )
-                    }
-                  >
+          {selectedItems.length === 0 ? (
+            <Typography>ไม่มีรายการ</Typography>
+          ) : selectedAppointment.type === "ตรวจรักษา" ? (
+            <>
+            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: '20%' }}>ชื่อบริการ</TableCell>
+                    <TableCell>จำนวน</TableCell>
+                    <TableCell>ราคารวม</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                {selectedItems.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.category_name}</TableCell>
+                  <TableCell>
+                      {/* ให้กรอกจำนวนในช่องนี้ */}
+                      <TextField
+                        type="number"
+                        value={item.quantity|| item.amount || 1}
+                        onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                        inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                        sx={{ width: '80px' }}
+                      />
+                    </TableCell>
+                  {/* <TableCell>{item.quantity || item.amount || 1}</TableCell> */}
+                  <TableCell>
+                  { (item.quantity) * (item.price_service)  || item.subtotal_price || 0}  บาท
+                  </TableCell>
+                  
+                  <TableCell>
+                  <Button color="error" onClick={() => handleDelete(item)}>
                     ลบ
-                  </Button>
+                </Button>
                 </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-     <Box mt={2} display="flex" justifyContent="space-between">
-        <Typography variant="h6">ยอดรวม:</Typography>
-        <Typography variant="h6">{calculateTotal()} บาท</Typography>
-    </Box>
-    </>
-    )}
-    </Box>
-</Box>
-)}  
- 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+                </TableRow>
+              ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+              <Box mt={2} display="flex" justifyContent="space-between">
+              <Typography variant="h6">ยอดรวม:</Typography>
+              <Typography variant="h6">{calculateTotalAmount()} บาท</Typography>
+          </Box>
+          </>
+          ) : (
+            <>
+            <TableContainer component={Paper} sx={{ flexGrow: 1, maxHeight: '80vh', overflowY: 'auto' }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ชื่อบริการ</TableCell>
+                    <TableCell>จำนวน</TableCell>
+                    <TableCell>ราคา</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedItems.map((item) => (
+                    <TableRow key={item.category_id}>
+                      <TableCell>{item.category_name}</TableCell>
+                      <TableCell>
+                        <TextField
+                          type="number"
+                          value={item.quantity || ''} 
+                          onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
+                          inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                          sx={{ width: '80px' }}
+                        />
+                      </TableCell>
+                      <TableCell>{item.quantity * item.price_service} บาท</TableCell>
+                      <TableCell>
+                        <Button
+                          color="error"
+                          onClick={() =>
+                            setSelectedItems((prevItems) =>
+                              prevItems.filter((i) => i.category_id !== item.category_id)
+                            )
+                          }
+                        >
+                          ลบ
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          <Box mt={2} display="flex" justifyContent="space-between">
+              <Typography variant="h6">ยอดรวม:</Typography>
+              <Typography variant="h6">{calculateTotalAmount()} บาท</Typography>
+          </Box>
+          </>
+          )}
+          </Box>
+      </Box>
+      )}  
+
+
+    </DialogContent>
+
+    <DialogActions>
+          <Button onClick={handleClose} variant="outlined">
+            ยกเลิก
+          </Button>
+          <Button onClick={handleOpenConfirmDialog} variant="contained" color="primary">
+            ชำระเงิน
+          </Button>
+        </DialogActions>
+
+
+    </Dialog>
+    <Dialog open={isConfirmDialogOpen} onClose={handleCloseConfirmDialog}>
+        <DialogTitle>ยืนยันการชำระเงิน</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            คุณต้องการยืนยันการชำระเงินสำหรับบริการนี้หรือไม่?
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            ยอดชำระทั้งหมด: {calculateTotalAmount()} บาท
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog} variant="outlined">
+            ยกเลิก
+          </Button>
+          <Button onClick={handlePay} variant="contained" color="primary">
+            ยืนยันการชำระเงิน
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    </DialogContent>
-    <DialogActions>
-        <Button onClick={handleClose} variant="outlined">
-        ยกเลิก
-        </Button>
-        <Button onClick={handlePay} variant="contained" color="primary">
-        ชำระเงิน
-        </Button>
-    </DialogActions>
-    </Dialog>
     </Paper>
   );
 };

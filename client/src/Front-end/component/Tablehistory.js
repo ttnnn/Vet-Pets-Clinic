@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Paper, Button, TextField, Box, Typography,
+  TableSortLabel, Paper, Button, TextField, Box, Typography, Dialog,
+  DialogTitle, DialogContent, DialogActions,Divider
 } from '@mui/material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -27,7 +28,8 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const CardLayout = ({ appointment }) => (
+const CardLayout = ({ appointment ,handleOpenDialog }) => (
+
   <Box
     display="flex"
     alignItems="center"
@@ -38,24 +40,54 @@ const CardLayout = ({ appointment }) => (
     marginBottom="8px"
     backgroundColor="#f9f9f9"
   >
-    <Box display="flex" alignItems="center">
-      <FolderIcon style={{ marginRight: '12px', color: '#757575' }} />
-      <Typography variant="body1" fontWeight="bold">
-        {formatDate2(appointment.appointment_date)}
+    <Box display="flex" alignItems="center" flexDirection="column">
+
+    <Box display="flex" alignItems="flex-start" flexDirection="column" textAlign="left">
+      <Box display="flex" alignItems="center" mb={1}>
+        <FolderIcon style={{ marginRight: '12px', color: '#757575' }} />
+        <Typography variant="body1" fontWeight="bold">
+          {formatDate2(appointment.appointment_date)}
+        </Typography>
+      </Box>
+    
+      <Typography variant="body2" color="textSecondary">
+        แก้ไขล่าสุด : {appointment.rec_time ? dayjs(appointment.rec_time).format('DD MMMM YYYY HH:mm') : '-'}
       </Typography>
-    </Box>
+
+     
+     
+</Box>
+</Box>
+
     <Box>
       <Typography variant="body2" color="textSecondary">
         {appointment.detail_service || 'ไม่มีรายละเอียด'}
       </Typography>
+
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => handleOpenDialog(appointment)}
+        >
+          แสดงรายละเอียด
+        </Button>
+      
     </Box>
   </Box>
 );
 
-const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabel, selectedPetId }) => {
+const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabel, selectedPetId ,onEditClick  }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
   const [mergedAppointments, setMergedAppointments] = useState([]);
+  const [details, setDetails] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  // console.log('appointments',appointments)
+  const handleEdit = (id) => {
+    onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
+  };
+
 
   useEffect(() => {
     const fetchVaccines = async () => {
@@ -64,18 +96,18 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
           const ids = appointments
             .filter((appointment) => appointment.type_service === 'วัคซีน')
             .map((appointment) => appointment.appointment_id);
-  
+
           const response = await axios.post(`${api}/appointment/vaccien`, { ids });
           const vaccineDataMap = response.data.reduce((acc, curr) => {
             acc[curr.appointment_id] = curr.category_name;
             return acc;
           }, {});
-  
+
           const updatedAppointments = appointments.map((appointment) => ({
             ...appointment,
             category_name: vaccineDataMap[appointment.appointment_id] || 'ไม่มีข้อมูลวัคซีน',
           }));
-  
+
           setMergedAppointments(updatedAppointments);
         } catch (error) {
           console.error('Error fetching vaccines:', error);
@@ -84,12 +116,33 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         setMergedAppointments(appointments);
       }
     };
-  
+
     fetchVaccines();
   }, [appointments, activeTabLabel]);
 
+  const fetchDetails = async (appointmentId) => {
+    if (!appointmentId || appointmentId === details?.appointmentId) return;
   
+    try {
+      const response = await axios.get(`${api}/history/medical/${appointmentId}`);
+      setDetails({ ...response.data, appointmentId }); // เก็บ appointmentId เพื่อการตรวจสอบ
+    } catch (error) {
+      console.error('Error fetching details:', error);
+    }
+  };
   
+
+
+  const handleOpenDialog = (appointment) => {
+    setSelectedAppointment(appointment);
+    fetchDetails(appointment.appointment_id);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setDetails(null);
+  };
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -132,7 +185,8 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
       ) : activeTabLabel === 'ตรวจรักษา' ? (
         <Box>
           {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
-            <CardLayout key={index} appointment={appointment} />
+            <CardLayout key={index} appointment={appointment}  handleOpenDialog ={handleOpenDialog}  />
+
           ))}
         </Box>
       ) : (
@@ -162,10 +216,11 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                 <TableCell>รายละเอียด</TableCell>
                 {activeTabLabel === 'วัคซีน' && <TableCell>ชื่อวัคซีน</TableCell>}
                 <TableCell>สถานะ</TableCell>
+
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredAppointments.sort((a, b) => (order === 'asc' ? a[orderBy] < b[orderBy] : a[orderBy] > b[orderBy])).map((appointment, index) => (
+              {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
                 <TableRow key={index}>
                   <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
                   <TableCell>{appointment.appointment_id}</TableCell>
@@ -176,13 +231,69 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                   {activeTabLabel === 'วัคซีน' && (
                     <TableCell>{appointment.category_name || 'ไม่มีข้อมูลวัคซีน'}</TableCell>
                   )}
-                  <TableCell>{appointment.status}</TableCell>
+                  <TableCell>{appointment.queue_status}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
+
+    <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <DialogTitle>รายละเอียดการรักษา</DialogTitle>
+      <DialogContent>
+        {details ? (
+          <Box>
+            {/* ส่วนข้อมูลทั่วไป */}
+            <Typography variant="h6" gutterBottom>ข้อมูลทั่วไป</Typography>
+            <Typography variant="body1">ชื่อสัตว์เลี้ยง: {details.pet_name || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body1">เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body1">สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body2" color="textSecondary">
+               แก้ไขล่าสุด : {details.rec_time ? dayjs(details.rec_time).format('DD MMMM YYYY HH:mm') : '-'}
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+        
+            {/* ส่วนการวินิจฉัย */}
+            <Typography variant="h6" gutterBottom>ข้อมูลการวินิจฉัย</Typography>
+            <Typography variant="body1">CC: {details.diag_cc || '-'}</Typography>
+            <Typography variant="body1">HT: {details.diag_ht || '-'}</Typography>
+            <Typography variant="body1">PE: {details.diag_pe || '-'}</Typography>
+            <Typography variant="body1">ปัญหาหลัก: {details.diag_majorproblem || '-'}</Typography>
+            <Typography variant="body1">Tentative DX: {details.diag_tentative || '-'}</Typography>
+            <Typography variant="body1">Final DX: {details.diag_final || '-'}</Typography>
+            <Typography variant="body1">การรักษา: {details.diag_treatment || '-'}</Typography>
+            <Typography variant="body1">หมายเหตุ: {details.diag_note || '-'}</Typography>
+        
+            <Divider sx={{ my: 2 }} />
+        
+              {/* ส่วนการตรวจร่างกาย */}
+            <Typography variant="h6" gutterBottom>ผลการตรวจร่างกาย</Typography>
+            {Object.entries(details)
+              .filter(
+                ([key, value]) =>
+                  key.startsWith('phy_') && value !== 'no exam' &&   value !== null // เงื่อนไขการกรองข้อมูล
+              )
+              .map(([key, value]) => (
+                <Typography key={key} variant="body1">
+                  {key.replace('phy_', '').replace(/_/g, ' ').toUpperCase()}: {value}
+                </Typography>
+              ))}
+    
+          </Box>
+        ) : (
+          <Typography variant="body2" align="center">ไม่พบข้อมูล</Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCloseDialog} color="secondary">
+          ปิด
+        </Button>
+        <Button onClick={() => handleEdit(details.appointment_id)}>แก้ไข</Button>
+     
+      </DialogActions>
+    </Dialog>
+      
     </Paper>
   );
 };

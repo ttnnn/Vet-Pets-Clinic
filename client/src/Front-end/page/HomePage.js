@@ -209,6 +209,7 @@ const HomeDashboard = () => {
 
   
 
+
   const currentDate = new Date();
   const formattedDate = formatDate(currentDate);
 
@@ -263,7 +264,8 @@ const HomeDashboard = () => {
         )}
         {view === 'pending-payment' && (
           <PendingAppointments
-            appointments={filteredAppointments('รอชำระเงิน')}
+            appointments={filteredAppointments('รอชำระเงิน')} 
+
           />
         )}
         </>

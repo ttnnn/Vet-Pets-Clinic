@@ -26,7 +26,7 @@ const RegisterSearch = () => {
   const location = useLocation();
 
   const { locationOwnerID } = location.state || {};
-  console.log("locationOwnerID : ",locationOwnerID)
+  // console.log("locationOwnerID : ",locationOwnerID)
 
   useEffect(() => {
     // Fetch owners when component mounts
@@ -115,9 +115,9 @@ const RegisterSearch = () => {
           </Box>
           
           <Box>
-            {pets.map((pet) => (
+            {pets.map((selectedPet) => (
               <Box
-                key={pet.pet_id}
+                key={selectedPet.pet_id}
                 sx={{
                   backgroundColor: '#e0e0e0',
                   padding: 2,
@@ -128,7 +128,7 @@ const RegisterSearch = () => {
                   alignItems: 'center',
                 }}
               >
-                {pet.image_url && (
+                {selectedPet.image_url && (
                   <Box
                     sx={{
                       mr: 2,
@@ -139,8 +139,8 @@ const RegisterSearch = () => {
                     }}
                   >
                     <img
-                      src={`http://localhost:8080${pet.image_url}`} 
-                      alt={pet.pet_name}
+                      src={`http://localhost:8080${selectedPet.image_url}`} 
+                      alt={selectedPet.pet_name}
                       style={{
                         width: '100%',
                         height: '100%',
@@ -153,9 +153,9 @@ const RegisterSearch = () => {
 
                 {/* Pet details next to the image */}
                 <Box>
-                  <Typography variant="h6">{pet.pet_name}</Typography>
-                  <Typography>พันธุ์: {pet.pet_breed}</Typography>
-                  <Typography>ประเภท: {pet.pet_species}</Typography>
+                  <Typography variant="h6">{selectedPet.pet_name}</Typography>
+                  <Typography>พันธุ์: {selectedPet.pet_breed}</Typography>
+                  <Typography>ประเภท: {selectedPet.pet_species}</Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', ml: 'auto' }}>
@@ -171,8 +171,14 @@ const RegisterSearch = () => {
                       fontSize: '16px',
                     }}
                     onClick={() => {
-                      const owner = owners.find(owner => owner.owner_id === selectedOwnerId);
-                      navigate('/clinic/pet-profile', { state: { pet, owner ,appointmentId:null } });
+                      // const owner = owners.find(owner => owner.owner_id === selectedOwnerId);
+                      const pet = {
+                        petId: selectedPet.pet_id, // ใช้ pets[0] เป็นตัวอย่าง หากต้องการเปลี่ยนสามารถระบุให้ชัดเจน
+                      };
+                      const owner = {
+                        ownerId: selectedOwnerId, // หาก selectedOwnerId เป็น ID เดียว ไม่ใช่อ็อบเจกต์
+                      };                
+                      navigate('/clinic/pet-profile', { state: { pet, owner ,appointmentId: null } });
                     }}
                   >
                     โปรไฟล์

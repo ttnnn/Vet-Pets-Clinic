@@ -74,7 +74,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   // console.log("locationOwnerID : ",locationOwnerID)
   // console.log("locationPetID : ",locationPetID)
 
- console.log('isCustomerAppointment',isCustomerAppointment)
+//  console.log('isCustomerAppointment',isCustomerAppointment)
 
   const user = JSON.parse(sessionStorage.getItem('user')); 
   // console.log('user',user)
