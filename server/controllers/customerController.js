@@ -80,7 +80,7 @@ router.get('/appointments', async (req, res) => {
 
     // ดึงข้อมูลการนัดหมาย
     const appointments = await pool.query(
-      `SELECT pets.pet_name, pets.image_url, appointment.appointment_date, appointment.appointment_time, 
+      `SELECT pets.pet_name, pets.image_url, pets.pet_id, appointment.appointment_date, appointment.appointment_time, 
               appointment.status, appointment.appointment_id, appointment.type_service ,appointment.owner_id,
               appointment.queue_status
        FROM appointment 
@@ -119,12 +119,20 @@ router.get('/appointments/history', async (req, res) => {
 
     const owner_id = owner.rows[0].owner_id;
 
+    // Query ที่จะดึงข้อมูลการนัดหมายที่ถูกยกเลิกหรือผ่านไปแล้ว
     const appointments = await pool.query(
       `SELECT pets.pet_name, pets.image_url, appointment.appointment_date, appointment.appointment_time, 
-              appointment.status, appointment.appointment_id, appointment.type_service
+              appointment.status, appointment.appointment_id, appointment.type_service, appointment.queue_status
        FROM appointment
        JOIN pets ON appointment.pet_id = pets.pet_id
-       WHERE appointment.owner_id = $1 AND appointment.appointment_date < CURRENT_DATE`,
+       WHERE appointment.owner_id = $1 
+         AND (
+            -- นัดหมายที่ถูกยกเลิกและยังไม่ถึงวัน
+            (appointment.status = 'ยกเลิกนัด' AND appointment.appointment_date >= CURRENT_DATE)
+            OR
+            -- นัดหมายที่ผ่านไปแล้วและไม่ได้ถูกยกเลิก
+            (appointment.status != 'ยกเลิกนัด' AND appointment.appointment_date < CURRENT_DATE)
+         )`,
       [owner_id]
     );
 
@@ -234,8 +242,8 @@ router.post('/appointment/cancel', async (req, res) => {
 
   try {
     // อัพเดตสถานะการนัดหมายในฐานข้อมูล
-    const query = 'UPDATE appointment SET queue_status = $1 WHERE appointment_id = $2';
-    const values = ['ยกเลิกนัด', appointmentId];
+    const query = 'UPDATE appointment SET queue_status = $1, status = $2 WHERE appointment_id = $3';
+    const values = ['ยกเลิกนัด', 'ยกเลิกนัด', appointmentId];
 
     const result = await pool.query(query, values);
 
@@ -251,6 +259,26 @@ router.post('/appointment/cancel', async (req, res) => {
   }
 });
 
+router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
+
+  try {
+      const result = await pool.query(
+          'UPDATE pets SET image_url = $1 WHERE pet_id = $2',
+          [ImageUrl, id]
+      );
+
+      if (result.rowCount === 0) {
+          return res.status(404).json({ message: 'Pet not found' });
+      }
+
+      res.status(200).json({ message: 'Pet image updated successfully' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error updating pet image' });
+  }
+});
 
 
 module.exports = router;

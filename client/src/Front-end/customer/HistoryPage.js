@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; 
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Card, CardContent, Grid, Avatar, Button, AppBar, Toolbar, Box, BottomNavigation, BottomNavigationAction, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Container, Typography, Card, CardContent, Grid, Avatar, Button, AppBar, Toolbar, Box, BottomNavigation, BottomNavigationAction, Select, MenuItem, FormControl } from '@mui/material';
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -18,25 +18,28 @@ const HistoryPage = () => {
 
   const user = JSON.parse(sessionStorage.getItem('user'));
 
-  const fetchHistoryAppointments = async () => {
+  const fetchHistoryAppointments = useCallback(async () => {
     if (!user) {
       console.error('User data not found');
       setHistoryAppointments([]);
       return;
     }
-
+  
     try {
       const { first_name, last_name, phone_number } = user;
-
+  
       const response = await axios.get(`${api}/appointments/history`, {
         params: { first_name, last_name, phone_number },
       });
-
+  
       console.log('Fetched history appointments:', response.data);
-
+  
       if (response.data && Array.isArray(response.data.appointments)) {
-        setHistoryAppointments(response.data.appointments);
-        setFilteredAppointments(response.data.appointments); // ตั้งค่าเริ่มต้น
+        // เช็คการเปลี่ยนแปลงของ appointments
+        if (JSON.stringify(response.data.appointments) !== JSON.stringify(historyAppointments)) {
+          setHistoryAppointments(response.data.appointments);
+          setFilteredAppointments(response.data.appointments); // ตั้งค่าเริ่มต้น
+        }
       } else {
         console.warn('No history appointments found or invalid data format');
         setHistoryAppointments([]);
@@ -45,12 +48,14 @@ const HistoryPage = () => {
       console.error('Error fetching history appointments:', error.message);
       setHistoryAppointments([]);
     }
-  };
+  }, [user, historyAppointments]);
+  
 
   useEffect(() => {
     const userData = JSON.parse(sessionStorage.getItem('user'));
     if (userData) fetchHistoryAppointments();
-  }, []);
+  }, [fetchHistoryAppointments]); 
+  
 
   const handleFilterChange = (event) => {
     const value = event.target.value;
@@ -108,7 +113,6 @@ const HistoryPage = () => {
             <MenuItem value="ตรวจรักษา">ตรวจรักษา</MenuItem>
             <MenuItem value="วัคซีน">วัคซีน</MenuItem>
             <MenuItem value="อาบน้ำ-ตัดขน">อาบน้ำ-ตัดขน</MenuItem>
-         
           </Select>
         </FormControl>
 
@@ -137,12 +141,19 @@ const HistoryPage = () => {
                           ประเภท: {appt.type_service}
                         </Typography>
                         <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
-                          วันที่นัดหมาย: {dayjs(appt.appointment_date).format('D MMMM YYYY')}
-                        </Typography>
-                        <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
-                          เวลา: {appt.appointment_time
-                            ? dayjs(appt.appointment_time).format('HH:mm')
-                            : 'ตลอดทั้งวัน'}
+                          วันที่นัดหมาย:{dayjs(appt.appointment_date).format("D MMMM YYYY")}
+                          <br />
+                          เวลา: {
+                            appt.appointment_time
+                            ? (() => {
+                                const timeWithoutTimezone = appt.appointment_time.split('+')[0]; // ตัด timezone (+07)
+                                const combinedDateTime = `${dayjs(appt.appointment_date).format('YYYY-MM-DD')}T${timeWithoutTimezone}`;
+                                return dayjs(combinedDateTime).isValid()
+                                  ? dayjs(combinedDateTime).format("HH:mm")
+                                  : "ไม่ระบุเวลา";
+                              })()
+                            : "ไม่ระบุเวลา"
+                          }
                         </Typography>
                         <Typography color="textSecondary" sx={{ marginBottom: 2, fontSize: '0.85rem' }}>
                           สถานะ: {appt.status}

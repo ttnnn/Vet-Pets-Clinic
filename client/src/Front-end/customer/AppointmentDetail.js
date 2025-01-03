@@ -21,7 +21,6 @@ const AppointmentDetail = ({setAppointments }) => {
   
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [openRescheduleDialog, setOpenRescheduleDialog] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [selectedTypeService, setSelectedTypeService] = useState(null);
   const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
@@ -99,12 +98,6 @@ const AppointmentDetail = ({setAppointments }) => {
     }
   };
 
-  const updateAppointments = () => {
-    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
-      .then((response) => setAppointments(response.data))
-      .catch((error) => console.error('Error fetching updated appointments:', error));
-  };
-
   const handlePostponeClick = (appointmentId, typeService, petId) => {
     setSelectedAppointmentId(appointmentId);
     setSelectedTypeService(typeService);
@@ -115,6 +108,7 @@ const AppointmentDetail = ({setAppointments }) => {
     console.log('typeService:', typeService);
     console.log('petId:', petId);
   };
+  
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -140,12 +134,20 @@ const AppointmentDetail = ({setAppointments }) => {
             <Typography><strong>สายพันธุ์:</strong> {appointment.pet_species}</Typography>
             <Typography><strong>เจ้าของ:</strong> {appointment.first_name} {appointment.last_name}</Typography>
             <Typography><strong>เบอร์ติดต่อ:</strong> {appointment.phone_number}</Typography>
-            <Typography><strong>วันที่นัดหมาย:</strong> {dayjs(appointment.appointment_date).format('D MMMM YYYY')}</Typography>
             <Typography>
-              <strong>เวลานัดหมาย:</strong> 
-              {appointment.appointment_time 
-                ? dayjs(`2024-01-01T${appointment.appointment_time}`).format('HH:mm')
-                : 'ไม่ระบุเวลา'}
+              <strong>วันที่นัดหมาย:</strong> {dayjs(appointment.appointment_date).format('D MMMM YYYY')}
+              <br />
+              <strong>เวลา:</strong> {
+                appointment.appointment_date && appointment.appointment_time
+                ? (() => {
+                    const timeWithoutTimezone = appointment.appointment_time.split('+')[0]; // ตัด timezone (+07)
+                    const combinedDateTime = `${dayjs(appointment.appointment_date).format('YYYY-MM-DD')}T${timeWithoutTimezone}`;
+                    return dayjs(combinedDateTime).isValid()
+                      ? dayjs(combinedDateTime).format("HH:mm")
+                      : "ข้อมูลเวลาไม่ถูกต้อง";
+                  })()
+                : "ไม่มีข้อมูลเวลา"
+              }
             </Typography>
             <Typography><strong>เหตุผล:</strong> {appointment.reason || 'ไม่ระบุ'}</Typography>
             <Typography><strong>สถานะ:</strong> {appointment.status}</Typography>
@@ -163,7 +165,9 @@ const AppointmentDetail = ({setAppointments }) => {
                   <Button 
                     variant="contained" 
                     color="secondary" 
-                    onClick={handlePostponeClick} 
+                    onClick={() =>
+                      handlePostponeClick(appointmentId, appointment.type_service, appointment.pet_id)
+                    }
                     sx={{ flex: 1, marginLeft: 1 }}>
                     เลื่อนนัด
                   </Button>
@@ -182,7 +186,9 @@ const AppointmentDetail = ({setAppointments }) => {
             handleClose={() => setOpenPostponeDialog(false)}
             appointmentId={selectedAppointmentId}
             petId={selectedPetId}
-            updateAppointments={updateAppointments}
+            updateAppointments={() => {
+              fetchAppointmentDetail(); 
+            }}
           />
         ) : (
           <Postpone
@@ -190,11 +196,12 @@ const AppointmentDetail = ({setAppointments }) => {
             handleClose={() => setOpenPostponeDialog(false)}
             appointmentId={selectedAppointmentId}
             TypeService={selectedTypeService}
-            updateAppointments={updateAppointments}
+            updateAppointments={() => {
+              fetchAppointmentDetail(); 
+            }}
           />
         )
       )}
-        
 
       {/* Dialog ยืนยันการยกเลิกนัด */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>

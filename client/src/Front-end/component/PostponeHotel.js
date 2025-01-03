@@ -243,7 +243,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                     label="Check-in Date"
                     value={checkInDate}
                     onChange={(newDate) => setCheckInDate(newDate)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    TextFieldComponent={(params) => <TextField {...params} fullWidth />}
                     disablePast
                     views={['year', 'month', 'day']}
                     sx={{  flexGrow: 1 }}
@@ -255,7 +255,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                     label="Check-out Date"
                     value={checkOutDate}
                     onChange={(newDate) => setCheckOutDate(newDate)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    TextFieldComponent={(params) => <TextField {...params} fullWidth />}
                     disablePast
                     minDate={checkInDate} //ไม่สามารถเลือก Check-out Date ที่น้อยกว่าหรือเท่ากับ Check-in Date ได้
                     views={['year', 'month', 'day']}
@@ -282,7 +282,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                 setCheckInDate(newDate);
                 setCheckOutDate(newDate);
               }}
-              renderInput={(params) => <TextField {...params} fullWidth />}
+              TextFieldComponent={(params) => <TextField {...params} fullWidth />}
               disablePast
               views={['year', 'month', 'day']}
             />
