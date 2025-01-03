@@ -1064,8 +1064,9 @@ router.get('/available-cages', async (req, res) => {
 
 router.post('/medical/symptom', async (req, res) => {
   console.log('/medical/symptom', req.body);
-  const { appointment_id, rec_weight, diag_cc, pet_id, type_service } = req.body; // รับประเภทบริการด้วย
-
+  const { appointment_id, diag_cc, rec_weight, pet_id, type_service, ribs, subcutaneous_fat, abdomen, waist,result_bcs } = req.body;
+  console.log("Result BCS:", result_bcs);
+  
   const client = await pool.connect(); // ใช้ client สำหรับ transaction
   try {
     await client.query('BEGIN'); // เริ่ม transaction
@@ -1104,6 +1105,21 @@ router.post('/medical/symptom', async (req, res) => {
        DO UPDATE SET rec_weight = $3, diagnosis_id = $4 ,rec_time = $5`,
       [appointment_id, pet_id, rec_weight, diagnosis_id,rec_time]
     );
+
+    // 3. บันทึกข้อมูลจาก DecisionTree ลงในตาราง `bodycondition`
+    await client.query(
+      `INSERT INTO bodycondition (pet_id, ribs, subcutaneous_fat, abdomen, waist, result_bcs, appointment_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (appointment_id, pet_id)
+      DO UPDATE SET 
+        ribs = EXCLUDED.ribs, 
+        subcutaneous_fat = EXCLUDED.subcutaneous_fat, 
+        abdomen = EXCLUDED.abdomen, 
+        waist = EXCLUDED.waist, 
+        result_bcs = EXCLUDED.result_bcs`,
+      [pet_id, ribs, subcutaneous_fat, abdomen, waist, result_bcs, appointment_id]
+    );
+    
 
     await client.query('COMMIT'); // ยืนยัน transaction
 

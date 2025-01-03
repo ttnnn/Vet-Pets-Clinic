@@ -120,7 +120,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                 label="เลือกวันที่"
                 value={appointmentDate}
                 onChange={(newDate) => setAppointmentDate(newDate)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+                TextFieldComponent={(params) => <TextField {...params} fullWidth />}
                 disablePast
                 views={['year', 'month', 'day']}
               />

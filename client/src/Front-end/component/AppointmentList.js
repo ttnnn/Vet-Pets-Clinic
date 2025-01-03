@@ -6,6 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import axios from 'axios';
+import Bodyscore from './Bodyscore';
 
 
 // Categories for filtering
@@ -61,13 +62,30 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
       diag_cc: '',
       pet_id: '',
       type_service:''
-     
     });
+    const [formData, setFormData] = useState({
+        ribs: '',
+        subcutaneous_fat: '',
+        abdomen: '',
+        waist: '',
+        result_bcs:''
+      });
     const handleMedicalChange = (field) => (event) => {
       setFormMedical((prev) => ({
         ...prev,
         [field]: event.target.value,
       }));
+    };
+    const handleBodyscoreTreeSubmit = (data) => {
+     console.log('data',data)
+      setFormData({
+        ...formData,
+        ribs: data.ribs, // or any additional fields
+        subcutaneous_fat: data.subcutaneous_fat,   
+        abdomen: data.abdomen,   
+        waist: data.waist,
+        result_bcs:data.result_bcs     // Save the result from the decision tree
+      });
     };
  
 
@@ -81,7 +99,10 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
             return;
           }
         }else {
-          if (!formMedical.rec_weight || !formMedical.diag_cc ) {
+          if (!formMedical.rec_weight || !formMedical.diag_cc || 
+            !formData.ribs || !formData.subcutaneous_fat || 
+            !formData.abdomen || !formData.waist || 
+            !formData.result_bcs)  {
             setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
             setAlertSeverity("warning");  // ประเภทของ Alert
             setOpenSnackbar(true);  // เปิดการแสดง Snackbar
@@ -94,7 +115,12 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
           rec_weight: formMedical.rec_weight,
           diag_cc: formMedical.diag_cc,
           pet_id: formMedical.pet_id,
-          type_service: formMedical.type_service
+          type_service: formMedical.type_service,
+          ribs: formData.ribs,                       // การมองเห็นกระดูกซี่โครงจาก formData
+          subcutaneous_fat: formData.subcutaneous_fat, // ไขมันใต้ผิวหนังจาก formData
+          abdomen: formData.abdomen,                 // ลักษณะท้องจาก formData
+          waist: formData.waist,    
+          result_bcs: formData.result_bcs
         });
       
         if (response.status === 200) {
@@ -349,6 +375,11 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
                     },
                   }}
                 />
+              </Box>
+
+              <Box>
+                <Typography sx={{ mr: 2 }}>การประเมินคะแนนสภาพร่างกาย (Body Condition Score)</Typography>
+                <Bodyscore onSubmit={handleBodyscoreTreeSubmit} />
               </Box>
           
               <Box>
