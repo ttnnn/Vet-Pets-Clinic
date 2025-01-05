@@ -31,7 +31,7 @@ const Sidebar = () => {
 
     // ตัวอย่าง: ลบโทเค็นและเปลี่ยนเส้นทางไปที่หน้า Login
     localStorage.removeItem('authToken');
-    navigate('/'); // Navigate to the home page or login page
+    navigate('/login'); // Navigate to the home page or login page
   };
 
   return (

@@ -4,8 +4,10 @@ import { Button, Container, Typography, Card, CardContent, Grid, Avatar, Box, Bo
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+dayjs.extend(isSameOrAfter);
 
 const api = 'http://localhost:8080/api/customer';
 
@@ -16,10 +18,28 @@ const Home = () => {
   const [navValue, setNavValue] = useState(0);
   const [appointments, setAppointments] = useState([]);
   const isFetched = useRef(false); // ย้ายมาไว้ภายนอก useEffect
+  const [ownerId, setOwnerId] = useState()
 
   // ดึงข้อมูลผู้ใช้จาก sessionStorage
   const user = JSON.parse(sessionStorage.getItem('user')); 
+  const today = dayjs().format("YYYY-MM-DD");
+  const formattedTime = (time) => {
+    if (!time) return 'ไม่ระบุเวลา';  // ถ้าไม่มีเวลาให้แสดง 'ไม่ระบุเวลา'
+  
+    // แยกเวลาออกจากค่าเวลาในรูปแบบ HH:mm:ss+07 และดึงเฉพาะ HH:mm
+    const timePart = time.split('+')[0];  // เอาส่วนก่อนเครื่องหมาย '+'
+    const formatted = timePart.slice(0, 5);  // ตัดเอาแค่ 5 ตัวแรก (HH:mm)
+    return formatted;
+  };
+  
+  const filteredAppointments = appointments.filter(
+    (appt) =>
+      appt.queue_status !== "ยกเลิกนัด" && // นัดหมายที่ไม่ถูกยกเลิก
+      (dayjs(appt.appointment_date).isSameOrAfter(today, "day")) // นัดหมายของวันนี้หรือล่วงหน้า
+  );
+  
 
+ 
   // ใช้ useCallback เพื่อให้ fetchAppointments คงที่
   const fetchAppointments = useCallback(async () => {
     if (!user) {
@@ -50,9 +70,12 @@ const Home = () => {
 
       if (response.data && Array.isArray(response.data.appointments)) {
         setAppointments(response.data.appointments);
+        setOwnerId(response.data.owner_id)
         console.log('Fetched appointments:', response.data.appointments); // ตรวจสอบค่าที่ได้จาก API
+        console.log('Fetched owner_id:', response.data.owner_id); 
       } else {
         console.warn('No appointments found or invalid data format');
+        setOwnerId(response.data.owner_id)
         setAppointments([]);
       }
     } catch (error) {
@@ -124,7 +147,7 @@ const Home = () => {
               variant="contained"
               fullWidth
               onClick={() =>
-                navigate('/customer/serviceappointment', { state: { owner_id: appointments[0].owner_id } })
+                navigate('/customer/serviceappointment', { state: { owner_id: ownerId } })
               }
               sx={{
                 height: '100px',
@@ -180,98 +203,59 @@ const Home = () => {
 
         <Divider sx={{ marginBottom: 2, mt: 2}} /> {/* เส้นกั้นก่อนแสดงนัดหมาย */}
         
-        {appointments.filter(appt => 
-          appt.queue_status !== 'ยกเลิกนัด' &&
-          dayjs(appt.appointment_date).isSame(dayjs(), 'day') // ตรวจสอบว่าตรงกับวันปัจจุบัน
-        ).length === 0 ? (
-          <Typography color="textSecondary">ไม่มีการนัดหมายในขณะนี้</Typography>
-        ) : (
-          <Grid container spacing={2} sx={{ paddingTop: 2 }} >
-            {appointments.map((appt) => (
-              appt.queue_status !== 'ยกเลิกนัด' && ( // เพิ่มเงื่อนไขตรงนี้
-                <Grid item xs={12} md={6} key={appt.appointment_id}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      borderRadius: 5, 
-                      boxShadow: 2, 
-                      backgroundColor: '#f5f5f5',
-                    }}
+        {filteredAppointments.length === 0 ? (
+        <Typography color="textSecondary">ไม่มีการนัดหมายในขณะนี้</Typography>
+      ) : (
+        <Grid container spacing={2} sx={{ paddingTop: 2 }}>
+          {filteredAppointments.map((appt) => (
+            <Grid item xs={12} md={6} key={appt.appointment_id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  borderRadius: 5,
+                  boxShadow: 2,
+                  backgroundColor: '#f5f5f5',
+                }}
+              >
+                <CardContent sx={{ paddingTop: 1 }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={4} container justifyContent="center" alignItems="center">
+                      <Avatar
+                        src={`http://localhost:8080${appt.image_url}`}
+                        alt={appt.pet_name}
+                        sx={{ width: 100, height: 100  ,borderRadius: 2 }}
+                      />
+                    </Grid>
+                    <Grid item xs={7}>
+                      <Typography variant="h6">{appt.pet_name}</Typography>
+                      <Typography color="textSecondary">ประเภท: {appt.type_service}</Typography>
+                      <Typography color="textSecondary">
+                        วันที่นัดหมาย: {dayjs(appt.appointment_date).format('D MMMM YYYY')}
+                      </Typography>
+                      <Typography color="textSecondary">
+                        เวลา: {formattedTime(appt.appointment_time) || 'ไม่ระบุเวลา'}
+                      </Typography>
+                      <Typography color="textSecondary">สถานะ: {appt.status}</Typography>
+                    </Grid>
+                  </Grid>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() =>
+                      navigate('/customer/appointment/', {
+                        state: { appointmentId: appt.appointment_id },
+                      })
+                    }
                   >
-                    <CardContent sx={{ paddingTop: 1 }}>
-                      <Grid container spacing={2}>
-                        {/* Pet Image */}
-                        <Grid item xs={4} container justifyContent="center" alignItems="center">
-                          <Avatar
-                            src={`http://localhost:8080${appt.image_url}`}
-                            alt={appt.pet_name}
-                            sx={{
-                              width: 100,
-                              height: 100,
-                              borderRadius: 2,
-                            }}
-                          />
-                        </Grid>
-                  
-                        {/* Appointment Details */}
-                        <Grid item xs={7}>
-                          <Typography variant="h6">{appt.pet_name}</Typography>
-                          <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
-                            ประเภท: {appt.type_service}
-                          </Typography>
-                          <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
-                            วันที่นัดหมาย:{dayjs(appt.appointment_date).format("D MMMM YYYY")}
-                            <br />
-                            เวลา: {
-                              appt.appointment_time
-                              ? (() => {
-                                  const timeWithoutTimezone = appt.appointment_time.split('+')[0]; // ตัด timezone (+07)
-                                  const combinedDateTime = `${dayjs(appt.appointment_date).format('YYYY-MM-DD')}T${timeWithoutTimezone}`;
-                                  return dayjs(combinedDateTime).isValid()
-                                    ? dayjs(combinedDateTime).format("HH:mm")
-                                    : "ข้อมูลเวลาไม่ถูกต้อง";
-                                })()
-                              : "ข้อมูลเวลาไม่ถูกต้อง"
-                            }
-                          </Typography>
-                          <Typography color="textSecondary" sx={{ marginBottom: 2 ,fontSize: '0.85rem' }}>
-                              สถานะ: {appt.status}
-                          </Typography>
-                        </Grid>
-                      </Grid>
+                    รายละเอียดเพิ่มเติม
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
-                      {/* View Details Button below the appointment details */}
-                      <Grid container justifyContent="center">
-                        <Grid item xs={12}>
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            sx={{
-                              marginTop: 1,
-                              textTransform: 'none',
-                              width: '100%', 
-                              padding: '5px 5px', 
-                              fontSize: '0.875rem',
-                              borderRadius: 3, 
-                              boxShadow: 1, 
-                            }}
-                            onClick={() =>
-                              navigate('/customer/appointment/', {
-                                state: { appointmentId: appt.appointment_id, from: 'home' },
-                              })
-                            }
-                          >
-                            รายละเอียดเพิ่มเติม
-                          </Button>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )
-            ))}
-          </Grid>
-        )}
       </Container>
 
         {/* Bottom Navigation Bar */}

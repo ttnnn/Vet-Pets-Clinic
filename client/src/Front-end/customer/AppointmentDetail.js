@@ -144,9 +144,9 @@ const AppointmentDetail = ({setAppointments }) => {
                     const combinedDateTime = `${dayjs(appointment.appointment_date).format('YYYY-MM-DD')}T${timeWithoutTimezone}`;
                     return dayjs(combinedDateTime).isValid()
                       ? dayjs(combinedDateTime).format("HH:mm")
-                      : "ข้อมูลเวลาไม่ถูกต้อง";
+                      : "ไม่ระบุเวลา";
                   })()
-                : "ไม่มีข้อมูลเวลา"
+                : "ไม่ระบุเวลา"
               }
             </Typography>
             <Typography><strong>เหตุผล:</strong> {appointment.reason || 'ไม่ระบุ'}</Typography>
@@ -189,6 +189,7 @@ const AppointmentDetail = ({setAppointments }) => {
             updateAppointments={() => {
               fetchAppointmentDetail(); 
             }}
+            isCustomer={true} // เพิ่มค่า isCustomer
           />
         ) : (
           <Postpone
@@ -199,6 +200,7 @@ const AppointmentDetail = ({setAppointments }) => {
             updateAppointments={() => {
               fetchAppointmentDetail(); 
             }}
+            isCustomer={true} // เพิ่มค่า isCustomer
           />
         )
       )}

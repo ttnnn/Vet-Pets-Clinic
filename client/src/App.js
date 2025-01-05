@@ -20,7 +20,7 @@ import LineAuth from './Front-end/customer/LineAuth'
 import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 import ServiceAppointment from './Front-end/customer/ServiceAppointment';
 import PrivateRoute from './Front-end/customer/PrivateRoute'; 
-
+import Dashboard from './Front-end/page/Dashboard';
 const theme = createTheme();
 
 function App() {
@@ -77,7 +77,7 @@ function App() {
             />
             <Route 
               path="/clinic/dashboard" 
-              element={isAuthenticated ? <RegisterPage /> : <Navigate to="/login" />} 
+              element={isAuthenticated ? <Dashboard/> : <Navigate to="/login" />} 
             />
             <Route 
               path="/clinic/pet-profile"

@@ -93,8 +93,11 @@ router.get('/appointments', async (req, res) => {
     
 
     console.log('Appointments:', appointments.rows);  // ตรวจสอบ appointments ที่ได้
+    if (appointments.rows.length === 0) {
+      return res.status(200).json({ owner_id, message: 'No upcoming appointments found' });
+    }
 
-    return res.status(200).json({ appointments: appointments.rows });
+    return res.status(200).json({ owner_id, appointments: appointments.rows });
   } catch (error) {
     console.error('Database error:', error);
     return res.status(500).json({ message: 'Internal server error' });

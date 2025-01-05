@@ -153,11 +153,13 @@ router.get('/medical/form/:appointmentId', async (req, res) => {
     SELECT 
       mr.*,  
       d.*, 
-      p.*
+      p.*,
+      b.*
     FROM 
       medicalrecord AS mr
     LEFT JOIN  diagnosis AS d  ON mr.diagnosis_id = d.diagnosis_id
     LEFT JOIN physicalcheckexam AS p ON mr.physical_check_id = p.physical_check_id
+    LEFT JOIN bodycondition AS b ON mr.appointment_id = b.appointment_id
     WHERE 
       mr.appointment_id = $1
   `;
@@ -1799,6 +1801,145 @@ router.get('/finance', async (req, res) => {
     client.release(); // ปล่อย connection กลับสู่ pool
   }
 });
+router.get('/product/receipt/:invoice_Id', async (req, res) => {
+  const { invoice_Id } = req.params; // ใช้ invoice_Id ให้ตรงกับ route
+  const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
+  try {
+    const query = `
+      SELECT 
+      i.invoice_id,
+      i.appointment_id,
+      pay.*,
+      owner.first_name ||' ' || owner.last_name AS fullname,
+      s.*,
+      c.category_name
+
+      FROM invoice i
+      LEFT JOIN appointment a  ON i.appointment_id = a.appointment_id
+      LEFT JOIN owner ON a.owner_id = owner.owner_id 
+      LEFT JOIN payment pay ON i.payment_id = pay.payment_id
+      LEFT JOIN serviceinvoice s ON s.invoice_id = i.invoice_id
+      LEFT JOIN servicecategory c ON c.category_id = s.category_id
+
+      WHERE i.invoice_id = $1
+   
+    `;
+    const result = await client.query(query,[invoice_Id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No records found for the given appointment ID' });
+    }
+
+    res.status(200).json(result.rows); // ส่งข้อมูลกลับในรูป JSON
+  } catch (error) {
+    console.error('Error fetching treatment details:', error);
+    res.status(500).json({ message: 'Failed to fetch treatment details', error: error.message });
+  } finally {
+    client.release(); // ปล่อย connection กลับสู่ pool
+  }
+});
+
+router.get('/dashboard', async (req, res) => {
+  try {
+    const { petType, timeFilter, year } = req.query;
+    console.log(' req.query', req.query)
+    // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว
+
+    const petTypeCondition = petType
+  ? petType === 'other'
+    ? "AND p.pet_species NOT IN ('สุนัข', 'แมว')" // เงื่อนไขสำหรับประเภทอื่นๆ
+    : petType === 'all'
+    ? '' // ไม่มีเงื่อนไขเพิ่มเติม
+    : `AND p.pet_species = '${petType}'` // เงื่อนไขสำหรับหมาหรือแมว
+  : '';
+
+    // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
+    const timeCondition = timeFilter === 'month'
+      ? `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM appointment_date) = EXTRACT(YEAR FROM CURRENT_DATE)`
+      : year
+      ? `EXTRACT(YEAR FROM appointment_date) = ${year}`
+      : '1=1';
+
+    // ดึงจำนวนบริการแยกตามประเภท
+    const resultServices = await pool.query(`
+      SELECT type_service AS type, COUNT(*) AS count 
+      FROM appointment a
+      LEFT JOIN pets p ON a.pet_id = p.pet_id  
+      WHERE ${timeCondition} ${petTypeCondition}
+      GROUP BY type_service
+    `);
+    const services = resultServices.rows; 
+
+    const resultPetsPerPeriod = await pool.query(`
+      SELECT 
+        ${timeFilter === 'month' 
+          ? 'EXTRACT(DAY FROM appointment_date)' 
+          : "TO_CHAR(appointment_date, 'FMMonth')" } AS period,  
+        COUNT(a.pet_id) AS count
+      FROM appointment a
+      LEFT JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${timeCondition} ${petTypeCondition}
+      GROUP BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM appointment_date)' 
+        : "TO_CHAR(appointment_date, 'FMMonth')"} 
+      ORDER BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM appointment_date)'  
+        : "TO_CHAR(appointment_date, 'FMMonth')"} 
+    `);
+    const petsPerPeriod = resultPetsPerPeriod.rows; // ใช้ resultPetsPerPeriod.rows
+    
+    
+
+    // ดึงรายได้ต่อเดือน/ปี
+    const resultRevenue = await pool.query(`
+      SELECT 
+        ${timeFilter === 'month' 
+          ? 'EXTRACT(DAY FROM payment_date)'  
+          : "TO_CHAR(payment_date, 'Month')"} AS period,  
+        SUM(total_payment) AS amount
+      FROM appointment a
+      LEFT JOIN invoice ON a.appointment_id = invoice.appointment_id
+      LEFT JOIN payment pay ON pay.payment_id = invoice.payment_id
+      LEFT JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${timeCondition} ${petTypeCondition}
+      GROUP BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM payment_date)'  
+        : "TO_CHAR(payment_date, 'Month')"} 
+      ORDER BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM payment_date)'  
+        : "TO_CHAR(payment_date, 'Month')"}  
+    `);
+    const revenue = resultRevenue.rows; // ใช้ resultRevenue.rows
+    
+
+    // ส่งผลลัพธ์กลับ
+    res.json({ services, petsPerPeriod, revenue });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error retrieving dashboard data');
+  }
+});
+
+router.get('/available-years', async (req, res) => {
+  try {
+    // Query ดึงปีที่มีข้อมูลจากตาราง appointments
+    const result = await pool.query(`
+      SELECT DISTINCT EXTRACT(YEAR FROM appointment_date) AS year
+      FROM appointment
+      ORDER BY year DESC
+    `);
+
+    // เช็คว่า result.rows มีข้อมูลหรือไม่
+    const years = result.rows.map(row => row.year);
+
+    // ส่งข้อมูลปีกลับไปในรูป JSON
+    res.json({ years });
+  } catch (error) {
+    console.error('Error fetching available years:', error);
+    res.status(500).send('Error fetching available years');
+  }
+});
+
 
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 

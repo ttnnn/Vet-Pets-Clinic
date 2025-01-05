@@ -16,12 +16,17 @@ import {
   TablePagination,
   Snackbar,
   Alert,
+  Dialog,IconButton
 } from '@mui/material';
 import { styled } from '@mui/system';
 import Sidebar from './Sidebar';
 import dayjs from 'dayjs';
-import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
-dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
+import 'dayjs/locale/th';
+import ReceiptComponent from '../component/ReceiptComponent';
+import DownloadIcon from '@mui/icons-material/Download';
+
+
+dayjs.locale('th');
 
 const api = 'http://localhost:8080/api/clinic';
 const CategoryContainer = styled(Box)(({ theme }) => ({
@@ -38,7 +43,7 @@ const FormRow = styled(Box)({
 });
 
 const FinancePage = () => {
-  const [activeTab, setActiveTab] = useState(0); // สถานะแท็บ
+  const [activeTab, setActiveTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [DataFinance, setDataFinance] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +52,10 @@ const FinancePage = () => {
     message: '',
     severity: 'success',
   });
-
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
 
   const resetPage = () => setPage(0);
 
@@ -92,10 +98,20 @@ const FinancePage = () => {
     setPage(0);
   };
 
+  const handleOpenDialog = (receipt) => {
+    setSelectedReceipt(receipt);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedReceipt(null);
+  };
+
   const filteredData = DataFinance.filter((service) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      service.appointment_id.toLowerCase().includes(searchLower) || 
+      service.appointment_id.toLowerCase().includes(searchLower) ||
       service.fullname.toLowerCase().includes(searchLower)
     );
   }).filter((service) => {
@@ -103,7 +119,6 @@ const FinancePage = () => {
     if (activeTab === 1) return service.status_pay === 'Paid';
     return true;
   });
-  
 
   const paginatedCategories = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -120,7 +135,7 @@ const FinancePage = () => {
             <FormRow>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
                 <TextField
-                  placeholder="ค้นหาเลขที่นัดหมาย"
+                  placeholder="ค้นหาเลขที่นัดหมาย หรือ ชื่อลูกค้า"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   variant="outlined"
@@ -135,21 +150,32 @@ const FinancePage = () => {
                 <Table stickyHeader>
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">รหัสชำระเงิน</TableCell>
-                      <TableCell align="center">เลขที่นัดหมาย</TableCell>
-                      <TableCell align="center">ชื่อลูกค้า</TableCell>
-                      <TableCell align="center">ยอดชำระ</TableCell>
-                      <TableCell align="center">สถานะ</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>รหัสชำระเงิน</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>เลขที่นัดหมาย</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ชื่อลูกค้า</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ยอดชำระ</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>สถานะ</TableCell>
+                      {activeTab === 1 && (
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ดาวน์โหลด</TableCell>)}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {paginatedCategories.map((service) => (
                       <TableRow key={service.invoice_id}>
-                        <TableCell align="center">#{service.invoice_id}-{dayjs(service.invoice_date).format('YYYYMMDD')}</TableCell>
+                        <TableCell align="center" >#{service.payment_id}-{dayjs(service.invoice_date).format('YYYYMMDD')}</TableCell>
                         <TableCell align="center">{service.appointment_id}</TableCell>
                         <TableCell align="center">{service.fullname}</TableCell>
                         <TableCell align="center">{service.total_pay_invoice} บาท</TableCell>
                         <TableCell align="center">{service.status_pay}</TableCell>
+                        {activeTab === 1 && (
+                          <TableCell align="center">
+                            <IconButton
+                               onClick={() => handleOpenDialog(service)}
+                            >
+                              <DownloadIcon />
+                            </IconButton>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -180,6 +206,9 @@ const FinancePage = () => {
             {snackbar.message}
           </Alert>
         </Snackbar>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md">
+          {selectedReceipt && <ReceiptComponent receiptData={selectedReceipt} />}
+        </Dialog>
       </CategoryContainer>
     </Box>
   );

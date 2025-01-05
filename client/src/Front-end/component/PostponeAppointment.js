@@ -16,7 +16,7 @@ dayjs.locale('th'); // Set dayjs to use Thai locale
 
 const api = 'http://localhost:8080/api/clinic';
 
-const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments }) => {
+const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments ,isCustomer }) => {
   const [appointmentDate, setAppointmentDate] = useState(null);
   const [appointmentTime, setAppointmentTime] = useState(null);
   const [isNoTime, setIsNoTime] = useState(false);
@@ -26,6 +26,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
     message: '',
     severity: 'success',
   });
+  // console.log('isCustomer',isCustomer)
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -61,17 +62,37 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         const [hours, minutes] = startTime.split(':');
         console.log(`${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`)
         return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
-      };
+      }
 
-       // ตรวจสอบเวลาปัจจุบันกับเวลานัดหมาย
-    // const currentDateTime = dayjs(); // เวลาปัจจุบัน
-    // const originalAppointmentDateTime = dayjs(`${appointmentDate}T${appointmentTime}`); // วันที่และเวลานัดหมายเดิม
-    // const diffMinutes = originalAppointmentDateTime.diff(currentDateTime, 'minute'); // คำนวณความต่างในหน่วยนาที
+       // ตรวจสอบเวลาปัจจุบันกับเวลานัดหมายเดิม (เฉพาะ customer)
 
-    // if (diffMinutes < 45) {
-      // alert('สามารถเลื่อนนัดได้อย่างน้อย 45 นาทีก่อนถึงเวลานัดหมาย.');
-      // return;
-    // }
+       if (isCustomer) {
+        const currentDateTime = new Date(); // เวลาปัจจุบัน
+        const appointmentDateTime = new Date(`${formatDate(appointmentDate)}T${formatTime(appointmentTime)}`); // เวลานัดหมาย
+
+      
+        const diffMilliseconds = appointmentDateTime - currentDateTime; // คำนวณความต่างในมิลลิวินาที
+        const diffMinutes = Math.floor(diffMilliseconds / (1000 * 60)); // แปลงเป็นนาที
+      
+        // Debug logs
+        console.log(" DateTime:", appointmentDate);
+        console.log(" Time:", appointmentDate);
+        console.log("Current DateTime:", currentDateTime);
+        console.log("Appointment DateTime:", appointmentDateTime);
+        console.log("Difference in Minutes:", diffMinutes);
+      
+        if (diffMinutes < 45) {
+          console.log("Condition met: Less than 45 minutes before appointment.");
+          setSnackbar({
+            open: true,
+            message: 'สามารถเลื่อนนัดได้อย่างน้อย 45 นาทีก่อนถึงเวลานัดหมาย.',
+            severity: 'error',
+          });
+          return;
+        }
+      }
+      
+
 
       const date_format = formatDate(appointmentDate) ;
 

@@ -376,12 +376,15 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
                   }}
                 />
               </Box>
+              {formMedical.type_service === 'ตรวจรักษา' && (
+                <Box>
+                  <Typography sx={{ mr: 2 }}>
+                    การประเมินคะแนนสภาพร่างกาย (Body Condition Score)
+                  </Typography>
+                  <Bodyscore onSubmit={handleBodyscoreTreeSubmit} />
+                </Box>
+              )}
 
-              <Box>
-                <Typography sx={{ mr: 2 }}>การประเมินคะแนนสภาพร่างกาย (Body Condition Score)</Typography>
-                <Bodyscore onSubmit={handleBodyscoreTreeSubmit} />
-              </Box>
-          
               <Box>
                 <Typography>อาการเบื้องต้น </Typography>
                 <TextField

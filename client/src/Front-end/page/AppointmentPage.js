@@ -95,7 +95,7 @@ const AppointmentPage = () => {
 
         switch (filterType) {
           case 'all':
-            return appointmentDate >= today;
+            return true;
           case 'today':
             return appointmentDate.hasSame(today, 'day');
           case 'tomorrow':

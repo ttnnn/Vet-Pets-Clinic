@@ -8,6 +8,7 @@ import OngoingAppointments from '../component/OngoingAppointment';
 import PendingAppointments from '../component/PendingAppointments';
 import CircularProgress from '@mui/material/CircularProgress';
 import AdmitTable from '../component/AdmitTable';
+import Notification from '../component/Notification';
 
 // Categories for filtering
 
@@ -208,14 +209,13 @@ const HomeDashboard = () => {
 };
 
   
-
-
   const currentDate = new Date();
   const formattedDate = formatDate(currentDate);
 
   return (
     <Box display="flex" height="100vh">
       <Sidebar />
+      <Notification /> 
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" align="left" gutterBottom>
           {formattedDate}

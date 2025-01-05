@@ -1,14 +1,19 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 const app = express();
 // Middleware
-app.use(cors());
-app.use(express.json()); 
+const http = require('http');
 const path = require('path');
 const pool = require('./db');
 const clinicController = require('./controllers/clinicController');  // นำเข้า controller
 const customerController = require('./controllers/customerController'); 
+const setupSocketServer = require('./models/socketServer');
+const setupCronJobs = require('./models/cronJobs');
+
+require('dotenv').config();
+app.use(cors());
+app.use(express.json()); 
+const server = http.createServer(app);
 
 // การเชื่อมต่อฐานข้อมูล
 pool.connect()
@@ -19,8 +24,6 @@ const staticFolder = path.join(__dirname, 'client');
 
 app.use('/customer', express.static(staticFolder, { index: 'index.html' }));
 app.use('/clinic', express.static(staticFolder, { index: 'index.html' }));
-
-
 app.use('/public', express.static(path.join(__dirname, '../client/public')));
 app.use('/public', express.static(path.join(__dirname, '../customer/public')));
 
@@ -29,8 +32,18 @@ app.use('/public', express.static(path.join(__dirname, '../customer/public')));
 app.use('/api/clinic', clinicController);
 app.use('/api/customer', customerController);
 
+// Socket.IO
+const io = setupSocketServer(server);
+
+// Cron Jobs
+setupCronJobs(io);
+
+
 // เริ่มเซิร์ฟเวอร์
-app.listen(8080, function () {
-    console.log('Server running on port 8080' );
-  })
-  
+// app.listen(8080, function () {
+    // console.log('Server running on port 8080' );
+  // })
+  // 
+server.listen(8080, function () {
+    console.log('Server running on port 8080');
+});

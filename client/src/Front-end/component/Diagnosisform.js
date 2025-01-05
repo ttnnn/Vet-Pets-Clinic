@@ -86,6 +86,14 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     phy_mucous_membranes: 'no exam',
     phy_dental: 'no exam',
   });
+
+  const [formDataList, setFormDataList] = useState({
+    ribs: '',
+    subcutaneous_fat: '',
+    abdomen: '',
+    waist: '',
+    result_bcs: '',
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; // จำนวนรายการต่อหน้า
 
@@ -149,6 +157,13 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
             phy_mucous_membranes: medicalData.phy_mucous_membranes || 'no exam',
             phy_dental: medicalData.phy_dental || 'no exam',
           });
+          setFormDataList({
+            ribs: medicalData.ribs,
+            subcutaneous_fat: medicalData.subcutaneous_fat,
+            abdomen: medicalData.abdomen ||'',
+            waist: medicalData.waist|| '',
+            result_bcs: medicalData.result_bcs || '',
+          })
           
         } else {
           // กรณีไม่พบข้อมูล ไม่ต้อง alert แต่ตั้งค่าฟอร์มให้ว่างเปล่า
@@ -471,11 +486,35 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   return (
     <Paper style={{ padding: 20 }}>
       <Typography variant="h5" gutterBottom>
-        Medical Record and Diagnosis
-      </Typography>
-      <Typography variant="h6" gutterBottom>
         เลขที่นัดหมาย : {appointmentId || ''}
     </Typography>
+    <Box>
+    <Typography variant="h6" gutterBottom>
+        ผลการตรวจ Body Condition Score
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="medical results table">
+          <TableHead>
+            <TableRow>
+              <TableCell align="center"  sx={{ backgroundColor: '#f0f0f0', color: '#333', fontWeight: 'bold' }}>Ribs</TableCell>
+              <TableCell align="center"  sx={{ backgroundColor: '#f0f0f0', color: '#333', fontWeight: 'bold' }}>Subcutaneous Fat</TableCell>
+              <TableCell align="center"  sx={{ backgroundColor: '#f0f0f0', color: '#333', fontWeight: 'bold' }}>Abdomen</TableCell>
+              <TableCell align="center"  sx={{ backgroundColor: '#f0f0f0', color: '#333', fontWeight: 'bold' }} >Waist</TableCell>
+              <TableCell align="center"  sx={{ backgroundColor: '#f0f0f0', color: '#333', fontWeight: 'bold' }} >Result BCS</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow>
+              <TableCell align="center" >{formDataList.ribs}</TableCell>
+              <TableCell align="center">{formDataList.subcutaneous_fat}</TableCell>
+              <TableCell align="center">{formDataList.abdomen}</TableCell>
+              <TableCell align="center">{formDataList.waist}</TableCell>
+              <TableCell align="center">{formDataList.result_bcs}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
       <Snackbar
           open={openSnackbar}
           autoHideDuration={6000} // ปิดเองหลัง 6 วินาที
@@ -498,7 +537,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         </Snackbar>
 
       {/* Medical Record Section */}
-      <Box display="flex" flexDirection="row" gap={3} alignItems="center" mb={3}>
+      <Box display="flex" flexDirection="row" gap={3} alignItems="center" mb={3} mt={5}>
         
       <TextField
         label="วันที่"

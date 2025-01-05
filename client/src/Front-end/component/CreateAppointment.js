@@ -68,16 +68,11 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [isNoTime, setIsNoTime] = useState(false); // Checkbox state
   const [timePickerKey, setTimePickerKey] = useState(0);
   const [openDialog , setOpenDialog] = useState(false)
-  // const isFormValid = isNoTime || (appointmentTime !== null && appointmentTime !== '');
   const location = useLocation();
   const { locationOwnerID ,locationPetID } = location.state || {};
-  // console.log("locationOwnerID : ",locationOwnerID)
-  // console.log("locationPetID : ",locationPetID)
-
-//  console.log('isCustomerAppointment',isCustomerAppointment)
 
   const user = JSON.parse(sessionStorage.getItem('user')); 
-  // console.log('user',user)
+
   useEffect(() => {
     if (locationOwnerID !== undefined && locationOwnerID !== selectedOwnerId) {
       setSelectedOwnerId(locationOwnerID);
@@ -222,7 +217,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
         owner_id: selectedOwnerId,
         pet_id: selectedPetId,
         type_service: TypeService,
-        status: 'อนุมัติ',   //ลงหน้าร้าน
+        status: isCustomerAppointment ? 'รออนุมัติ' : 'อนุมัติ', // เปลี่ยนสถานะตามเงื่อนไข
         queue_status: 'รอรับบริการ',
         personnel_id: selectedPersonnel ? selectedPersonnel.personnel_id : null,
         
@@ -353,7 +348,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                   }
                 }}
               />}
-            getOptionSelected={(option, value) => option.owner_id === value.owner_id}
+            // getOptionSelected={(option, value) => option.owner_id === value.owner_id}
             renderOption={(props, option) => (
               <li {...props} key={option.owner_id}>
                 {`${option.first_name} ${option.last_name}`}
@@ -365,6 +360,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
           <Autocomplete
             options={pets}
             getOptionLabel={(pet) => pet.pet_name}
+            isOptionEqualToValue={(option, value) => option.pet_id === value.pet_id}
             onChange= {handlePetChange}
             value={selectedPetId ? pets.find(pet => pet.pet_id === selectedPetId) : null}
             renderInput={(params) => (
