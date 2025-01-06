@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import { styled } from '@mui/material/styles';
 import HolidayFilter from './HolidayFilter';
-
+import { useNavigate  } from 'react-router-dom';
 dayjs.locale('th');
 
 const api = 'http://localhost:8080/api/clinic';
@@ -46,7 +46,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
   const [snackbarColor, setSnackbarColor] = useState(''); // Snackbar color state
   const [initialCheckInDate, setInitialCheckInDate] = useState(null); 
   const [petName, setPetName] = useState('');
-
+  const navigate = useNavigate();
   // console.log('checkInDate',checkInDate)
   // console.log('appointmentId',appointmentId)
 
@@ -95,6 +95,13 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
         
         resetFields();
         handleClose(); 
+        if (isAdmitBooking) {
+          navigate('/clinic/home', {
+            state: {
+              locationActiveTab: 1,
+            },
+          });
+        }
       }
     } catch (error) {
     console.error('Failed to update appointment:', error);

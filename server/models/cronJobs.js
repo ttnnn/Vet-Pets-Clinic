@@ -1,11 +1,15 @@
 const cron = require("node-cron");
 const pool = require("../db");
+const LineNotification = require('./LineNotification');
+const dayjs = require('dayjs');
+require('dayjs/locale/th');
+
+
 
 const setupCronJobs = (io) => {
-  // ทุกๆ 5  นาที Every hour from 9:00 AM to 9:00 PM 
+  // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
   cron.schedule("*/1 9-21 * * *", async () => {
     try {
-      // กรองคิวที่ยังไม่เสร็จสิ้น และยังไม่ได้กดส่งคิว
       const query = `
         SELECT * FROM appointment
         WHERE appointment_date = CURRENT_DATE
@@ -13,24 +17,21 @@ const setupCronJobs = (io) => {
         AND appointment_time < CURRENT_TIME
         AND status NOT IN ('รออนุมัติ','ยกเลิกนัด');
       `;
-
       const { rows } = await pool.query(query);
-    //   console.log("Pending queues:", rows); // Log ข้อมูลคิวที่ยังไม่ได้กดส่ง
 
-      // แจ้งเตือนเมื่อมีคิวที่ยังไม่ได้กดส่งคิว
+      // แจ้งเตือนคิวที่ยังไม่ได้กดส่ง
       if (rows.length > 0) {
         io.emit("queue-alert", {
           message: `ยังมี ${rows.length} คิวที่ยังไม่ได้กดส่งคิว โปรดจัดการก่อนร้านปิด!`,
           queues: rows,
         });
-        console.log("Queue alert emitted:", rows); // Log การส่งแจ้งเตือน
+        console.log("Queue alert emitted:", rows);
       }
 
-      // เช็คเวลาปัจจุบันว่าเกิน 20:00 หรือยัง
+      // อัปเดตสถานะคิวหลังเวลา 20:00 น.
       const currentTime = new Date();
       const currentHour = currentTime.getHours();
       if (currentHour >= 20) {
-        // ถ้าเลยเวลา 20:00 น. อัปเดตสถานะ
         const updateQuery = `
           UPDATE appointment
           SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด'
@@ -41,8 +42,8 @@ const setupCronJobs = (io) => {
         await pool.query(updateQuery);
         console.log('Appointment status updated to "ยกเลิกนัด" after 20:00');
         io.emit('notification', {
-            message: 'มีคิวที่ถูกยกเลิกเนื่องจากเลยเวลา 20:00 น.',
-          });
+          message: 'มีคิวที่ถูกยกเลิกเนื่องจากเลยเวลา 20:00 น.',
+        });
       }
 
       console.log("Cron job executed successfully");
@@ -50,6 +51,39 @@ const setupCronJobs = (io) => {
       console.error("Error in cron job:", error);
     }
   });
+
+  // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
+  const sendAppointmentReminders = async () => {
+    const query = `
+      SELECT a.appointment_date, a.appointment_time, p.pet_name, o.line_id, a.appointment_id
+    FROM appointment a
+    JOIN owner o ON a.owner_id = o.owner_id
+    JOIN pets p ON a.pet_id = p.pet_id
+    WHERE a.appointment_date = CURRENT_DATE + INTERVAL '1 day'
+    `;
+  
+    try {
+      const { rows } = await pool.query(query);
+      rows.forEach(appointment => {
+        // แปลง appointment_time ให้อยู่ในรูปแบบ '10:00'  
+        const formattedTime = appointment.appointment_time.split('+')[0];
+        const formatDate = dayjs(appointment.appointment_date).locale('th').format('D MMMM YYYY');  // ใช้ dayjs แปลงเป็นวันที่ไทย
+  
+        const message = `แจ้งเตือนนัดหมาย:\n${appointment.pet_name} มีนัดหมายในวันพรุ่งนี้ วันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
+
+        
+        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id);
+      });
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+  };
+  
+
+
+  // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 00:00 น.
+  cron.schedule('1 1 * * *', sendAppointmentReminders);
+
 };
 
 module.exports = setupCronJobs;

@@ -1,34 +1,78 @@
-import  { useEffect, useCallback } from "react";
-import { useNavigate } from 'react-router-dom';
-import liff from '@line/liff'; // Make sure you have installed and imported the liff SDK
+import { useEffect, useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import liff from "@line/liff";
 
 const LineAuth = () => {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // สร้าง handleLogin ฟังก์ชันและใช้ useCallback เพื่อหลีกเลี่ยงการสร้างใหม่ในการ render ทุกครั้ง
+    // ฟังก์ชันสำหรับการล็อกอินและดึงข้อมูลผู้ใช้
+    const isTokenExpired = (idToken) => {
+        try {
+            const decoded = JSON.parse(atob(idToken.split(".")[1]));
+            return Date.now() >= decoded.exp * 1000; // exp อยู่ในหน่วยวินาที
+        } catch {
+            return true;
+        }
+    };
+
     const handleLogin = useCallback(async () => {
         try {
-            const profile = await liff.getProfile();
-            const idToken = liff.getIDToken();
-            console.log(profile, idToken);
-            navigate("/login"); 
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                const idToken = liff.getIDToken();
+
+                if (isTokenExpired(idToken)) {
+                    console.warn("Token has expired. Redirecting to login...");
+                    liff.logout();
+                    liff.login();
+                    return;
+                }
+
+                const profile = await liff.getProfile();
+                console.log("User Profile:", profile);
+                console.log("ID Token:", idToken);
+
+                navigate("/customer/login", { state: { idToken } });
+            }
         } catch (err) {
-            console.log(err);
+            console.error("Error during login:", err);
+            setError("Failed to log in with LINE.");
+        } finally {
+            setLoading(false);
         }
-    }, [navigate]); 
+    }, [navigate]);
+
+
+    
 
     useEffect(() => {
-        liff.init({ liffId: '2006068191-vAnqlBk7' })
+        liff.init({ liffId: "2006068191-vAnqlBk7" })
             .then(() => {
-                handleLogin();
                 console.log("LIFF initialized");
+                handleLogin();
             })
             .catch((err) => {
-                // Initialization failed
-                console.error("LIFF initialization failed", err);
+                console.error("LIFF initialization failed:", err);
+                setError("Failed to initialize LIFF.");
+                setLoading(false);
             });
-    }, [handleLogin]); // เพิ่ม handleLogin ใน dependency array
+    }, [handleLogin]);
 
+    // แสดงข้อความระหว่างรอการโหลด
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    // แสดงข้อความข้อผิดพลาด (ถ้ามี)
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
+
+    return null; // ไม่ต้องแสดง UI ในคอมโพเนนต์นี้
 };
 
 export default LineAuth;
+ 

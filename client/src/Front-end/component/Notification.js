@@ -38,13 +38,10 @@ const Notification = () => {
     <Snackbar
     open={open}
     onClose={handleClose}
-    // ปรับตำแหน่งด้วย style
-    sx={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-      }}
+    anchorOrigin={{ 
+      vertical: 'bottom', 
+      horizontal: 'left' 
+    }}
   >
     <Alert onClose={handleClose} severity="warning" 
     style={{

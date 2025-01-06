@@ -13,7 +13,7 @@ dayjs.locale('th'); // ใช้ locale ภาษาไทย
 
 const api = 'http://localhost:8080/api/customer';
 
-const AppointmentDetail = ({setAppointments }) => {
+const AppointmentDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [appointment, setAppointment] = useState(null); 

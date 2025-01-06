@@ -9,7 +9,7 @@ import PendingAppointments from '../component/PendingAppointments';
 import CircularProgress from '@mui/material/CircularProgress';
 import AdmitTable from '../component/AdmitTable';
 import Notification from '../component/Notification';
-
+import {useLocation } from 'react-router-dom';
 // Categories for filtering
 
 const api = 'http://localhost:8080/api/clinic';
@@ -90,8 +90,10 @@ const AppointmentSummary = ({
 // HomeDashboard component
 
 const HomeDashboard = () => {
+  const location = useLocation(); 
   const [appointments, setAppointments] = useState([]);
-  const [view, setView] = useState('total');
+  // const [view, setView] = useState('total');
+  const [view, setView] = useState(location.state?.locationActiveTab === 1 ? 'ongoing' : 'total');
   const [loading, setLoading] = useState(false); // Loading state
  
 

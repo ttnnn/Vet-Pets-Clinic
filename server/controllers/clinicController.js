@@ -1549,7 +1549,7 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
       END AS days_overdue
    
     FROM appointment
-    LEFT JOIN invoice ON appointment.appointment_id = invoice.appointment_id
+    INNER JOIN invoice ON appointment.appointment_id = invoice.appointment_id
     LEFT JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
     LEFT JOIN servicecategory ON serviceinvoice.category_id = servicecategory.category_id 
     LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
@@ -1939,8 +1939,6 @@ router.get('/available-years', async (req, res) => {
     res.status(500).send('Error fetching available years');
   }
 });
-
-
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

@@ -9,7 +9,6 @@ const clinicController = require('./controllers/clinicController');  // นำ�
 const customerController = require('./controllers/customerController'); 
 const setupSocketServer = require('./models/socketServer');
 const setupCronJobs = require('./models/cronJobs');
-
 require('dotenv').config();
 app.use(cors());
 app.use(express.json()); 
@@ -44,6 +43,7 @@ setupCronJobs(io);
     // console.log('Server running on port 8080' );
   // })
   // 
+  
 server.listen(8080, function () {
     console.log('Server running on port 8080');
 });

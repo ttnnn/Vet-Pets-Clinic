@@ -44,7 +44,7 @@ const AppointmentPage = () => {
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState('this_month');
 
   const location = useLocation();
   const { locationActiveTab } = location.state || {};

@@ -1,12 +1,13 @@
-const path = require('path');
-const dayjs = require('dayjs');
+const axios = require("axios"); // CommonJS syntax
+const path = require('path');;
 const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 const pool = require('../db.js');
 const multer = require('multer');
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  
-
+const jwt = require("jsonwebtoken");
+const jwkToPem = require("jwk-to-pem");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -18,38 +19,116 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.post('/owner/check-owner', async (req, res) => {
-    const { first_name, last_name, phone_number } = req.body;
-    console.log('/owner/check-owner', req.body);
-  
-    // ตรวจสอบว่าข้อมูลครบถ้วนหรือไม่
-    if (!first_name || !last_name || !phone_number) {
-      return res.status(400).json({ success: false, message: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
-    }
-  
-    try {
-      const query = `
-      SELECT * 
-        FROM owner
-        WHERE TRIM(first_name) ILIKE $1 
-          AND TRIM(last_name) ILIKE $2 
-          AND TRIM(phone_number) ILIKE $3;
+const verifyLineToken = async (idToken) => {
+  try {
+    // ดึง Public Keys จาก LINE
+    const { data: keys } = await axios.get("https://api.line.me/oauth2/v2.1/certs");
 
-      `;
-      const values = [first_name, last_name, phone_number];
-  
-      const result = await pool.query(query, values);
-      console.log('result', result.rows); // แสดงผลลัพธ์จากฐานข้อมูล
-  
-      if (result.rows.length > 0) {
-        res.status(200).json({ success: true, message: 'พบข้อมูลในระบบ', data: result.rows[0] });
-      } else {
-        res.status(404).json({ success: false, message: 'ไม่พบข้อมูลในระบบ' });
-      }
-    } catch (error) {
-      console.error('Database query error:', error);
-      res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในระบบ' });
+    // ถอดรหัส Header จาก idToken เพื่อหา kid (Key ID)
+    const { header } = jwt.decode(idToken, { complete: true });
+    if (!header || !header.kid) throw new Error("Invalid Token Header");
+
+    // หา Public Key ที่ตรงกับ kid
+    const jwk = keys.keys.find((key) => key.kid === header.kid);
+    if (!jwk) throw new Error("Public key not found");
+
+    // แปลง JWK เป็น PEM (รูปแบบ Public Key ที่ใช้ใน jwt.verify)
+    const pem = jwkToPem(jwk);
+
+    // ตรวจสอบความถูกต้องของ Token
+    const decoded = jwt.verify(idToken, pem, {
+      audience: "2006068191", // ตรวจสอบค่า aud (Audience)
+      issuer: "https://access.line.me", // ตรวจสอบค่า iss (Issuer)
+    });
+
+    // คืนค่า userId (sub) จาก Token
+    return decoded.sub;
+  } catch (error) {
+    // ตรวจสอบกรณี Token หมดอายุ
+    if (error.name === "TokenExpiredError") {
+      console.error("Token has expired:", error);
+      throw new Error("Token expired. Please reauthenticate.");
     }
+
+    // กรณีอื่นๆ ที่เกี่ยวข้องกับการตรวจสอบ Token
+    console.error("Token verification failed:", error);
+    throw new Error("Invalid token");
+  }
+};
+
+
+router.post("/owner/check-owner", async (req, res) => {
+  const { first_name, last_name, phone_number } = req.body;
+  const token = req.headers.authorization?.split(' ')[1]; // รับ Token จาก Header
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Token is required' });
+  }
+
+  if (!first_name || !last_name || !phone_number) {
+    return res
+      .status(400)
+      .json({ success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+  }
+
+  try {
+   
+    const userId = await verifyLineToken(token);
+     console.log('Verified User ID:', userId);
+
+    const checkQuery = `
+      SELECT * 
+      FROM owner
+      WHERE TRIM(first_name) ILIKE $1 
+        AND TRIM(last_name) ILIKE $2 
+        AND TRIM(phone_number) ILIKE $3;
+    `;
+    const checkValues = [first_name, last_name, phone_number];
+    const result = await pool.query(checkQuery, checkValues);
+
+    if (result.rows.length > 0) {
+
+       const existingOwner = result.rows[0];
+
+      if (existingOwner.line_id) {
+        // ถ้ามี userId อยู่แล้ว ไม่ต้องทำอะไร
+        return res.status(200).json({
+          success: true,
+          message: "มีข้อมูล userId อยู่ในระบบแล้ว",
+          data: existingOwner,
+        });
+      } else {
+        // ถ้ายังไม่มี userId ให้เพิ่มข้อมูล
+        const updateQuery = `
+          UPDATE owner 
+          SET line_id = $1 
+          WHERE TRIM(first_name) ILIKE $2 
+            AND TRIM(last_name) ILIKE $3 
+            AND TRIM(phone_number) ILIKE $4;
+        `;
+        const updateValues = [userId, first_name, last_name, phone_number];
+        await pool.query(updateQuery, updateValues);
+
+        return res.status(200).json({
+          success: true,
+          message: "เพิ่ม userId ลงในระบบเรียบร้อยแล้ว",
+          data: { ...existingOwner, line_user_id: userId },
+        });
+      }
+    } else {
+      // ถ้าไม่พบข้อมูลในระบบ ให้แจ้งว่าข้อมูลไม่ตรง
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อ-นามสกุล หรือเบอร์โทร",
+      });
+    }
+  } catch (error) {
+    console.error("Database query error:", error);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในระบบ",
+    });
+  }
 });
 
 router.get('/appointments', async (req, res) => { 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'; 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate ,useLocation } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box } from '@mui/material';
 import axios from 'axios'; // import axios
 
@@ -10,7 +10,10 @@ const Register = () => {
   const [last_name, setLastName] = useState('');
   const [phone_number, setPhone] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { idToken } = location.state || {};
 
+  console.log('location.state ',location.state )
   const handleRegister = async (event) => {
     event.preventDefault();
   
@@ -26,34 +29,52 @@ const Register = () => {
       alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
       return;
     }
-  
+    if (!idToken) {
+      console.error("No ID Token found");
+      return;
+    }
+
     try {
+      console.log("idToken from Line:", idToken);
       console.log('first_name',first_name)
       console.log('last_name',last_name)
       console.log('phone_number',phone_number)
-      const response = await axios.post(`${api}/owner/check-owner`, {
-        first_name,
-        last_name,
-        phone_number,
-      });
-  
-      const result = response.data;
-  
-      if (result.success) {
-        // เก็บข้อมูลผู้ใช้ใน sessionStorage
-        sessionStorage.setItem('user', JSON.stringify({
+      const response = await axios.post(
+        `${api}/owner/check-owner`,
+        {
           first_name,
           last_name,
           phone_number,
-        }));
-        
-        navigate('/customer/home');
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`, // ส่ง idToken ผ่าน Header
+          },
+        }
+      );
+  
+      const result = response.data;
+  
+      if (response.data.success) {
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify({ first_name, last_name, phone_number})
+        );
+        alert(response.data.message);
+        navigate("/customer/home");
+
       } else {
-        alert(result.message || 'เข้าสู่ระบบไม่สำเร็จ');
+        alert(result.data.message || 'เข้าสู่ระบบไม่สำเร็จ');
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+      if (error.response?.data?.message === "Token expired. Please reauthenticate.") {
+        alert("Token หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
+        // เปลี่ยนเส้นทางไปยังหน้า login หรือ refresh โทเค็นที่นี่
+        navigate("customer/line-login");
+      } else {
+        console.error("Error:", error);
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
+      }
     }
   };
 
