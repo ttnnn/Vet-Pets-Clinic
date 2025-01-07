@@ -37,12 +37,6 @@ const io = setupSocketServer(server);
 // Cron Jobs
 setupCronJobs(io);
 
-
-// เริ่มเซิร์ฟเวอร์
-// app.listen(8080, function () {
-    // console.log('Server running on port 8080' );
-  // })
-  // 
   
 server.listen(8080, function () {
     console.log('Server running on port 8080');

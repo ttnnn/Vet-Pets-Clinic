@@ -11,7 +11,7 @@ import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
-import {useLocation} from 'react-router-dom';
+import {useLocation,useNavigate} from 'react-router-dom';
 import HolidayFilter from './HolidayFilter';
 
 
@@ -70,7 +70,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [openDialog , setOpenDialog] = useState(false)
   const location = useLocation();
   const { locationOwnerID ,locationPetID } = location.state || {};
-
+  const navigate = useNavigate();
   const user = JSON.parse(sessionStorage.getItem('user')); 
 
   useEffect(() => {
@@ -258,6 +258,9 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
         resetForm();
         setAlertSeverity('success');
         setAlertMessage('เพิ่มการนัดหมายสำเร็จ.');
+        if (isCustomerAppointment) {
+          navigate('/customer/home');
+        }
       }
   
       setTimeout(() => setAlertMessage(''), 2000);

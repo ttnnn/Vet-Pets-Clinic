@@ -1,16 +1,109 @@
 const { generateAppointmentID } = require('../models/IdGenerator.js');
+const { sendLineMessageWithImage } = require('../models/sendLineImage.js');
+const {generateServiceID} = require('../models/generateServiceID.js'); 
 const multer = require('multer');
 const path = require('path');
-const {generateServiceID} = require('../models/generateServiceID.js'); 
 const dayjs = require('dayjs');
 const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 const bcrypt = require('bcrypt'); 
-
+const crypto = require('crypto');
+const sendLineMessage = require('../models/sendLineApprove.js');
 const pool = require('../db.js');
-router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
 
+router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
+// const LINE_CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN; // LINE Token
+
+
+// router.post('/send-line-message', async (req, res) => {
+  // const { lineUserId, message, appointmentId } = req.body;
+// 
+  // if (!lineUserId) {
+    // return res.status(400).json({ error: `lineUserId is required for appointment_id: ${appointmentId}` });
+  // }
+// 
+  // try {
+    // const response = await axios.post(
+      // 'https://api.line.me/v2/bot/message/push',
+      // {
+        // to: lineUserId,
+        // messages: [{ type: 'text', text: message }],
+      // },
+      // {
+        // headers: {
+          // 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+          // 'Content-Type': 'application/json',
+        // },
+      // }
+    // );
+// 
+    // res.status(200).json({ message: 'Message sent successfully', data: response.data });
+  // } catch (error) {
+    // console.error('Error sending LINE message:', error);
+    // res.status(500).json({ error: 'Failed to send message' });
+  // }
+// });
+// 
+
+router.post('/send-line-message', async (req, res) => {
+  const { lineUserId, message} = req.body;
+  if (!lineUserId) {
+    return res.status(400).json({ error: `lineUserId is required for appointment_id` });
+  }
+
+  try {
+    const response = await sendLineMessage(lineUserId, message);
+    res.status(200).json({ message: 'Message sent successfully', data: response });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+router.get('/get-line-user/:appointmentId', async (req, res) => {
+  const { appointmentId } = req.params;
+
+  try {
+    // Query เพื่อดึง line_id
+    const query = `
+      SELECT o.line_id
+      FROM appointment a
+      JOIN owner o ON a.owner_id = o.owner_id
+      WHERE a.appointment_id = $1
+    `;
+
+    const result = await pool.query(query, [appointmentId]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ lineUserId: result.rows[0].line_id });
+    } else {
+      res.status(404).json({ error: 'Line ID not found for the given appointment ID' });
+    }
+  } catch (error) {
+    console.error('Error fetching line_id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/generate-signature', (req, res) => {
+  const { timestamp, upload_preset } = req.body;
+
+  if (!timestamp || !upload_preset) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const stringToSign = `timestamp=${timestamp}&upload_preset=${upload_preset}`;
+  const signature = crypto
+    .createHash('sha256')
+    .update(stringToSign + process.env.CLOUDINARY_API_SECRET)
+    .digest('hex');
+
+  res.status(200).json({
+    signature,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  });
+});
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -25,6 +118,8 @@ const upload = multer({ storage: storage });
 router.post('/uploads',(req,res) =>{
   console.log(req.file)
 });
+
+
 router.put('/pets/:id', async (req, res) => {
   const { id } = req.params;
   const { 
@@ -1695,7 +1790,7 @@ router.post('/create-invoice/payment', async (req, res) => {
 
 
     await client.query('COMMIT'); // ยืนยัน transaction
-    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' });
+    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' , invoice_id: invoiceId });
   } catch (error) {
     await client.query('ROLLBACK'); // ยกเลิก transaction หากเกิดข้อผิดพลาด
     console.error('Error during transaction:', error);
@@ -1812,7 +1907,8 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
       pay.*,
       owner.first_name ||' ' || owner.last_name AS fullname,
       s.*,
-      c.category_name
+      c.category_name,
+      owner.line_id
 
       FROM invoice i
       LEFT JOIN appointment a  ON i.appointment_id = a.appointment_id
@@ -1939,6 +2035,25 @@ router.get('/available-years', async (req, res) => {
     res.status(500).send('Error fetching available years');
   }
 });
+
+router.post('/sendLineReceipt', async (req, res) => {
+  const { lineId, imageUrl } = req.body; // เปลี่ยนจาก imageBase64 เป็น imageUrl
+
+  if (!lineId || !imageUrl) {
+    return res.status(400).json({ error: 'Missing required data' });
+  }
+
+  try {
+    await sendLineMessageWithImage(lineId, imageUrl); // ส่งข้อความพร้อมรูปภาพจาก URL ไปยัง LINE
+    res.status(200).json({ message: 'Receipt sent to LINE successfully' });
+  } catch (error) {
+    console.error('Error sending receipt to LINE:', error);
+    res.status(500).json({ error: 'Failed to send receipt to LINE' });
+  }
+});
+
+
+
 // router.use('/public', express.static(path.join(__dirname, '../../public')));
 
 module.exports = router;

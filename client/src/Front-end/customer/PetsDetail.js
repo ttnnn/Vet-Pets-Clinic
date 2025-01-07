@@ -7,6 +7,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+
 
 
 const api = 'http://localhost:8080/api/customer';
@@ -101,42 +103,62 @@ const PetsDetail = () => {
         }}
       >
         {/* แสดงรูปภาพพร้อมปุ่มแก้ไข */}
-        {pet.image_url && (
-          <Box
+        <Box
+         sx={{
+          position: 'relative', // ตั้งค่า position
+          width: 120,
+          height: 120,
+          marginBottom: 2,
+          borderRadius: '50%', // ทำให้เป็นวงกลม
+          backgroundColor: pet.image_url ? 'transparent' : '#dcdcdc', // ถ้ามีรูปจะเป็นโปร่งใส, ถ้าไม่มีจะเป็นสีเทาทึบ
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        >
+        {/* แสดงรูปภาพหรือ default */}
+        <Box
+          sx={{
+            position: 'relative', // ตั้งค่า position
+            width: 120,
+            height: 120,
+            marginBottom: 2,
+          }}
+        >
+          <img
+            src={
+              pet.image_url
+                ? `http://localhost:8080${pet.image_url}` // ใช้ URL ของรูปภาพถ้ามี
+                : '/path/to/default/image.png' // ใช้รูป default ถ้าไม่มี URL
+            }
+            alt={pet.pet_name || 'Default pet image'}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%',
+            }}
+          />
+
+          {/* ปุ่มไอคอนเพิ่มหรือแก้ไข */}
+          <IconButton
+            onClick={() => setEditImageOpen(true)} // เปิด dialog สำหรับเพิ่มหรือแก้ไขรูป
             sx={{
-              position: 'relative', // ตั้งค่า position
-              width: 120,
-              height: 120,
-              marginBottom: 2,
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              backgroundColor: '#ffffff',
+              color: '#000',
+              '&:hover': { backgroundColor: '#e0e0e0' },
+              border: '1px solid #ccc',
             }}
           >
-            <img
-              src={`http://localhost:8080${pet.image_url}`}
-              alt={pet.pet_name}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%',
-              }}
-            />
-            {/* ปุ่มไอคอนแก้ไข */}
-            <IconButton
-              onClick={() => setEditImageOpen(true)}
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                backgroundColor: '#ffffff',
-                color: '#000',
-                '&:hover': { backgroundColor: '#e0e0e0' },
-                border: '1px solid #ccc',
-              }}
-            >
-              <EditIcon />
-            </IconButton>
-          </Box>
-        )}
+            {pet.image_url ? <EditIcon /> : <AddPhotoAlternateIcon />} {/* แสดงไอคอนแก้ไขหรือเพิ่ม */}
+          </IconButton>
+        </Box>
+      </Box>
+          
+
 
         <TextField
           label="ชื่อสัตว์เลี้ยง"

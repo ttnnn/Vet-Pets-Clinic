@@ -102,7 +102,7 @@ const HomeDashboard = () => {
     try {
       const response = await axios.get(`${api}/appointment`);
       setAppointments(response.data);
-      console.log('Fetched appointments:', response.data);
+      // console.log('Fetched appointments:', response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     }

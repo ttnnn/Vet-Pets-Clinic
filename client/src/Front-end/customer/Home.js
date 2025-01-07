@@ -65,14 +65,14 @@ const Home = () => {
         },
       });
 
-      console.log('API Params:', { first_name, last_name, phone_number });
-      console.log('Response Data:', response.data);
+      // console.log('API Params:', { first_name, last_name, phone_number });
+      // console.log('Response Data:', response.data);
 
       if (response.data && Array.isArray(response.data.appointments)) {
         setAppointments(response.data.appointments);
         setOwnerId(response.data.owner_id)
-        console.log('Fetched appointments:', response.data.appointments); // ตรวจสอบค่าที่ได้จาก API
-        console.log('Fetched owner_id:', response.data.owner_id); 
+        // console.log('Fetched appointments:', response.data.appointments); // ตรวจสอบค่าที่ได้จาก API
+        // console.log('Fetched owner_id:', response.data.owner_id); 
       } else {
         console.warn('No appointments found or invalid data format');
         setOwnerId(response.data.owner_id)
@@ -87,7 +87,7 @@ const Home = () => {
   useEffect(() => {
     if (user && !isFetched.current) {
       setDisplayName(`${user.first_name}`);
-      setProfilePicture('https://via.placeholder.com/150'); 
+      setProfilePicture(user.pictureUrl || 'https://via.placeholder.com/150');
       fetchAppointments();
       isFetched.current = true; // ตั้งค่าสถานะว่าข้อมูลถูกดึงแล้ว
     }

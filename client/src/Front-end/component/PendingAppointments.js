@@ -19,10 +19,12 @@ import {
   MenuItem,
   Select,
   TablePagination,
-  TextField, Alert,Snackbar ,DialogTitle
+  TextField, Alert,Snackbar ,DialogTitle,IconButton
 } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
+import ReceiptComponent from './ReceiptComponent';
+import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
 
@@ -80,6 +82,9 @@ const PendingAppointments = ({ appointments }) => {
   const [openSnackbar, setOpenSnackbar] = useState(false); 
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+  const [receiptData, setReceiptData] = useState(null); // สถานะสำหรับข้อมูลใบเสร็จ
+  const [showReceipt, setShowReceipt] = useState(false); // สถานะควบคุมการแสดงใบเสร็จ
+  const [isReceiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
 
 
@@ -95,26 +100,56 @@ const PendingAppointments = ({ appointments }) => {
     setOrderBy(property);
   };
   
+  // const handleSelectItem = (item) => {
+    // setSelectedItems((prevItems) => {
+      // const isDuplicate = prevItems.some(
+        // (i) =>
+          // i.id === item.id &&
+          // i.price_service === item.price_service &&
+          // i.category_name === item.category_name // เพิ่มตรวจสอบคุณสมบัติเฉพาะ
+      // );
+  // 
+      // if (isDuplicate) {
+        // return prevItems.map((i) =>
+          // i.id === item.id &&
+          // i.price_service === item.price_service &&
+          // i.category_name === item.category_name
+            // ? { ...i, quantity: i.quantity + 1 }
+            // : i
+        // );
+      // }
+  // 
+      // return [...prevItems, { ...item, quantity: 1 }];
+    // });
+  // };
   const handleSelectItem = (item) => {
     setSelectedItems((prevItems) => {
-      const isDuplicate = prevItems.some(
-        (i) =>
-          i.id === item.id &&
-          i.price_service === item.price_service &&
-          i.category_name === item.category_name // เพิ่มตรวจสอบคุณสมบัติเฉพาะ
+      const existingItem = prevItems.find(
+        (i) => i.category_id === item.category_id
       );
   
-      if (isDuplicate) {
+      if (existingItem) {
+        // อัปเดตรายการเดิม
         return prevItems.map((i) =>
-          i.id === item.id &&
-          i.price_service === item.price_service &&
-          i.category_name === item.category_name
-            ? { ...i, quantity: i.quantity + 1 }
+          i.category_id === item.category_id
+            ? {
+                ...i,
+                quantity: (i.quantity || 1) + 1,
+                subtotal: ((i.quantity || 1) + 1) * i.price_service, // คำนวณใหม่
+              }
             : i
         );
       }
   
-      return [...prevItems, { ...item, quantity: 1 }];
+      // เพิ่มรายการใหม่
+      return [
+        ...prevItems,
+        {
+          ...item,
+          quantity: 1,
+          subtotal: item.price_service, // เริ่มต้นด้วย subtotal เท่ากับราคา
+        },
+      ];
     });
   };
   
@@ -128,10 +163,10 @@ const PendingAppointments = ({ appointments }) => {
           // 0
         // );
         const selectedItemsTotal = selectedItems.reduce(
-          (sum, item) => sum + (item.quantity || 0) * (item.price_service || 0),
+          (sum, item) => sum + (item.quantity ||item.amount||  0) * (item.price_service || 0),
           0
         );
-        const total = selectedItemsTotal ;
+        const total = selectedItemsTotal  ;
         return total;
       } else {
         // ใช้ quantity และ price_service สำหรับบริการอื่นๆ
@@ -388,6 +423,12 @@ const PendingAppointments = ({ appointments }) => {
       handleCloseConfirmDialog();
     
       await filterAppointments(appointments);
+       // อัปเดตข้อมูลใบเสร็จ
+       setReceiptData({
+        invoice_id: response.data.invoice_id,
+      });
+      handleOpenReceiptDialog()
+      
 
     } catch (error) {
       // console.error("Error saving invoice:", error);
@@ -404,7 +445,17 @@ const PendingAppointments = ({ appointments }) => {
   const handleCloseConfirmDialog = () => {
     setConfirmDialogOpen(false); // ปิด Dialog
   };
+
+  const handleOpenReceiptDialog = () => {
+    setReceiptDialogOpen(true); 
+    setShowReceipt(true); // แสดงใบเสร็จ
+  };
+
   
+const handleCloseReceiptDialog = () => {
+  setReceiptDialogOpen(false); // ปิด Dialog
+};
+
   const handleClose = () => {
     setSelectedItems([])
     setOpenPopup(false);
@@ -434,6 +485,7 @@ const PendingAppointments = ({ appointments }) => {
        {alertMessage}
      </Alert>
    </Snackbar>
+   
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={activeCategory}
@@ -452,22 +504,11 @@ const PendingAppointments = ({ appointments }) => {
           <TableHead>
             <TableRow>
               <TableCell>วันที่</TableCell>
-              <TableCell>เลขที่นัดหมาย</TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === 'appointment_time'}
-                  direction={orderBy === 'appointment_time' ? order : 'asc'}
-                  onClick={(event) =>
-                    handleRequestSort(event, 'appointment_time')
-                  }
-                >
-                  เวลา
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>ชื่อสัตว์</TableCell>
-              <TableCell>ประเภทสัตว์เลี้ยง</TableCell>
-              <TableCell>ชื่อเจ้าของ</TableCell>
-              <TableCell>ประเภทนัดหมาย</TableCell>
+              <TableCell sx={{ width: '10%' }}>เลขที่นัดหมาย</TableCell>
+              <TableCell sx={{ width: '10%' }}>ชื่อสัตว์</TableCell>
+              <TableCell sx={{ width: '10%' }}>ประเภทสัตว์เลี้ยง</TableCell>
+              <TableCell sx={{ width: '15%' }} >ชื่อเจ้าของ</TableCell>
+              <TableCell sx={{ width: '10%' }}>ประเภทนัดหมาย</TableCell>
               <TableCell>รายละเอียด</TableCell>
               <TableCell sx={{ width: '20%' }}></TableCell>
               <TableCell></TableCell>
@@ -480,11 +521,6 @@ const PendingAppointments = ({ appointments }) => {
                 <TableRow key={appointment.appointment_id}>
                   <TableCell>{dayjs(appointment.appointment_date).format('DD/MM/YYYY')}</TableCell>
                   <TableCell>{appointment.appointment_id}</TableCell>
-                  <TableCell>
-                    {appointment.appointment_time
-                      ? formatTime(appointment.appointment_time)
-                      : 'ตลอดทั้งวัน'}
-                  </TableCell>
                   <TableCell>{appointment.pet_name}</TableCell>
                   <TableCell>{appointment.pet_species}</TableCell>
                   <TableCell>{appointment.full_name}</TableCell>
@@ -694,7 +730,7 @@ const PendingAppointments = ({ appointments }) => {
                       {/* ให้กรอกจำนวนในช่องนี้ */}
                       <TextField
                         type="number"
-                        value={item.quantity|| item.amount || 1}
+                        value={item.quantity|| item.amount || ''}
                         onChange={(e) => handleQuantityChange(item.category_id, e.target.value)}
                         inputProps={{ min: 0, style: { textAlign: 'center' } }}
                         sx={{ width: '80px' }}
@@ -804,9 +840,31 @@ const PendingAppointments = ({ appointments }) => {
           <Button onClick={handlePay} variant="contained" color="primary">
             ยืนยันการชำระเงิน
           </Button>
+          
         </DialogActions>
       </Dialog>
 
+      <Dialog 
+        open={isReceiptDialogOpen} 
+       onClose={handleCloseReceiptDialog} 
+        maxWidth="sm"  // ปรับขนาดให้เหมาะสม
+        fullWidth={true}  // ขยาย Dialog ให้เต็มหน้าจอ 
+     >
+    <DialogTitle>ใบเสร็จรับเงิน   
+       <IconButton
+          edge="end"
+          color="inherit"
+          onClick={handleCloseReceiptDialog}
+          aria-label="close"
+          sx={{ position: 'absolute', top: 10, right: 10 }}
+        >
+          <CloseIcon />
+        </IconButton></DialogTitle>
+    <DialogContent>
+      {/* แสดงใบเสร็จเมื่อสถานะ showReceipt เป็น true */}
+    {showReceipt && receiptData && <ReceiptComponent receiptData={receiptData}  isPending ={true}/>}
+    </DialogContent>
+  </Dialog>
     
     </Paper>
   );

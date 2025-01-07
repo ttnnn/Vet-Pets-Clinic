@@ -8,7 +8,7 @@ require('dayjs/locale/th');
 
 const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
-  cron.schedule("*/1 9-21 * * *", async () => {
+  cron.schedule("*/5 9-21 * * *", async () => {
     try {
       const query = `
         SELECT * FROM appointment
@@ -51,6 +51,8 @@ const setupCronJobs = (io) => {
       console.error("Error in cron job:", error);
     }
   });
+  
+
 
   // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
   const sendAppointmentReminders = async () => {
@@ -59,7 +61,7 @@ const setupCronJobs = (io) => {
     FROM appointment a
     JOIN owner o ON a.owner_id = o.owner_id
     JOIN pets p ON a.pet_id = p.pet_id
-    WHERE a.appointment_date = CURRENT_DATE + INTERVAL '1 day'
+    WHERE a.status ='อนุมัติ'
     `;
   
     try {
@@ -79,11 +81,10 @@ const setupCronJobs = (io) => {
     }
   };
   
+  // const message = `นัดหมายได้รับอนุมัติ  ${appointment.pet_name} มีนัดหมายหมายในวันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
 
-
-  // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 00:00 น.
-  cron.schedule('1 1 * * *', sendAppointmentReminders);
-
+  // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
+  cron.schedule('0 9 * * *', sendAppointmentReminders);
 };
 
 module.exports = setupCronJobs;

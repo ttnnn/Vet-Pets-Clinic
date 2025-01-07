@@ -9,6 +9,7 @@ import {
 import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
 import PostponeHotel from './PostponeHotel';
+import sendLineMessage from './sendLine'
 import dayjs from 'dayjs';
 
 
@@ -114,6 +115,17 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setOpenDialog(false);
     updateAppointments()
   };
+
+  const getLineUserId = async (appointmentId) => {
+    try {
+      const response = await axios.get(`${api}/get-line-user/${appointmentId}`);
+      return response.data.lineUserId; // สมมติว่า API ส่ง lineUserId กลับมา
+    } catch (error) {
+      console.error('Failed to fetch LINE User ID:', error);
+      return null;
+    }
+  };
+  
  //เปิดให้กดยืนยันการอนุมัติ
   const handleConfirmApprove = () => {
     try {
@@ -121,12 +133,25 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       axios.put(`${api}/appointment/${approveAppointmentId}`, {
         status: 'อนุมัติ',
         queue_status: 'รอรับบริการ'
-      }).then(()=>{
+      }).then(async () =>{
         updateAppointments()
         setSnackbarMessage(`การอนุมัตินัดหมายหมายเลข ${approveAppointmentId} เสร็จสิ้น!`);
         setSnackbarSeverity('success'); 
         setSnackbarOpen(true);
-      })
+
+        const lineUserId = await getLineUserId(approveAppointmentId); // ดึง LINE User ID จากฐานข้อมูล
+        const message = `นัดหมายหมายเลข ${approveAppointmentId} ได้รับการอนุมัติแล้ว!`;
+
+      if (lineUserId) {
+        await sendLineMessage(lineUserId, message);
+      } else {
+        console.error(`LINE User ID not found for appointment_id: ${approveAppointmentId}`);
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to approve appointment:', error);
+    });
+    
       
     } catch (error) {
       console.error('Failed to approve appointment:', error);

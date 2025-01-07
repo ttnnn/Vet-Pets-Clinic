@@ -1,15 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
+import { CircularProgress, Backdrop ,Snackbar, Alert} from '@mui/material';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import 'dayjs/locale/th';
 
 const api = 'http://localhost:8080/api/clinic';
 
-const ReceiptComponent = ({ receiptData }) => {
+const ReceiptComponent = ({ receiptData , isPending }) => {
   const [DataReceipt, setDataReceipt] = useState([]);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef();
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     // console.log('ReceiptData Props:', receiptData); // ตรวจสอบ props ที่ส่งมา
@@ -27,6 +31,15 @@ const ReceiptComponent = ({ receiptData }) => {
       setLoading(false);
     }
   };
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
 
   const handleDownloadReceipt = async () => {
     if (receiptRef.current) {
@@ -39,18 +52,95 @@ const ReceiptComponent = ({ receiptData }) => {
     }
   };
 
+  const handleUploadWithSignature = async () => {
+    
+    if (!DataReceipt[0]?.line_id) {
+      showSnackbar('กรุณาลงทะเบียนในไลน์ก่อนส่งใบเสร็จ', 'error');
+      return;
+    }
+  
+    if (receiptRef.current) {
+      const canvas = await html2canvas(receiptRef.current, { scale: 1 });
+  
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          return;
+        }
+  
+        const timestamp = Math.floor(Date.now() / 1000); // Timestamp ปัจจุบัน
+        const uploadPreset = 'receipt_pic'; // Upload Preset ของคุณ
+  
+        try {
+          setLoading(true); 
+          // ขอ Signature จากเซิร์ฟเวอร์
+          const signatureResponse = await axios.post(`${api}/generate-signature`, {
+            timestamp,
+            upload_preset: uploadPreset,
+          });
+  
+          const { signature, apiKey, cloudName } = signatureResponse.data;
+  
+          // สร้าง FormData สำหรับอัปโหลด
+          const formData = new FormData();
+          formData.append('file', blob, 'receipt.jpg');
+          formData.append('timestamp', timestamp);
+          formData.append('upload_preset', uploadPreset);
+          formData.append('api_key', apiKey);
+          formData.append('signature', signature);
+  
+          // อัปโหลดไปยัง Cloudinary
+          const uploadResponse = await axios.post(
+            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            }
+          );
+  
+          const imageUrl = uploadResponse.data.secure_url;
+                 // ส่ง URL ไปยัง LINE ผ่าน API
+
+                 
+          const lineResponse = await axios.post(`${api}/sendLineReceipt`, {
+              lineId: DataReceipt[0]?.line_id,  // LINE ID ของลูกค้า
+              imageUrl: imageUrl,  // URL ของรูปใบเสร็จ
+            });
+          
+          if (lineResponse.status === 200) {
+            showSnackbar('ส่งใบเสร็จไปยัง LINE สำเร็จ', 'success');
+            } else {
+            showSnackbar('การส่งใบเสร็จไปยัง LINE ล้มเหลว', 'error');
+            }
+  
+          // ส่ง URL นี้ไปยัง LINE หรือทำอย่างอื่น
+        } catch (error) {
+          // console.error('Error uploading image:', error);
+          showSnackbar('เกิดข้อผิดพลาดในการอัปโหลด', 'error');
+        }finally {
+          setLoading(false);
+        }
+      }, 'image/jpeg', 1.0);
+    }
+  };
+  
+  
+
   if (loading) {
     return <p>กำลังโหลดข้อมูล...</p>;
   }
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#f9f9f9', textAlign: 'center' }}>
+    <div style={{ padding: '20px', backgroundColor: '#f9f9f9', textAlign: 'center' ,maxWidth: '100%',  // ไม่ให้เกินขนาด Dialog
+      height: 'auto'}}>
+        
     <div
       ref={receiptRef}
         style={{
         padding: '20px',
         margin: '20px auto',
-        width: '600px',
+        width: '400px',
         backgroundColor: '#fff',
         boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
         }}
@@ -138,6 +228,40 @@ const ReceiptComponent = ({ receiptData }) => {
       >
         ดาวน์โหลดใบเสร็จ
       </button>
+
+      {isPending && (
+        <>
+      <button
+        onClick={handleUploadWithSignature}
+        style={{
+          padding: '10px 20px',
+          fontSize: '16px',
+          backgroundColor: '#28a745',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '5px',
+          marginLeft: '10px',
+          cursor: 'pointer',
+        }}
+      >
+        ส่งใบเสร็จไป LINE
+      </button>
+      <Backdrop open={loading} sx={{ color: '#fff', zIndex: 1201 }}>
+      <CircularProgress color="inherit" />
+    </Backdrop>
+      </>
+    )}
+
+    <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

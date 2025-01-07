@@ -19,6 +19,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+
 const verifyLineToken = async (idToken) => {
   try {
     // ดึง Public Keys จาก LINE
@@ -76,6 +77,7 @@ router.post("/owner/check-owner", async (req, res) => {
     const userId = await verifyLineToken(token);
      console.log('Verified User ID:', userId);
 
+
     const checkQuery = `
       SELECT * 
       FROM owner
@@ -95,7 +97,7 @@ router.post("/owner/check-owner", async (req, res) => {
         return res.status(200).json({
           success: true,
           message: "มีข้อมูล userId อยู่ในระบบแล้ว",
-          data: existingOwner,
+          data:  existingOwner           
         });
       } else {
         // ถ้ายังไม่มี userId ให้เพิ่มข้อมูล

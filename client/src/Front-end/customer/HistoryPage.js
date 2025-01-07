@@ -32,7 +32,7 @@ const HistoryPage = () => {
         params: { first_name, last_name, phone_number },
       });
   
-      console.log('Fetched history appointments:', response.data);
+      // console.log('Fetched history appointments:', response.data);
   
       if (response.data && Array.isArray(response.data.appointments)) {
         // เช็คการเปลี่ยนแปลงของ appointments

@@ -1,6 +1,6 @@
-import React, { useState } from 'react'; 
-import { useNavigate ,useLocation } from 'react-router-dom';
-import { TextField, Button, Container, Typography, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { TextField, Button, Container, Typography, Box, Snackbar, Alert } from '@mui/material';
 import axios from 'axios'; // import axios
 
 const api = 'http://localhost:8080/api/customer';
@@ -9,73 +9,64 @@ const Register = () => {
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [phone_number, setPhone] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // State for Snackbar
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { idToken } = location.state || {};
+  const { idToken, pictureUrl } = location.state || {};
 
-  console.log('location.state ',location.state )
   const handleRegister = async (event) => {
     event.preventDefault();
-  
+
     // ตรวจสอบว่าข้อมูลครบถ้วนหรือไม่
     if (!first_name || !last_name || !phone_number) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบถ้วน', severity: 'error' });
       return;
     }
-  
+
     // ตรวจสอบรูปแบบเบอร์โทรศัพท์ (10 หลัก)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(phone_number)) {
-      alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+      setSnackbar({ open: true, message: 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง', severity: 'error' });
       return;
     }
+
     if (!idToken) {
       console.error("No ID Token found");
+      setSnackbar({ open: true, message: 'ไม่พบ Token กรุณาเข้าสู่ระบบอีกครั้ง', severity: 'error' });
       return;
     }
 
     try {
-      console.log("idToken from Line:", idToken);
-      console.log('first_name',first_name)
-      console.log('last_name',last_name)
-      console.log('phone_number',phone_number)
       const response = await axios.post(
         `${api}/owner/check-owner`,
-        {
-          first_name,
-          last_name,
-          phone_number,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`, // ส่ง idToken ผ่าน Header
-          },
-        }
+        { first_name, last_name, phone_number },
+        { headers: { Authorization: `Bearer ${idToken}` } }
       );
-  
-      const result = response.data;
-  
+
       if (response.data.success) {
         sessionStorage.setItem(
           "user",
-          JSON.stringify({ first_name, last_name, phone_number})
+          JSON.stringify({ first_name, last_name, phone_number, pictureUrl })
         );
-        alert(response.data.message);
+        setSnackbar({ open: true, message: response.data.message, severity: 'success' });
         navigate("/customer/home");
-
       } else {
-        alert(result.data.message || 'เข้าสู่ระบบไม่สำเร็จ');
+        setSnackbar({ open: true, message: response.data.message || 'เข้าสู่ระบบไม่สำเร็จ', severity: 'error' });
       }
     } catch (error) {
       if (error.response?.data?.message === "Token expired. Please reauthenticate.") {
-        alert("Token หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
-        // เปลี่ยนเส้นทางไปยังหน้า login หรือ refresh โทเค็นที่นี่
-        navigate("customer/line-login");
+        setSnackbar({ open: true, message: 'Token หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง', severity: 'warning' });
+        navigate("/customer/login");
       } else {
-        console.error("Error:", error);
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
+        // console.error("Error:", error);
+        setSnackbar({ open: true, message: 'ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อ-นามสกุล หรือเบอร์โทร', severity: 'error' });
       }
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -135,6 +126,17 @@ const Register = () => {
           เข้าสู่ระบบ
         </Button>
       </Box>
+      {/* Snackbar Component */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

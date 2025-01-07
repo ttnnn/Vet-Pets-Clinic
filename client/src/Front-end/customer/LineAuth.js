@@ -32,10 +32,11 @@ const LineAuth = () => {
                 }
 
                 const profile = await liff.getProfile();
-                console.log("User Profile:", profile);
-                console.log("ID Token:", idToken);
+                const {pictureUrl} = profile;
+                // console.log("User Profile:", profile);
+                // console.log("ID Token:", idToken);
 
-                navigate("/customer/login", { state: { idToken } });
+                navigate("/customer/login", { state: { idToken ,pictureUrl } });
             }
         } catch (err) {
             console.error("Error during login:", err);
