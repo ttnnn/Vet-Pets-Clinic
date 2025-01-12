@@ -44,7 +44,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
         try {
           setLoading(true);
           const response = await axios.get(`${api}/appointment/hotel`);
-          console.log('API Response:', response.data);
+          // console.log('API Response:', response.data);
           setAppointmentHotel(response.data);
           
         } catch (error) {
@@ -80,8 +80,8 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
         return appointment.queue_status === 'admit' && appointment.status === 'อนุมัติ';
       });
 
-      console.log('filteredAppointments',filteredAppointments)
-      console.log('appointmentHotel:', appointmentHotel);
+      // console.log('filteredAppointments',filteredAppointments)
+      // console.log('appointmentHotel:', appointmentHotel);
 
     const handleButtonAction = async (appointment) => {
       try {

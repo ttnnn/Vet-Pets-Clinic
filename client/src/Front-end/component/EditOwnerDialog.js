@@ -1,17 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 const api = 'http://localhost:8080/api/clinic';
 
 const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
+
   const [formData, setFormData] = useState({
-    first_name: owner.first_name,
-    last_name: owner.last_name,
-    phone_number: owner.phone_number,
-    phone_emergency: owner.phone_emergency,
-    address: owner.address,
-    province: owner.province,
-    postal_code: owner.postal_code,
+    owner_id: owner?.owner_id || '',
+    first_name: owner?.first_name || '',
+    last_name: owner?.last_name || '' , 
+    phone_number: owner?.phone_number || '',
+    phone_emergency: owner?.phone_emergency || '' ,
+    address: owner?.address || '',
+    province: owner?.province || '',
+    postal_code: owner?.postal_code || '',
   });
+
+  useEffect(() => {
+    const fetchOwnerData = async () => {
+      try {
+        const response = await fetch(`${api}/owners/${owner.owner_id}`);
+        const data = await response.json();
+        if (response.ok) {
+          setFormData({
+            owner_id: data.owner_id,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            phone_number: data.phone_number,
+            phone_emergency: data.phone_emergency,
+            address: data.address,
+            province: data.province,
+            postal_code: data.postal_code,
+          });
+          console('owner',data.owner_id)
+        } else {
+          console.error('Error fetching pet data:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching pet data:', error);
+      }
+    };
+    if (owner?.owner_id) {
+      fetchOwnerData();
+    }
+  }, [owner]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -24,6 +55,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
       const response = await fetch(`${api}/owners/${owner.owner_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
       if (response.ok) {
         console.log('Data updated successfully');

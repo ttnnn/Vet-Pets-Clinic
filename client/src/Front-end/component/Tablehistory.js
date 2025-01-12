@@ -154,7 +154,8 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     const matchesPetAndTypeService =
       appointment.pet_id === selectedPetId &&
       appointment.type_service === activeTabLabel &&
-      appointment.status !== 'รออนุมัติ';
+      appointment.status !== 'รออนุมัติ' &&  appointment.status !== 'ยกเลิกนัด'
+
 
     const matchesSearchQuery =
       appointment.appointment_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -215,7 +216,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                 </TableCell>
                 <TableCell>รายละเอียด</TableCell>
                 {activeTabLabel === 'วัคซีน' && <TableCell>ชื่อวัคซีน</TableCell>}
-                <TableCell>สถานะ</TableCell>
+      
 
               </TableRow>
             </TableHead>
@@ -231,7 +232,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                   {activeTabLabel === 'วัคซีน' && (
                     <TableCell>{appointment.category_name || 'ไม่มีข้อมูลวัคซีน'}</TableCell>
                   )}
-                  <TableCell>{appointment.queue_status}</TableCell>
+
                 </TableRow>
               ))}
             </TableBody>

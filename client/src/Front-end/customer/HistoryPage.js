@@ -129,7 +129,11 @@ const HistoryPage = () => {
                     <Grid container spacing={2}>
                       <Grid item xs={4} container justifyContent="center" alignItems="center">
                         <Avatar
-                          src={`http://localhost:8080${appt.image_url}`}
+                          src={
+                            appt.image_url
+                              ? appt.image_url // ใช้ URL จากฐานข้อมูล
+                              : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+                          }
                           alt={appt.pet_name}
                           sx={{ width: 100, height: 100, borderRadius: 2 }}
                         />

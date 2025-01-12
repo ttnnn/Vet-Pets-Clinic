@@ -1,19 +1,55 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box, Typography, Paper, Grid } from '@mui/material';
+import { TextField, Button, Box, Typography, Paper, Grid, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const api = 'http://localhost:8080/api/clinic';
 
 const LoginPage = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('error'); // error, success, info, warning
   const navigate = useNavigate();
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
-  const handleLogin = () => {
-    if (email === '' && password === '') {
-      localStorage.setItem('isAuthenticated', 'true'); // Save login status
-      onLogin();
-      navigate('/clinic/home');
-    } else {
-      alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  const handleLogin = async () => {
+    setUsernameError(false);
+    setPasswordError(false);
+
+    // Validate inputs
+    if (!username || !password) {
+      if (!username) setUsernameError(true);
+      if (!password) setPasswordError(true);
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${api}/login`, { username, password });
+
+      if (response.data.success) {
+        localStorage.setItem('isAuthenticated', 'true');
+        setSnackbarMessage('เข้าสู่ระบบสำเร็จ!');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+        onLogin();
+        navigate('/clinic/home');
+      } else {
+        setSnackbarMessage('ชื่อหรือรหัสผ่านไม่ถูกต้อง');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      setSnackbarMessage('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -23,7 +59,7 @@ const LoginPage = ({ onLogin }) => {
       justifyContent="center"
       alignItems="center"
       height="100vh"
-      width="100vw" // Full screen width
+      width="100vw"
       bgcolor="#f5f5f5"
     >
       <Paper
@@ -39,7 +75,6 @@ const LoginPage = ({ onLogin }) => {
         }}
       >
         <Grid container spacing={0} sx={{ height: '100%' }}>
-          {/* Left Side - Animal Image */}
           <Grid item xs={12} md={6} sx={{ height: '100%' }}>
             <Box
               display="flex"
@@ -49,7 +84,7 @@ const LoginPage = ({ onLogin }) => {
               overflow="hidden"
             >
               <img
-                src="/login.jpg" // เส้นทางของรูปภาพใน public
+                src="/login.jpg"
                 alt="Animal"
                 style={{
                   width: '100%',
@@ -60,7 +95,6 @@ const LoginPage = ({ onLogin }) => {
             </Box>
           </Grid>
 
-          {/* Right Side - Logo and Login Form */}
           <Grid item xs={12} md={6} sx={{ height: '100%' }}>
             <Box
               display="flex"
@@ -71,7 +105,7 @@ const LoginPage = ({ onLogin }) => {
               padding={4}
             >
               <img
-                src="/Logo.jpg" // เส้นทางของโลโก้ใน public
+                src="/Logo.jpg"
                 alt="Logo"
                 style={{ width: '150px', marginBottom: '20px' }}
               />
@@ -80,22 +114,26 @@ const LoginPage = ({ onLogin }) => {
               </Typography>
               <Box sx={{ width: '75%', maxWidth: '400px' }}>
                 <TextField
-                  label="อีเมล"
+                  label="username"
                   variant="outlined"
                   fullWidth
                   margin="normal"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  helperText={usernameError ? 'กรุณากรอกชื่อผู้ใช้งาน' : ''}
+                  error={usernameError}
                   sx={{ marginBottom: 2 }}
                 />
                 <TextField
-                  label="รหัสผ่าน"
+                  label="password"
                   variant="outlined"
                   type="password"
                   fullWidth
                   margin="normal"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  error={passwordError}
+                  helperText={passwordError ? 'กรุณากรอกรหัสผ่าน' : ''}
                   sx={{ marginBottom: 2 }}
                 />
                 <Button
@@ -112,6 +150,16 @@ const LoginPage = ({ onLogin }) => {
           </Grid>
         </Grid>
       </Paper>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

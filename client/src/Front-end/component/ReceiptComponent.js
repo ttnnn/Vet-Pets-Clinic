@@ -214,44 +214,58 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
         <p style={{ textAlign: 'center' }}> <strong>ขอบคุณที่ใช้บริการ</strong> </p>
 
       </div>
-      <button
-        onClick={handleDownloadReceipt}
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          backgroundColor: '#007bff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-        }}
-      >
-        ดาวน์โหลดใบเสร็จ
-      </button>
+      <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <button
+          onClick={handleDownloadReceipt}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+          }}
+        >
+          ดาวน์โหลดใบเสร็จ
+        </button>
+        
+        {isPending && (
+          <button
+            onClick={handleUploadWithSignature}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              backgroundColor: loading ? '#aaa' : '#28a745', // เปลี่ยนสีปุ่มเมื่อกำลังโหลด
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              marginLeft: '10px', // ระยะห่างระหว่างปุ่ม
+              cursor: loading ? 'not-allowed' : 'pointer', // ปิดการกดปุ่มเมื่อโหลด
+              position: 'relative', // สำหรับวางตำแหน่ง CircularProgress
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            disabled={loading} // ปิดการกดปุ่มระหว่างโหลด
+          >
+            {loading && (
+              <CircularProgress
+                size={24}
+                sx={{
+                  color: '#fff',
+                  position: 'absolute',
+                }}
+              />
+            )}
+            {!loading && 'ส่งใบเสร็จไปที่ LINE'}
+          </button>                
+        )}
 
-      {isPending && (
-        <>
-      <button
-        onClick={handleUploadWithSignature}
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          backgroundColor: '#28a745',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          marginLeft: '10px',
-          cursor: 'pointer',
-        }}
-      >
-        ส่งใบเสร็จไป LINE
-      </button>
-      <Backdrop open={loading} sx={{ color: '#fff', zIndex: 1201 }}>
-      <CircularProgress color="inherit" />
-    </Backdrop>
-      </>
-    )}
-
+        <Backdrop open={loading} sx={{ color: '#fff', zIndex: 1201 }}>
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      </div>         
     <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}

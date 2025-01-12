@@ -16,7 +16,8 @@ import {
   TablePagination,
   Snackbar,
   Alert,
-  Dialog,IconButton
+  Dialog,IconButton,
+  Button
 } from '@mui/material';
 import { styled } from '@mui/system';
 import Sidebar from './Sidebar';
@@ -24,6 +25,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import ReceiptComponent from '../component/ReceiptComponent';
 import DownloadIcon from '@mui/icons-material/Download';
+import { CircularProgress } from '@mui/material';
+import ExportFinanceToExcel from '../component/ExportFinanceToExcel';
 
 
 dayjs.locale('th');
@@ -56,6 +59,8 @@ const FinancePage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [loadingId, setLoadingId] = useState(null); // เก็บ id ของปุ่มที่กด
+
 
   const resetPage = () => setPage(0);
 
@@ -98,11 +103,16 @@ const FinancePage = () => {
     setPage(0);
   };
 
-  const handleOpenDialog = (receipt) => {
-    setSelectedReceipt(receipt);
-    setOpenDialog(true);
-  };
 
+  const handleOpenDialog = (receipt) => {
+    setLoadingId(receipt.invoice_id); // ตั้งค่าปุ่มที่กำลังโหลด
+    setTimeout(() => {
+      setLoadingId(null); // รีเซ็ตเมื่อโหลดเสร็จ
+      setSelectedReceipt(receipt); // หรือทำสิ่งที่ต้องการหลังโหลด
+      setOpenDialog(true);
+    }, 1000); // ระยะเวลาการโหลด (สมมติ)
+  };
+  
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedReceipt(null);
@@ -127,12 +137,16 @@ const FinancePage = () => {
       <Sidebar />
       <CategoryContainer>
         <Paper sx={{ width: '100%' }}>
+       
           <Box p={3}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Tabs value={activeTab} onChange={handleChangeTab} indicatorColor="primary" textColor="primary">
               <Tab label="ลูกค้าที่ค้างชำระ" />
               <Tab label="ประวัติการชำระ" />
             </Tabs>
-            <FormRow>
+            {activeTab === 1 && (<ExportFinanceToExcel filteredAppointments={DataFinance} />)}
+            </Box>
+            <FormRow sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
                 <TextField
                   placeholder="ค้นหาเลขที่นัดหมาย หรือ ชื่อลูกค้า"
@@ -156,7 +170,12 @@ const FinancePage = () => {
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ยอดชำระ</TableCell>
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>สถานะ</TableCell>
                       {activeTab === 1 && (
-                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ดาวน์โหลด</TableCell>)}
+                        <>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ดาวน์โหลด</TableCell>
+                      <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}></TableCell>
+                      </>
+                      )}
+                      
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -168,13 +187,19 @@ const FinancePage = () => {
                         <TableCell align="center">{service.total_pay_invoice} บาท</TableCell>
                         <TableCell align="center">{service.status_pay}</TableCell>
                         {activeTab === 1 && (
-                          <TableCell align="center">
-                            <IconButton
-                               onClick={() => handleOpenDialog(service)}
+                           <TableCell align="center">
+                            <Button
+                              onClick={() => handleOpenDialog({...service,isPending: true})}
+                              disabled={loadingId === service.invoice_id}
                             >
-                              <DownloadIcon />
-                            </IconButton>
+                              {loadingId === service.invoice_id ? (
+                                <CircularProgress size={24} style={{ color: '#e0e0e0' }} />
+                              ) : (
+                                <DownloadIcon /> // ไอคอนดาวน์โหลดปกติ
+                              )}
+                            </Button>
                           </TableCell>
+                         
                         )}
                       </TableRow>
                     ))}
@@ -207,8 +232,10 @@ const FinancePage = () => {
           </Alert>
         </Snackbar>
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md">
-          {selectedReceipt && <ReceiptComponent receiptData={selectedReceipt} />}
-        </Dialog>
+          {selectedReceipt && <ReceiptComponent receiptData={selectedReceipt} isPending={selectedReceipt.isPending || false} />}
+      
+      </Dialog>
+      
       </CategoryContainer>
     </Box>
   );

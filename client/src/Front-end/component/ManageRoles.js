@@ -109,7 +109,6 @@ const ManageRoles = () => {
   const fetchAdmins = async () => {
     try {
       const response = await axios.get(`${api}/personnel`);
-      console.log('Fetched admins:', response.data); // ดูข้อมูลที่ดึงมา
       setAdmins(response.data);
     } catch (error) {
       console.error('Error fetching admins:', error);
@@ -177,7 +176,7 @@ const ManageRoles = () => {
     return;
   }
     try {
-      console.log('Adding new admin:', newAdmin); // ดูค่าที่บันทึก
+      // console.log('Adding new admin:', newAdmin); // ดูค่าที่บันทึก
       await axios.post(`${api}/personnel`, newAdmin);
       fetchAdmins();
       setSnackbar({ open: true, message: 'เพิ่มผู้ดูแลสำเร็จ!', severity: 'success' });

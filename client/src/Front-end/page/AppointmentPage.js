@@ -7,6 +7,8 @@ import { styled } from '@mui/material/styles';
 import AddAppointment from '../component/CreateAppointment';
 import { DateTime } from 'luxon';
 import { useLocation } from 'react-router-dom';
+import ExportAppointmentsToExcel from '../component/ExportToExcel';
+
 
 
 const api = 'http://localhost:8080/api/clinic';
@@ -45,6 +47,7 @@ const AppointmentPage = () => {
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('this_month');
+
 
   const location = useLocation();
   const { locationActiveTab } = location.state || {};
@@ -115,19 +118,23 @@ const AppointmentPage = () => {
     setFilteredAppointments(filterData());
   }, [appointments, filterType, activeTab]);
 
+
   return (
     <Box display="flex" sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}}>
-      <Sidebar />
+      <Sidebar appointments={appointments} />
+
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Paper sx={{ p: 3 }}>
           <Typography variant="h4" gutterBottom>ระบบจัดการนัดหมาย</Typography>
-  
+          {activeTab === 1 && (<ExportAppointmentsToExcel filteredAppointments={appointments} />)}
           {/* Dropdown */}
           <Box sx={{
             display: 'flex',
             justifyContent: 'flex-end',
             mb: 2, // เพิ่มระยะห่างระหว่าง Dropdown และ Tabs
           }}>
+              
+          
             <Select
               value={filterType}
               onChange={handleFilterChange}
@@ -163,6 +170,7 @@ const AppointmentPage = () => {
               appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              activeTab = {activeTab}
             />
           )}
           {activeTab === 1 && (
@@ -171,6 +179,7 @@ const AppointmentPage = () => {
               appointments={filteredAppointments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              activeTab = {activeTab}
             />
           )}
           {activeTab === 2 && <AddAppointment />}

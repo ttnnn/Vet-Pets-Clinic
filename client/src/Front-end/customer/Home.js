@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Container, Typography, Card, CardContent, Grid, Avatar, Box, BottomNavigation, BottomNavigationAction, AppBar, Toolbar, IconButton, Divider } from '@mui/material';
-import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
+import { Button, Container, Typography, Card, CardContent, Grid, Avatar, Box, BottomNavigation, BottomNavigationAction, AppBar, Toolbar, Divider } from '@mui/material';
+import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import liff from "@line/liff";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 dayjs.extend(isSameOrAfter);
+
 
 const api = 'http://localhost:8080/api/customer';
 
@@ -112,6 +114,26 @@ const Home = () => {
         break;
     }
   };
+  
+  useEffect(() => {
+    liff.init({ liffId: process.env.REACT_APP_LIFF_ID })
+        .then(() => {
+            console.log("LIFF initialized");
+        })
+        .catch((err) => {
+            console.error("LIFF initialization failed:", err);
+        });
+  }, []);
+  
+ const handleLogout = useCallback(() => {
+   if (liff.isLoggedIn()) {
+     liff.logout();
+     sessionStorage.removeItem("user");
+     console.log("Logged out successfully.");
+   }
+   navigate("/customer/line-login");
+ }, [navigate]);
+
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -121,9 +143,9 @@ const Home = () => {
           <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
             2 Vet's Pet Clinic
           </Typography>
-          <IconButton edge="start" color="inherit" onClick={() => alert('เปิดการแจ้งเตือน')}>
-            <NotificationsIcon />
-          </IconButton>
+          <Button color="inherit" onClick={handleLogout}>
+          Log out
+        </Button>
         </Toolbar>
       </AppBar>
 
@@ -221,7 +243,11 @@ const Home = () => {
                   <Grid container spacing={2}>
                     <Grid item xs={4} container justifyContent="center" alignItems="center">
                       <Avatar
-                        src={`http://localhost:8080${appt.image_url}`}
+                        src={
+                          appt.image_url
+                            ? appt.image_url // ใช้ URL จากฐานข้อมูล
+                            : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+                        }
                         alt={appt.pet_name}
                         sx={{ width: 100, height: 100  ,borderRadius: 2 }}
                       />

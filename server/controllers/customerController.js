@@ -8,16 +8,26 @@ const multer = require('multer');
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  
 const jwt = require("jsonwebtoken");
 const jwkToPem = require("jwk-to-pem");
+const cloudinary = require('../models/cloudinary'); 
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, '../../client/public/Images')); // save images in the 'uploads' folder
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+      folder: 'pets_images', // Change this to your desired Cloudinary folder
+      allowed_formats: ['jpg', 'jpeg', 'png'], // Allowed file formats
   },
-  filename: (req, file, cb) => {
-      cb(null, file.fieldname+"_"+Date.now()+ path.extname(file.originalname));
-  }
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({ storage });
+
+// Upload route
+router.post('/uploads', upload.single('image'), (req, res) => {
+  if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+  }
+  res.status(200).json({ imageUrl: req.file.path });
+});
 
 
 const verifyLineToken = async (idToken) => {
@@ -320,6 +330,31 @@ router.get('/pets/:id', async (req, res) => {
   }
 });
 
+router.get('/history/vaccien/:pet_id', async (req, res) => {
+  console.log('/history/vaccien/', req.params);
+  const { pet_id } = req.params;
+  try {
+    // Query ดึงข้อมูลจากฐานข้อมูล
+    const result = await pool.query(`
+      SELECT c.category_name 
+      FROM historyvaccine h
+      LEFT JOIN servicecategory c ON c.category_id = h.category_id
+      WHERE pet_id = $1
+    `, [pet_id]);
+
+    // ถ้ามีผลลัพธ์ จะส่งคืนรายการ category_name ทั้งหมด
+    if (result.rows.length > 0) {
+      res.json(result.rows); // ส่งกลับทุกแถวที่ดึงมา
+    } else {
+      res.status(404).json({ message: 'No vaccine history found for this pet.' }); // ถ้าไม่มีข้อมูล
+    }
+  } catch (error) {
+    // ถ้ามีข้อผิดพลาดในการ query
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // API สำหรับยกเลิกนัดหมาย
 router.post('/appointment/cancel', async (req, res) => {
   const { appointmentId } = req.body; // รับ appointmentId จาก request body
@@ -345,7 +380,7 @@ router.post('/appointment/cancel', async (req, res) => {
 
 router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
   const { id } = req.params;
-  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
+  const ImageUrl = req.file ? req.file.path : null; // Cloudinary's URL is in `req.file.path`
 
   try {
       const result = await pool.query(
@@ -357,12 +392,13 @@ router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
           return res.status(404).json({ message: 'Pet not found' });
       }
 
-      res.status(200).json({ message: 'Pet image updated successfully' });
+      res.status(200).json({ message: 'Pet image updated successfully', imageUrl: ImageUrl });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error updating pet image' });
   }
 });
+
 
 
 module.exports = router;

@@ -98,15 +98,17 @@ const AppointmentDetail = () => {
     }
   };
 
-  const handlePostponeClick = (appointmentId, typeService, petId) => {
+  const handlePostponeClick = (appointmentId, typeService, petId, appointmentDate, appointmentTime) => {
     setSelectedAppointmentId(appointmentId);
     setSelectedTypeService(typeService);
-    setSelectedPetId(petId); // Store pet_id
+    setSelectedPetId(petId);
     setOpenPostponeDialog(true);
-
+  
     console.log('appointment:', appointmentId);
     console.log('typeService:', typeService);
     console.log('petId:', petId);
+    console.log('appointmentDate:', appointmentDate);
+    console.log('appointmentTime:', appointmentTime);
   };
   
 
@@ -166,7 +168,13 @@ const AppointmentDetail = () => {
                     variant="contained" 
                     color="secondary" 
                     onClick={() =>
-                      handlePostponeClick(appointmentId, appointment.type_service, appointment.pet_id)
+                      handlePostponeClick(
+                        appointmentId, 
+                        appointment.type_service, 
+                        appointment.pet_id, 
+                        appointment.appointment_date, // ส่งวันที่นัดหมาย
+                        appointment.appointment_time  // ส่งเวลานัดหมาย
+                      )
                     }
                     sx={{ flex: 1, marginLeft: 1 }}>
                     เลื่อนนัด
@@ -186,6 +194,8 @@ const AppointmentDetail = () => {
             handleClose={() => setOpenPostponeDialog(false)}
             appointmentId={selectedAppointmentId}
             petId={selectedPetId}
+            appointmentDates={appointment.appointment_date} // ส่งวันที่นัดหมาย
+            appointmentTimes={appointment.appointment_time} // ส่งเวลานัดหมาย
             updateAppointments={() => {
               fetchAppointmentDetail(); 
             }}
@@ -197,6 +207,8 @@ const AppointmentDetail = () => {
             handleClose={() => setOpenPostponeDialog(false)}
             appointmentId={selectedAppointmentId}
             TypeService={selectedTypeService}
+            appointmentDates={appointment.appointment_date} // ส่งวันที่นัดหมาย
+            appointmentTimes={appointment.appointment_time} // ส่งเวลานัดหมาย
             updateAppointments={() => {
               fetchAppointmentDetail(); 
             }}

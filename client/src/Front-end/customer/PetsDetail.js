@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Box, TextField, Typography, AppBar, Toolbar, IconButton, Button, 
-  Dialog, DialogTitle, DialogContent, DialogActions 
+  Dialog, DialogTitle, DialogContent, DialogActions ,Snackbar
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import CircularProgress from '@mui/material/CircularProgress';
 
 
 
@@ -21,17 +22,40 @@ const PetsDetail = () => {
   const [editImageOpen, setEditImageOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   const fetchPetDetail = async () => {
     try {
-      const response = await axios.get(`${api}/pets/${petId}`);
-      if (response.data) {
-        setPet(response.data);
+      // ดึงข้อมูลจาก API ที่หนึ่ง (ข้อมูลของสัตว์เลี้ยง)
+      const petResponse = await axios.get(`${api}/pets/${petId}`);
+      
+      // ดึงข้อมูลจาก API ที่สอง (ข้อมูลประวัติการฉีดวัคซีน)
+      const historyResponse = await axios.get(`${api}/history/vaccien/${petId}`);
+      
+      if (petResponse.data && historyResponse.data) {
+        // รวมข้อมูลจากทั้งสอง API
+        const petData = petResponse.data;
+        const historyData = historyResponse.data;
+  
+        // ตัวอย่างการรวมข้อมูล (เพิ่ม history เข้าไปในข้อมูลของสัตว์เลี้ยง)
+        const updatedPetData = {
+          ...petData,   // ข้อมูลสัตว์เลี้ยง
+          vaccineHistory: historyData,  // ข้อมูลประวัติการฉีดวัคซีน
+        };
+  
+        // อัพเดต state ของ pet
+        setPet(updatedPetData);
       }
     } catch (error) {
       console.error('Error fetching pet details:', error.message);
     }
   };
+  
 
   useEffect(() => {
     fetchPetDetail();
@@ -49,30 +73,46 @@ const PetsDetail = () => {
   };
 
   const handleImageSave = async () => {
-    if (!selectedImage) return;
-
+    if (!selectedImage) {
+      alert('กรุณาเลือกรูปภาพก่อนบันทึก');
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('image', selectedImage);
-
+    
     try {
+      setLoading(true); // เริ่มโหลด
       const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
+    
       if (response.status === 200) {
-        setSnackbarOpen(true);
+        const updatedPetData = response.data;
+    
+        // อัปเดตข้อมูลใน State
         setPet((prevPet) => ({
           ...prevPet,
-          image_url: response.data.image_url,
+          image_url: updatedPetData.image_url,
         }));
-        setEditImageOpen(false);
-        setSelectedImage(null);
-        fetchPetDetail(); // Re-fetch pet data
+    
+        setSnackbarMessage('อัปโหลดรูปภาพสำเร็จ');
+        setSnackbarOpen(true);
+    
+        setEditImageOpen(false); // ปิด Dialog
+        setSelectedImage(null); // รีเซ็ต temp state
+        await fetchPetDetail(); // (Optional) อัปเดตข้อมูลจาก API
       }
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ กรุณาลองอีกครั้ง');
+    } finally {
+      setLoading(false); // โหลดเสร็จ
     }
   };
+
+
+
 
   if (!pet) {
     return <Typography variant="h6">กำลังโหลดข้อมูลสัตว์เลี้ยง...</Typography>;
@@ -126,12 +166,12 @@ const PetsDetail = () => {
           }}
         >
           <img
-            src={
-              pet.image_url
-                ? `http://localhost:8080${pet.image_url}` // ใช้ URL ของรูปภาพถ้ามี
-                : '/path/to/default/image.png' // ใช้รูป default ถ้าไม่มี URL
-            }
-            alt={pet.pet_name || 'Default pet image'}
+          src={
+            pet.image_url
+              ? pet.image_url // ใช้ URL จากฐานข้อมูล
+              : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+          }
+            alt={pet.pet_name }
             style={{
               width: '100%',
               height: '100%',
@@ -211,20 +251,23 @@ const PetsDetail = () => {
         />
         <TextField
           label="ประวัติการฉีดวัคซีน"
-          value={pet.vaccinationHistory || '-'}
+          value={pet.vaccineHistory?.map(vaccine => vaccine.category_name).join(', ') || '-'}
           multiline
           rows={4}
           fullWidth
           InputProps={{ readOnly: true }}
         />
-      </Box>
 
+      </Box>
+      
+      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar}  message={snackbarMessage} />
       <Dialog 
         open={editImageOpen} 
         onClose={() => setEditImageOpen(false)} 
         aria-labelledby="edit-image-dialog-title" // เพิ่ม aria-labelledby เพื่อช่วยเทคโนโลยีช่วยเหลือ
         aria-describedby="edit-image-dialog-description" // เพิ่มคำอธิบาย
       >
+       
         <DialogTitle id="edit-image-dialog-title">อัปโหลดรูปภาพสัตว์เลี้ยง</DialogTitle>
         <DialogContent>
           <Typography id="edit-image-dialog-description" sx={{ mb: 2 }}>
@@ -235,6 +278,16 @@ const PetsDetail = () => {
             accept="image/*" 
             onChange={handleFileChange}
           />
+           {loading && (
+          <Box 
+            display="flex" 
+            justifyContent="center" 
+            alignItems="center" 
+            minHeight="100px" // สามารถปรับความสูงตามต้องการ
+          >
+            <CircularProgress />
+          </Box>
+        )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditImageOpen(false)}>ยกเลิก</Button>

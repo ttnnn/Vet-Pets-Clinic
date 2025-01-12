@@ -1,4 +1,5 @@
 const socketIo = require('socket.io');
+const pool = require('../db.js');
 
 const setupSocketServer = (server) => {
   const io = socketIo(server, {
@@ -7,6 +8,32 @@ const setupSocketServer = (server) => {
       methods: ["GET", "POST"]
     }
   });
+
+    // เชื่อมต่อกับ PostgreSQL และฟังการแจ้งเตือนจากฐานข้อมูล
+    pool.connect((err, client) => {
+      if (err) {
+        console.error('Error connecting to database:', err);
+        return;
+      }
+      console.log('Listening for new_appointment notifications...');
+      
+      client.query('LISTEN new_appointment'); // ฟังการแจ้งเตือนจาก PostgreSQL
+    
+      client.on('notification', (msg) => {
+        console.log('Received notification:', msg);
+        
+        // Parsing payload ของ notification (ในกรณีที่ PostgreSQL ส่ง payload มา)
+        const payload = JSON.parse(msg.payload); // ต้องแน่ใจว่า PostgreSQL ส่ง payload ในรูปแบบ JSON
+    
+        if (msg.channel === 'new_appointment' && payload.status === 'รออนุมัติ') {
+          // ส่งการแจ้งเตือนถึงผู้ใช้ที่อยู่ในห้อง 'clinic'
+          io.to('clinic').emit('notification', { message: 'มีนัดหมายใหม่ รอการอนุมัติ' });
+        }
+      });
+    });
+    
+  
+  
 
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
@@ -22,16 +49,15 @@ const setupSocketServer = (server) => {
       }
     });
 
-    // ตัวอย่าง: ส่งข้อความแจ้งเตือนไปยังคลินิก
+    // ส่งข้อความแจ้งเตือนไปยังคลินิก
     socket.on('send-to-clinic', (data) => {
-      io.to('clinic').emit('notification', data);
+      io.to('clinic').emit('notification', data); // ส่งไปยังห้อง clinic
       console.log('Notification sent to clinic:', data);
     });
 
-    // ตัวอย่าง: ส่งข้อความแจ้งเตือนไปยังลูกค้า
-    socket.on('send-to-customer', (data) => {
-      io.to('customer').emit('notification', data);
-      console.log('Notification sent to customer:', data);
+    socket.on('broadcast-message', (data) => {
+      io.emit('notification', data); // ส่งไปยังทุกคน
+      console.log('Broadcast message sent:', data);
     });
 
     socket.on('disconnect', () => {

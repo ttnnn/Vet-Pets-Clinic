@@ -114,7 +114,11 @@ const PetsPage = () => {
                         }}
                       >
                         <img
-                          src={`http://localhost:8080${pet.image_url}`}
+                          src={
+                            pet.image_url
+                              ? pet.image_url // ใช้ URL จากฐานข้อมูล
+                              : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+                          }
                           alt={pet.pet_name}
                           style={{
                             width: '100%',

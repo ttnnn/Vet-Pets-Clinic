@@ -12,6 +12,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DiagnosisForm from '../component/Diagnosisform';
 import TableHistory from '../component/Tablehistory';
 import RecordMedical from '../component/recordAdmit';
+import CircularProgress from '@mui/material/CircularProgress';
 
 
 
@@ -33,9 +34,12 @@ const PetProfilePage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   const [Id, setId] = useState(null);
 
-  // console.log("Owner state before rendering:", owner);
+  //console.log("Owner state before rendering:", owner);
   // console.log('Location state:', location.state);
 // 
 
@@ -160,33 +164,72 @@ const PetProfilePage = () => {
     }
   };
   // Handle file selection
+  // const handleImageSave = async () => {
+    // if (!selectedImage) return; // Ensure an image is selected
+  // 
+    // const formData = new FormData();
+    // formData.append('image', selectedImage);
+  // 
+    // try {
+      // const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
+        // headers: { 'Content-Type': 'multipart/form-data' },
+      // });
+  // 
+      // if (response.status === 200) {
+        // setSnackbarOpen(true); // Notify success
+        // const updatedPetData = response.data;
+        // setPet((prevPet) => ({
+          // ...prevPet,
+          // image_url: updatedPetData.image_url, // Update image URL
+        // }));
+        // setEditImageOpen(false); // Close the dialog
+        // setSelectedImage(null); // Reset the temp state.
+        // 
+        // await fetchUpdatedPetData();
+      // }
+    // } catch (error) {
+      // console.error('Error uploading image:', error);
+    // }
+  // };
   const handleImageSave = async () => {
-    if (!selectedImage) return; // Ensure an image is selected
+    if (!selectedImage) {
+      alert('กรุณาเลือกรูปภาพก่อนบันทึก');
+      return;
+    }
   
     const formData = new FormData();
     formData.append('image', selectedImage);
   
     try {
+      setLoading(true); // เริ่มโหลด
       const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
   
       if (response.status === 200) {
-        setSnackbarOpen(true); // Notify success
         const updatedPetData = response.data;
+  
+        // อัปเดตข้อมูลใน State
         setPet((prevPet) => ({
           ...prevPet,
-          image_url: updatedPetData.image_url, // Update image URL
+          image_url: updatedPetData.image_url,
         }));
-        setEditImageOpen(false); // Close the dialog
-        setSelectedImage(null); // Reset the temp state.
-        
-        await fetchUpdatedPetData();
+  
+        setSnackbarMessage('อัปโหลดรูปภาพสำเร็จ');
+        setSnackbarOpen(true);
+  
+        setEditImageOpen(false); // ปิด Dialog
+        setSelectedImage(null); // รีเซ็ต temp state
+        await fetchUpdatedPetData(); // (Optional) อัปเดตข้อมูลจาก API
       }
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ กรุณาลองอีกครั้ง');
+    } finally {
+      setLoading(false); // โหลดเสร็จ
     }
   };
+  
   const fetchUpdatedPetData = async () => {
     try {
       const response = await axios.get(`${api}/pets/${pet.pet_id}`);
@@ -209,6 +252,7 @@ const handleUpdate = async (updatedData, type) => {
     });
 
     if (response.status === 200) {
+      setSnackbarMessage('Data updated successfully!');
       setSnackbarOpen(true);
       // Update state with new data
       const updatedResponse = await axios.get(`${api}${endpoint}`);
@@ -247,6 +291,7 @@ const handleEditClick = (id) => {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
+
       <Box sx={{ flexGrow: 1, padding: 3, backgroundColor: '#f5f5f5' }}>
         {/* Header */}
         <Box
@@ -283,7 +328,11 @@ const handleEditClick = (id) => {
           >
             <Avatar
               alt={pet.pet_name}
-              src={`http://localhost:8080${pet.image_url}`} 
+              src={
+                pet.image_url
+                  ? pet.image_url // ใช้ URL จากฐานข้อมูล
+                  : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+              }
               sx={{ width: '100%', // ให้รูปขยายเต็มกรอบ
                 height: '100%', // ให้รูปสูงเต็มกรอบ
                 objectFit: 'cover', // ปรับให้เต็มกรอบโดยไม่บิดเบี้ยว
@@ -407,7 +456,7 @@ const handleEditClick = (id) => {
         <EditPetDialog open={editPetOpen} onClose={() => setEditPetOpen(false)} pet={pet} onSave={(data) => handleUpdate(data, 'pet')} />
         <EditOwnerDialog open={editOwnerOpen} onClose={() => setEditOwnerOpen(false)} owner={owner} onSave={(data) => handleUpdate(data, 'owner')} />
 
-        <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar} message="Data updated successfully!" />
+        <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleCloseSnackbar}  message={snackbarMessage} />
         <Dialog open={editImageOpen} onClose={() => setEditImageOpen(false)}>
                   <DialogTitle>อัปโหลดรูปภาพสัตว์เลี้ยง</DialogTitle>
                   <DialogContent>
@@ -416,7 +465,18 @@ const handleEditClick = (id) => {
                           accept="image/*" 
                            onChange={handleFileChange}
                       />
+                       {loading && (
+                        <Box 
+                          display="flex" 
+                          justifyContent="center" 
+                          alignItems="center" 
+                          minHeight="100px" // สามารถปรับความสูงตามต้องการ
+                        >
+                          <CircularProgress />
+                        </Box>
+                      )}
                   </DialogContent>
+                  
                   <DialogActions>
                       <Button onClick={() => setEditImageOpen(false)}>ยกเลิก</Button>
                       <Button onClick={handleImageSave}    disabled={!selectedImage} color="primary">บันทึก</Button>

@@ -89,7 +89,9 @@ function App() {
             />
 
              {/* สำหรับลูกค้า */}
-            <Route path="/customer/login" element={<Register />} />
+             <Route path="/customer/line-login" element={<Line />} />
+              <Route path="/customer/line" element={<LineAuth />} /> 
+             <Route path="/customer/login" element={<Register />} />
               <Route element={<PrivateRoute />}>
                 <Route path="/customer/home" element={<Home />} />
                 <Route path="/customer/history" element={<HistoryPage />} />
@@ -97,8 +99,7 @@ function App() {
                 <Route path="/customer/serviceappointment" element={<ServiceAppointment />} />
                 <Route path="/customer/appointment" element={<AppointmentDetail />} />
                 <Route path="/customer/petsdetail" element={<PetsDetail />} />
-                <Route path="/customer/line" element={<LineAuth />} />
-                <Route path="/customer/line-login" element={<Line />} />
+            
               </Route>
           </Routes>
         </div>

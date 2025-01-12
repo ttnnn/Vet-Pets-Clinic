@@ -18,7 +18,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle,
+  DialogTitle,Badge ,
 } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
@@ -29,7 +29,7 @@ import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 
-const categories = ['อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
+const categories = ['ฝากเลี้ยง','อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน'];
 const api = 'http://localhost:8080/api/clinic';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -77,7 +77,7 @@ function getComparator(order, orderBy) {
 }
 
 const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending }) => {
-  const [activeCategory, setActiveCategory] = useState('อาบน้ำ-ตัดขน');
+  const [activeCategory, setActiveCategory] = useState('ฝากเลี้ยง');
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
   const [appointmentHotel, setAppointmentHotel] = useState([]);
@@ -88,7 +88,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const [selectedPetId, setSelectedPetId] = useState(null);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-
+  const [appointmentCounts, setAppointmentCounts] = useState({}); //นับจำนวนนัดหมายแยกประเภท 
   const navigate = useNavigate();
 
   const fetchAppointments = async () => {
@@ -118,12 +118,18 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const sortedData = (data) =>
     data.sort(getComparator(order, orderBy));
 
-  const filteredData =
-    activeCategory === 'ฝากเลี้ยง'
-      ? sortedData(filterAppointments(appointmentHotel, activeCategory))
-      : sortedData(filterAppointments(appointments, activeCategory))
-      ;
-
+  // const filteredData =
+    // activeCategory === 'ฝากเลี้ยง'
+      // ? sortedData(filterAppointments(appointmentHotel, activeCategory))
+      // : sortedData(filterAppointments(appointments, activeCategory))
+      // ;
+      const filteredData = sortedData(
+        filterAppointments(
+          activeCategory === 'ฝากเลี้ยง' ? appointmentHotel : appointments,
+          activeCategory
+        )
+      );
+      
 
 
   const handleOpenConfirmDialog = (appointment) => {
@@ -195,21 +201,53 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
     }
   };
   
+  // นับจำนวนบริการแยกตามประเภท
+
+  useEffect(() => {
+    if (!appointments.length && !appointmentHotel.length) {
+      // ถ้ายังไม่มีข้อมูล ไม่ต้องทำอะไร
+      return;
+    }
+    const counts = categories.reduce((acc, category) => {
+      const categoryAppointments =
+        category === 'ฝากเลี้ยง'
+          ? filterAppointments(appointmentHotel, category)
+          : filterAppointments(appointments, category);
+      acc[category] = categoryAppointments.length;
+      return acc;
+    }, {});
   
+    setAppointmentCounts(counts);
+  }, [appointments, appointmentHotel , categories]);
+  
+
+
+  const handleChangeCategory = (event, newValue) => {
+    setActiveCategory(newValue);
+  };
 
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={activeCategory}
-          onChange={(e, newValue) => setActiveCategory(newValue)}
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          {categories.map((category) => (
-            <StyledTab key={category} label={category} value={category} />
-          ))}
-        </Tabs>
+      <Tabs value={activeCategory} onChange={handleChangeCategory}>
+      {categories.map((category) => (
+        <StyledTab
+          key={category}
+          label={
+            <Badge
+              color="secondary"
+              badgeContent={
+                appointmentCounts[category] > 0 ? appointmentCounts[category] : null
+              }
+              invisible={appointmentCounts[category] === 0}
+            >
+              {category}
+            </Badge>
+          }
+          value={category}
+        />
+      ))}
+    </Tabs>
       </Box>
       <TableContainer component={Paper}>
         {loading ? (

@@ -8,7 +8,7 @@ require('dayjs/locale/th');
 
 const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
-  cron.schedule("*/5 9-21 * * *", async () => {
+  cron.schedule("*/1 9-21 * * *", async () => {
     try {
       const query = `
         SELECT * FROM appointment
@@ -34,7 +34,7 @@ const setupCronJobs = (io) => {
       if (currentHour >= 20) {
         const updateQuery = `
           UPDATE appointment
-          SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด'
+          SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด' ,  massage_status = 'cancle'
           WHERE queue_status IN ('รอรับบริการ')
             AND appointment_date = CURRENT_DATE
             AND CURRENT_TIME > appointment_time;

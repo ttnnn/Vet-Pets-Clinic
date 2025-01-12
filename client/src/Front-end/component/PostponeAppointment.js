@@ -16,7 +16,7 @@ dayjs.locale('th'); // Set dayjs to use Thai locale
 
 const api = 'http://localhost:8080/api/clinic';
 
-const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments ,isCustomer }) => {
+const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments ,isCustomer , appointmentDates, appointmentTimes }) => {
   const [appointmentDate, setAppointmentDate] = useState(null);
   const [appointmentTime, setAppointmentTime] = useState(null);
   const [isNoTime, setIsNoTime] = useState(false);
@@ -27,6 +27,8 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
     severity: 'success',
   });
   // console.log('isCustomer',isCustomer)
+  console.log('Appointment Date:', appointmentDates);
+  console.log('Appointment Time:', appointmentTimes);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -68,7 +70,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
 
        if (isCustomer) {
         const currentDateTime = new Date(); // เวลาปัจจุบัน
-        const appointmentDateTime = new Date(`${formatDate(appointmentDate)}T${formatTime(appointmentTime)}`); // เวลานัดหมาย
+        const appointmentDateTime = new Date(`${formatDate(appointmentDates)}T${formatTime(appointmentTimes)}`); // เวลานัดหมาย
 
       
         const diffMilliseconds = appointmentDateTime - currentDateTime; // คำนวณความต่างในมิลลิวินาที

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  Box, Typography, Autocomplete, TextField, Button
+  Box, Typography, Autocomplete, TextField, Button,Avatar
 } from '@mui/material';
 import PetDialog from './Addnewpets';
 import { useNavigate ,useLocation} from 'react-router-dom';
@@ -138,8 +138,12 @@ const RegisterSearch = () => {
                       height: 150,
                     }}
                   >
-                    <img
-                      src={`http://localhost:8080${selectedPet.image_url}`} 
+                    <Avatar
+                      src={
+                        selectedPet.image_url
+                          ? selectedPet.image_url // ใช้ URL จากฐานข้อมูล
+                          : '/default-image.png' // ใช้ภาพ Default หากไม่มีรูป
+                      }
                       alt={selectedPet.pet_name}
                       style={{
                         width: '100%',

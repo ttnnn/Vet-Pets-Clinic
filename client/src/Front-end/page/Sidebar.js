@@ -9,6 +9,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Icon for log out
 import SettingsIcon from '@mui/icons-material/Settings';
+import Notification from '../component/Notification' ;
 //
 
 const Sidebar = () => {
@@ -49,6 +50,7 @@ const Sidebar = () => {
         },
       }}
     >
+      <Notification/>
       <Box sx={{ textAlign: 'center', padding: 1 }}>
         <img src="/Logo.jpg" alt="Logo" style={{ width: '60%', height: 'auto' }} />
         <Typography

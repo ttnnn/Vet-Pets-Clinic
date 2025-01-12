@@ -8,43 +8,55 @@ const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 const bcrypt = require('bcrypt'); 
+const saltRounds = 10; // ระดับของการเข้ารหัส
 const crypto = require('crypto');
 const sendLineMessage = require('../models/sendLineApprove.js');
 const pool = require('../db.js');
-
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
-// const LINE_CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN; // LINE Token
+const cloudinary = require('../models/cloudinary'); 
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 
-// router.post('/send-line-message', async (req, res) => {
-  // const { lineUserId, message, appointmentId } = req.body;
-// 
-  // if (!lineUserId) {
-    // return res.status(400).json({ error: `lineUserId is required for appointment_id: ${appointmentId}` });
-  // }
-// 
-  // try {
-    // const response = await axios.post(
-      // 'https://api.line.me/v2/bot/message/push',
-      // {
-        // to: lineUserId,
-        // messages: [{ type: 'text', text: message }],
-      // },
-      // {
-        // headers: {
-          // 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
-          // 'Content-Type': 'application/json',
-        // },
-      // }
-    // );
-// 
-    // res.status(200).json({ message: 'Message sent successfully', data: response.data });
-  // } catch (error) {
-    // console.error('Error sending LINE message:', error);
-    // res.status(500).json({ error: 'Failed to send message' });
-  // }
-// });
-// 
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+      folder: 'pets_images', // Change this to your desired Cloudinary folder
+      allowed_formats: ['jpg', 'jpeg', 'png'], // Allowed file formats
+  },
+});
+
+const upload = multer({ storage });
+
+// Upload route
+router.post('/uploads', upload.single('image'), (req, res) => {
+  if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+  }
+  res.status(200).json({ imageUrl: req.file.path });
+});
+
+// Update pet image route
+router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const ImageUrl = req.file ? req.file.path : null; // Cloudinary's URL is in `req.file.path`
+
+  try {
+      const result = await pool.query(
+          'UPDATE pets SET image_url = $1 WHERE pet_id = $2',
+          [ImageUrl, id]
+      );
+
+      if (result.rowCount === 0) {
+          return res.status(404).json({ message: 'Pet not found' });
+      }
+
+      res.status(200).json({ message: 'Pet image updated successfully', imageUrl: ImageUrl });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error updating pet image' });
+  }
+});
+
 
 router.post('/send-line-message', async (req, res) => {
   const { lineUserId, message} = req.body;
@@ -105,20 +117,6 @@ router.post('/generate-signature', (req, res) => {
   });
 });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, '../../client/public/Images')); // save images in the 'uploads' folder
-  },
-  filename: (req, file, cb) => {
-      cb(null, file.fieldname+"_"+Date.now()+ path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
-
-router.post('/uploads',(req,res) =>{
-  console.log(req.file)
-});
-
 
 router.put('/pets/:id', async (req, res) => {
   const { id } = req.params;
@@ -147,31 +145,10 @@ router.put('/pets/:id', async (req, res) => {
   }
 });
 
-router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
-  const { id } = req.params;
-  const ImageUrl = req.file ? `/public/Images/${req.file.filename}` : null;
 
-  try {
-      const result = await pool.query(
-          'UPDATE pets SET image_url = $1 WHERE pet_id = $2',
-          [ImageUrl, id]
-      );
-
-      if (result.rowCount === 0) {
-          return res.status(404).json({ message: 'Pet not found' });
-      }
-
-      res.status(200).json({ message: 'Pet image updated successfully' });
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error updating pet image' });
-  }
-});
-
-
-router.put('/owners/:id', (req, res) => {
-  const { id } = req.params; // Move this line up to avoid referencing id before it's declared.
-  console.log('Updating owner:', id);
+router.put('/owners/:owner_id', (req, res) => {
+  const { owner_id } = req.params; // Move this line up to avoid referencing id before it's declared.
+  console.log('Updating owner:', owner_id);
   console.log(req.body);
   
   const {
@@ -187,7 +164,7 @@ router.put('/owners/:id', (req, res) => {
   try {
     pool.query(
       'UPDATE owner SET first_name = $1, last_name = $2, phone_number = $3, phone_emergency = $4, address = $5, province = $6, postal_code = $7 WHERE owner_id = $8',
-      [first_name, last_name, phone_number, phone_emergency, address, province, postal_code, id]
+      [first_name, last_name, phone_number, phone_emergency, address, province, postal_code, owner_id]
     );
 
     res.status(200).json({ message: 'Owner updated successfully' });
@@ -967,6 +944,7 @@ router.get('/appointment', async (req, res) => {
       appointment.status,
       appointment.appointment_date,
       appointment.appointment_time,
+       appointment.massage_status,
       pets.pet_name,
       pets.pet_id,
       pets.pet_birthday,
@@ -1083,6 +1061,9 @@ router.post('/create-appointment', async (req, res) => {
     }
 
     await client.query('COMMIT'); // Commit the transaction if all steps succeed
+    // แจ้งเตือนไปยังคลินิกว่ามีการนัดหมายใหม่รออนุมัติ
+
+    //  emitNewAppointment(pet_id, newAppointmentID)
     res.status(201).json({ message: 'Appointment and PetHotel entry created successfully!', AppointmentID: newAppointmentID });
 
   } catch (error) {
@@ -1442,38 +1423,40 @@ router.put('/personnel/change-password', async (req, res) => {
 });
 
 router.post('/personnel', async (req, res) => {
-  console.log('/personnel',req.body)
+  
   const { first_name, last_name, user_name, password_encrip, role } = req.body;
+  let client; // Declare client outside the try block
 
-  console.log("data", req.body);
-
-  if (!first_name || !last_name || !user_name || !password_encrip || !role) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  const client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
   try {
+    // เข้ารหัสรหัสผ่าน
+    const hashedPassword = await bcrypt.hash(password_encrip, saltRounds);
+
+    client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
     await client.query('BEGIN'); // เริ่มต้น Transaction
 
     // บันทึกข้อมูลในตาราง personnel
     const result = await client.query(
       'INSERT INTO personnel (first_name, last_name, user_name, password_encrip, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [first_name, last_name, user_name, password_encrip, role]
+      [first_name, last_name, user_name, hashedPassword, role]
     );
 
     await client.query('COMMIT'); // Commit transaction
-    res.status(201).json(result.rows[0]); // ส่งข้อมูลกลับไปในรูป JSON
+    res.status(201).json(result.rows[0]); // ส่งข้อมูลกลับในรูป JSON
   } catch (error) {
-    await client.query('ROLLBACK'); // Rollback transaction หากเกิดข้อผิดพลาด
+    if (client) {
+      await client.query('ROLLBACK'); // Rollback transaction หากเกิดข้อผิดพลาด
+    }
     console.error(error);
     res.status(500).json({ error: 'Failed to create personnel' });
   } finally {
-    client.release(); // ปล่อยการเชื่อมต่อกลับ
+    if (client) {
+      client.release(); // ปล่อยการเชื่อมต่อกลับ
+    }
   }
 });
 
+
 router.get('/personnel', async (req, res) => { 
-  console.log("/personnel", req.body);
 
   const query = 
     'SELECT * FROM personnel'
@@ -1492,7 +1475,6 @@ router.get('/personnel', async (req, res) => {
 });
 
 router.delete('/personnel/:id', async (req, res) => {
-  console.log('id', req.params)
   const { id } = req.params;
 
   try {
@@ -1935,19 +1917,19 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
   }
 });
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', async (req, res) => { 
   try {
     const { petType, timeFilter, year } = req.query;
-    console.log(' req.query', req.query)
-    // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว
+    console.log(' req.query', req.query);
 
+    // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว์
     const petTypeCondition = petType
-  ? petType === 'other'
-    ? "AND p.pet_species NOT IN ('สุนัข', 'แมว')" // เงื่อนไขสำหรับประเภทอื่นๆ
-    : petType === 'all'
-    ? '' // ไม่มีเงื่อนไขเพิ่มเติม
-    : `AND p.pet_species = '${petType}'` // เงื่อนไขสำหรับหมาหรือแมว
-  : '';
+      ? petType === 'other'
+        ? "AND p.pet_species NOT IN ('สุนัข', 'แมว')" // เงื่อนไขสำหรับประเภทอื่นๆ
+        : petType === 'all'
+        ? '' // ไม่มีเงื่อนไขเพิ่มเติม
+        : `AND p.pet_species = '${petType}'` // เงื่อนไขสำหรับหมาหรือแมว
+      : '';
 
     // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
     const timeCondition = timeFilter === 'month'
@@ -1956,12 +1938,15 @@ router.get('/dashboard', async (req, res) => {
       ? `EXTRACT(YEAR FROM appointment_date) = ${year}`
       : '1=1';
 
+    // WHERE เงื่อนไขสำหรับสถานะ
+    const statusCondition = "AND a.status = 'อนุมัติ' AND a.queue_status = 'เสร็จสิ้น'";
+
     // ดึงจำนวนบริการแยกตามประเภท
     const resultServices = await pool.query(`
       SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
       LEFT JOIN pets p ON a.pet_id = p.pet_id  
-      WHERE ${timeCondition} ${petTypeCondition}
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY type_service
     `);
     const services = resultServices.rows; 
@@ -1974,7 +1959,7 @@ router.get('/dashboard', async (req, res) => {
         COUNT(a.pet_id) AS count
       FROM appointment a
       LEFT JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE ${timeCondition} ${petTypeCondition}
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM appointment_date)' 
         : "TO_CHAR(appointment_date, 'FMMonth')"} 
@@ -1982,10 +1967,8 @@ router.get('/dashboard', async (req, res) => {
         ? 'EXTRACT(DAY FROM appointment_date)'  
         : "TO_CHAR(appointment_date, 'FMMonth')"} 
     `);
-    const petsPerPeriod = resultPetsPerPeriod.rows; // ใช้ resultPetsPerPeriod.rows
+    const petsPerPeriod = resultPetsPerPeriod.rows; 
     
-    
-
     // ดึงรายได้ต่อเดือน/ปี
     const resultRevenue = await pool.query(`
       SELECT 
@@ -1997,7 +1980,7 @@ router.get('/dashboard', async (req, res) => {
       LEFT JOIN invoice ON a.appointment_id = invoice.appointment_id
       LEFT JOIN payment pay ON pay.payment_id = invoice.payment_id
       LEFT JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE ${timeCondition} ${petTypeCondition}
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM payment_date)'  
         : "TO_CHAR(payment_date, 'Month')"} 
@@ -2005,9 +1988,8 @@ router.get('/dashboard', async (req, res) => {
         ? 'EXTRACT(DAY FROM payment_date)'  
         : "TO_CHAR(payment_date, 'Month')"}  
     `);
-    const revenue = resultRevenue.rows; // ใช้ resultRevenue.rows
+    const revenue = resultRevenue.rows;
     
-
     // ส่งผลลัพธ์กลับ
     res.json({ services, petsPerPeriod, revenue });
   } catch (error) {
@@ -2015,6 +1997,7 @@ router.get('/dashboard', async (req, res) => {
     res.status(500).send('Error retrieving dashboard data');
   }
 });
+
 
 router.get('/available-years', async (req, res) => {
   try {
@@ -2052,6 +2035,42 @@ router.post('/sendLineReceipt', async (req, res) => {
   }
 });
 
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ success: false, error: 'Username and password are required' });
+  }
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM personnel WHERE user_name = $1',
+      [username]
+    );
+    client.release();
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const user = result.rows[0];
+    const isPasswordMatch = await bcrypt.compare(password, user.password_encrip);
+
+    if (!isPasswordMatch) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Filter sensitive data before sending
+    const { user_id, user_name, first_name, last_name } = user;
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: { user_id, user_name, first_name, last_name },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, error: 'Login failed' });
+  }
+});
 
 
 // router.use('/public', express.static(path.join(__dirname, '../../public')));

@@ -4,13 +4,14 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab,
   Dialog, DialogActions, 
-  DialogContent, DialogTitle,Typography ,Snackbar,Alert, AlertTitle
+  DialogContent, DialogTitle,Typography ,Snackbar,Alert, AlertTitle,TablePagination
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Postpone from './PostponeAppointment'; 
 import PostponeHotel from './PostponeHotel';
 import sendLineMessage from './sendLine'
 import dayjs from 'dayjs';
+
 
 
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
@@ -57,7 +58,7 @@ function getComparator(order, orderBy) {
 const formatDate = (dateString) => {
   return dayjs(dateString).format('DD/MM/YYYY'); // Use day.js for formatting
 };
-const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments }) => {
+const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments , activeTab }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
   const [activeCategory, setActiveCategory] = useState('ทั้งหมด');
@@ -72,6 +73,9 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelAppointmentId, setCancelAppointmentId] = useState(null);
+  const [page, setPage] = useState(0); // หน้าปัจจุบัน
+  const [rowsPerPage, setRowsPerPage] = useState(15); // จำนวนแถวต่อหน้า
+
 
   const handlePostponeClick = (appointmentId, typeService, petId) => {
     setSelectedAppointmentId(appointmentId);
@@ -236,7 +240,19 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
      
     return categoryMatch && searchMatch  ;
   });
- 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+  
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // กลับไปที่หน้าแรกเมื่อเปลี่ยนจำนวนแถวต่อหน้า
+  };
+
+  const paginatedAppointments = filteredAppointments
+  .sort(getComparator(order, orderBy))
+  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
  
   // console.log(filteredAppointments)
   return (
@@ -264,6 +280,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       <Box display="flex" alignItems="center" mt={2} mb={2}>
         <TextField
           label="ค้นหานัดหมาย"
+          placeholder='ค้นหานัดหมายด้วย ชื่อลูกค้า , ชื่อสัตว์เลี้ยง'
           variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -276,7 +293,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>
+              <TableCell >
                 <TableSortLabel
                   active={orderBy === 'appointment_date'}
                   direction={orderBy === 'appointment_date' ? order : 'asc'}
@@ -300,24 +317,47 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
               <TableCell>นัดมา</TableCell>
               <TableCell>รายละเอียด</TableCell>
               <TableCell>สถานะ</TableCell>
+              {activeTab === 1 && (
+                <TableCell>สถานะแจ้งเตือนนัดหมาย</TableCell>
+              )}
+              
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-      {filteredAppointments.sort(getComparator(order, orderBy)).map((appointment, index) => (
-        <TableRow key={index}>
+          {paginatedAppointments.map((appointment, index) => (
+        
+        <TableRow  key={index}>
 
           {/* ข้อมูลอื่นๆ */}
-          <TableCell>{formatDate(appointment.appointment_date)}</TableCell>
-          <TableCell>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
-          <TableCell>{appointment.pet_name}</TableCell>
-          <TableCell>{appointment.full_name}</TableCell>
-          <TableCell>{appointment.type_service}</TableCell>
-          <TableCell>{appointment.detail_service || '-'}</TableCell>
-          <TableCell>{appointment.reason || '-'}</TableCell>
-          <TableCell>{appointment.status}</TableCell>
-                
+          <TableCell sx={{ width: '15%' }}>{formatDate(appointment.appointment_date)}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.appointment_time ? formatTime(appointment.appointment_time) : 'ตลอดทั้งวัน'}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.pet_name}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.full_name}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.type_service}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.detail_service || '-'}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.reason || '-'}</TableCell>
+          <TableCell sx={{ width: '15%' }}>{appointment.status}</TableCell>
+          {activeTab === 1 && (
+              <TableCell>
+              <Box 
+              sx={{
+                width: '15%',
+                bgcolor: appointment.massage_status === 'success' ? 'green' : 'transparent',
+                color: appointment.massage_status === 'success' ? 'white' : 'inherit',
+                textAlign: 'center',
+                borderRadius: 1, // เพิ่มมุมโค้งนิดหน่อย
+                width: '100%', // ขนาดของกล่องเป็น 60% ของช่อง
+                padding: '4px', 
+                borderRadius: '4px' 
+              
+              }}>
+              {appointment.massage_status}
+              </Box>
+              </TableCell>
+
+              )}      
           <TableCell>
 
           {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
@@ -385,7 +425,15 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
         </Table>
       </TableContainer>
-
+      <TablePagination
+        rowsPerPageOptions={[15,25]} // เลือกจำนวนแถวต่อหน้า
+        component="div"
+        count={filteredAppointments.length} // จำนวนทั้งหมด
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
 
        {/* Confirmation Dialog */}
         <Dialog open={openDialog} onClose={handleDialogClose}>

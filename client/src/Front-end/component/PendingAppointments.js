@@ -64,7 +64,7 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const PendingAppointments = ({ appointments }) => {
+const PendingAppointments = ({ appointments ,update}) => {
   const [activeCategory, setActiveCategory] = useState('คิวทั้งหมด');
   const [openPopup, setOpenPopup] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -206,7 +206,7 @@ const PendingAppointments = ({ appointments }) => {
   };
   
   // ฟังก์ชันหลัก
-  const handleClickOpen = useCallback((appointment) => {
+  const handleClickOpen = useCallback((appointment ,update) => {
     setLoading(true);
     const updateAppointmentDetails = async () => {
       // ตั้งค่าเบื้องต้นของ SelectedAppointment
@@ -421,14 +421,12 @@ const PendingAppointments = ({ appointments }) => {
       setOpenSnackbar(true);
       handleClose();
       handleCloseConfirmDialog();
-    
-      await filterAppointments(appointments);
        // อัปเดตข้อมูลใบเสร็จ
        setReceiptData({
         invoice_id: response.data.invoice_id,
       });
       handleOpenReceiptDialog()
-      
+     
 
     } catch (error) {
       // console.error("Error saving invoice:", error);
@@ -454,6 +452,7 @@ const PendingAppointments = ({ appointments }) => {
   
 const handleCloseReceiptDialog = () => {
   setReceiptDialogOpen(false); // ปิด Dialog
+  update();
 };
 
   const handleClose = () => {
