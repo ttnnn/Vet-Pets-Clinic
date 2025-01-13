@@ -10,6 +10,7 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService
   start.setHours(startHour, 0, 0, 0);
 
   const end = new Date();
+  console.log('typeService',typeService)
   if (typeService === 'อาบน้ำ-ตัดขน') {
     end.setHours(18, 0, 0, 0); // จำกัดให้สิ้นสุดที่ 18:00 สำหรับ "อาบน้ำ-ตัดขน"
   } else {
@@ -20,12 +21,16 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
   let current = start;
-
-  while (current < end) {
-    const next = new Date(current.getTime() + stepMinutes * 60000);
-    slots.push(`${formatTime(current)} - ${formatTime(next)}`);
-    current = next;
+  
+  if (typeService !== 'ฝากเลี้ยง') {
+    while (current < end) {
+      const next = new Date(current.getTime() + stepMinutes * 60000);
+      slots.push(`${formatTime(current)} - ${formatTime(next)}`);
+      current = next;
+    }
   }
+  
+  
 
   return slots;
 };

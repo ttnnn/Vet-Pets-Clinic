@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { Button, Grid, Box } from '@mui/material';
 import liff from '@line/liff';
-
+const lineliff = process.env.REACT_APP_LIFF_ID;
 const Line = () => {
   useEffect(() => {
-    liff.init({ liffId: '2006068191-vAnqlBk7' })
+    liff.init({  liffId: lineliff})
       .then(() => {
         // Optionally handle success (e.g., check login status)
       })

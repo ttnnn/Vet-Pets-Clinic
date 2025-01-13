@@ -311,7 +311,7 @@ const ManageRoles = () => {
                 <TableBody>
                 {paginatedAdmins.map((admin) => (
                     <TableRow
-                    key={admin.user_name}
+                    key={admin.personnel_id}
                     sx={{
                     '&:hover': { backgroundColor: '#e0f7fa' },
                     }}

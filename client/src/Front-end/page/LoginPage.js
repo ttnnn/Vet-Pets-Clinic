@@ -15,6 +15,7 @@ const LoginPage = ({ onLogin }) => {
   const [usernameError, setUsernameError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
+  
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -34,11 +35,13 @@ const LoginPage = ({ onLogin }) => {
       const response = await axios.post(`${api}/login`, { username, password });
 
       if (response.data.success) {
-        localStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('isAuthenticated', 'true');
+        onLogin(response.data.token);
         setSnackbarMessage('เข้าสู่ระบบสำเร็จ!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        onLogin();
+        
         navigate('/clinic/home');
       } else {
         setSnackbarMessage('ชื่อหรือรหัสผ่านไม่ถูกต้อง');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useMemo } from 'react';
+import React, { useState, useEffect , useMemo ,useCallback} from 'react';
 import { Box, Button, Typography, Paper, MenuItem, Select, FormControl, InputLabel, TextField, Autocomplete,
   Tabs, Tab,Checkbox, FormControlLabel,Snackbar  ,Dialog, DialogActions, 
   DialogContent, DialogTitle,} from '@mui/material';
@@ -13,6 +13,7 @@ import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import {useLocation,useNavigate} from 'react-router-dom';
 import HolidayFilter from './HolidayFilter';
+const MemoizedAutocomplete = React.memo(Autocomplete);
 
 
 const api = 'http://localhost:8080/api/clinic';
@@ -62,7 +63,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [selectedCage, setSelectedCage] = useState('');
   const [petSpecies, setPetSpecies] = useState('');
   const [personnelList, setPersonnelList] = useState([]); 
-  const [selectedPersonnel, setSelectedPersonnel] = useState('');
+  const [selectedPersonnel, setSelectedPersonnel] = useState(null);
   const [detailservice,setDetailService] = useState('') ;
   const [activeTab, setActiveTab] = useState(0);
   const [isNoTime, setIsNoTime] = useState(false); // Checkbox state
@@ -171,31 +172,39 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   };
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    console.log('Active Tab:', newValue);
+
   };
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
 
-  const handleDateChange = (dateType, newDate) => {
+  const handleDateChange = useCallback((dateType, newDate) => {
+    console.log("Selected Date: ", newDate);
     if (dateType === 'checkIn') {
       setCheckInDate(newDate);
       if (activeTab === 1) setCheckOutDate(newDate); // สำหรับ Daytime Booking
     } else if (dateType === 'checkOut') {
       setCheckOutDate(newDate);
     }
-  };
+  }, [activeTab]);  // Depend on activeTab
+
   const filteredCages = useMemo(() => {
-    return petCages.map(cage => ({
-      label: `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)} (${cage.cage_capacity})`,
-      id: cage.pet_cage_id
-    }));
+    return petCages
+      .filter(cage => cage.pet_cage_id && cage.cage_capacity) // กรองข้อมูลที่ไม่สมบูรณ์ออก
+      .map(cage => ({
+        label: `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)} (${cage.cage_capacity})`,
+        id: cage.pet_cage_id,
+      }));
   }, [petCages]);
   
   const filteredPersonnel = useMemo(() => {
-    return personnelList.map(personnel => ({
-      label: `${personnel.first_name} ${personnel.last_name} (${personnel.role})`,
-      id: personnel.personnel_id
-    }));
+    return personnelList
+      .filter(personnel => personnel.personnel_id && personnel.first_name && personnel.last_name) // กรองข้อมูลที่ไม่สมบูรณ์ออก
+      .map(personnel => ({
+        label: `${personnel.first_name} ${personnel.last_name} (${personnel.role})`,
+        id: personnel.personnel_id,
+      }));
   }, [personnelList]);
   
     
@@ -203,12 +212,14 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     try {
       if(TypeService !== 'ฝากเลี้ยง'){
         if (!appointmentDate || (!appointmentTime && !isNoTime)) {
-          alert('Please fill all required fields.');
+          setAlertSeverity('warning');
+          setAlertMessage('กรุณากรอกข้อมูลให้ครบ');
           return;
         }
       }else {
         if (!checkInDate || !checkOutDate || !petCages  || !isNoTime ) {
-          alert('Please fill all required fields.');
+          setAlertSeverity('warning');
+          setAlertMessage('กรุณากรอกข้อมูลให้ครบ');
           return;
         }
       }
@@ -318,7 +329,12 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
             {alertMessage}
           </Alert>
         )}
-        <Snackbar open={!!alertMessage} autoHideDuration={6000} onClose={() => setAlertMessage('')}>
+        <Snackbar open={!!alertMessage} autoHideDuration={6000} 
+         anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'center',
+        }}
+        onClose={() => setAlertMessage('')}>
         <Alert onClose={() => setAlertMessage('')} severity={alertSeverity}>
           {alertMessage}
         </Alert>
@@ -416,7 +432,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                     <DatePicker 
                       label="Check-in Date"
                       value={checkInDate}
-                      onChange={handleDateChange}
+                      onChange={(newDate) => handleDateChange('checkIn', newDate)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -426,7 +442,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                     <DatePicker
                       label="Check-out Date"
                       value={checkOutDate}
-                      onChange={handleDateChange}
+                      onChange={(newDate) => handleDateChange('checkOut', newDate)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -445,7 +461,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                     <DatePicker 
                       label="เลือกวันที่"
                       value={checkInDate}
-                      onChange={handleDateChange}
+                      onChange={(newDate) => handleDateChange('checkIn', newDate)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
                       views={['year', 'month', 'day']}
@@ -463,24 +479,28 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
               fullWidth
             />
               
-            <Autocomplete
-            options={filteredCages}
-            getOptionLabel={(cage) => `ID: ${cage.pet_cage_id} - ที่ว่าง: ${cage.cage_capacity - (cage.reserved_count || 0)}  (${cage.cage_capacity}) `}
-            onChange={(event, value) => setSelectedCage(value ? value.pet_cage_id : '')}
-            renderInput={(params) => (
-              <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />
-            )}
-            />
-            <Autocomplete
-              options={filteredPersonnel}
-              getOptionLabel={(personnel) => personnel ? `${personnel.first_name} ${personnel.last_name} (${personnel.role}) ` : ''}
-              onChange={(event, value) => setSelectedPersonnel(value || null)}
-              value={selectedPersonnel ? personnelList.find(p => p.personnel_id === selectedPersonnel.personnel_id) : null}
-              isOptionEqualToValue={(option, value) => option.personnel_id === value?.personnel_id}
-              renderInput={(params) => (
-            <TextField {...params} label="ผู้บันทึก" variant="outlined" fullWidth />
-            )}
-          />
+              <MemoizedAutocomplete
+                options={filteredCages}
+                getOptionLabel={(cage) => cage.label}
+                onChange={(event, value) => setSelectedCage(value ? value.id : '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="กรงฝากเลี้ยง" variant="outlined" fullWidth />
+                )}
+                isOptionEqualToValue={(option, value) => option.id === value?.id}
+              />
+
+              {!isCustomerAppointment && (
+                    <MemoizedAutocomplete
+                      options={filteredPersonnel}
+                      getOptionLabel={(personnel) => personnel.label || ''} // ป้องกัน label เป็น undefined
+                      onChange={(event, value) => setSelectedPersonnel(value || null)} // บันทึกค่าที่เลือก
+                      value={selectedPersonnel} // ใช้ selectedPersonnel โดยตรง
+                      isOptionEqualToValue={(option, value) => option.id === value?.id} // ตรวจสอบความเท่ากันของ id
+                      renderInput={(params) => (
+                        <TextField {...params} label="ผู้บันทึก" variant="outlined" fullWidth />
+                      )}
+                    />
+                  )}
             </>
           ) : ( 
             <HolidayFilter>

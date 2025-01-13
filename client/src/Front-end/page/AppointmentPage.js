@@ -10,7 +10,6 @@ import { useLocation } from 'react-router-dom';
 import ExportAppointmentsToExcel from '../component/ExportToExcel';
 
 
-
 const api = 'http://localhost:8080/api/clinic';
 
 // Styled Tab with custom colors
@@ -47,7 +46,6 @@ const AppointmentPage = () => {
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('this_month');
-
 
   const location = useLocation();
   const { locationActiveTab } = location.state || {};

@@ -21,34 +21,62 @@ import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 import ServiceAppointment from './Front-end/customer/ServiceAppointment';
 import PrivateRoute from './Front-end/customer/PrivateRoute'; 
 import Dashboard from './Front-end/page/Dashboard';
+import axios from 'axios';
+const api = 'http://localhost:8080/api/clinic';
+
 const theme = createTheme();
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
   const location = useLocation();
 
-  useEffect(() => {
-    // Check if the user is authenticated when the app loads
-    const authStatus = localStorage.getItem('isAuthenticated');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
+    // ตรวจสอบ token ใน sessionStorage เมื่อโหลดหน้า
+    useEffect(() => {
+      const token = sessionStorage.getItem('token');
+      if (token) {
+        axios
+          .get(`${api}/validate-token`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            if (response.data.success) {
+              setIsAuthenticated(true); // อัปเดตสถานะการล็อกอิน
+            } else {
+              sessionStorage.removeItem('token');
+              sessionStorage.removeItem('isAuthenticated');
+              setIsAuthenticated(false);
+            }
+          })
+          .catch(() => {
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('isAuthenticated');
+            setIsAuthenticated(false);
+          });
+      }
+    }, []); // ทำงานเมื่อโหลดหน้า
+    
+    const handleLogin = (token) => {
+      sessionStorage.setItem('token', token); // บันทึก Token
+      sessionStorage.setItem('isAuthenticated', 'true'); // บันทึกสถานะ
+      setIsAuthenticated(true); // อัปเดต UI
+    };
+    
+    const handleLogout = () => {
+      sessionStorage.removeItem('token'); // ลบ Token
+      sessionStorage.removeItem('isAuthenticated'); // ลบสถานะ
+      setIsAuthenticated(false); // อัปเดต UI
+    };
+    
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('isAuthenticated'); // Clear login status
-  };
+
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <div className="App">
-        {location.pathname !== '/login' && isAuthenticated && <Navbar onLogout={handleLogout} />}
+         {isAuthenticated && location.pathname !== '/login' && <Navbar onLogout={handleLogout} />}
+
         <div className='Content'>
           <Routes>
             <Route 

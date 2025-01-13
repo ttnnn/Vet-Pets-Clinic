@@ -15,7 +15,9 @@ const pool = require('../db.js');
 router.use('/public', express.static(path.join(__dirname, '../../client/public')));  // **สำคัญ**: ตั้งเส้นทางให้ถูกต้อง
 const cloudinary = require('../models/cloudinary'); 
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
+const jwt = require('jsonwebtoken');
+const secretKey = 'your_secret_key'; // คีย์ลับสำหรับสร้าง Token
+const tokenExpiry = '1h'; // อายุของ Token
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -255,7 +257,7 @@ router.get('/servicecategory', async (req, res) => {
   console.log("/servicecategory", req.body);
 
   const query = `
-    SELECT * FROM servicecategory
+    SELECT * FROM servicecategory where active = 'true'
   `;
 
   try {
@@ -273,7 +275,7 @@ router.get('/vaccines', async (req, res) => {
   console.log("/vaccines", req.body);
 
   const query = `
-    SELECT * FROM servicecategory WHERE category_type = 'รายการยา'
+    SELECT * FROM servicecategory WHERE category_type = 'รายการยา' and  active = 'true'
   `;
 
   try {
@@ -329,7 +331,7 @@ router.post('/appointments/:appointmentId/vaccines', async (req, res) => {
 
     // 2. ตรวจสอบการมีอยู่ของ vaccine
     const vaccineRes = await client.query(
-      'SELECT * FROM servicecategory WHERE category_id = $1',
+      'SELECT * FROM servicecategory WHERE category_id = $1 and active = true' ,
       [vaccine_id]
     );
     if (vaccineRes.rows.length === 0) {
@@ -402,7 +404,7 @@ router.delete('/servicecategory/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('DELETE FROM servicecategory WHERE category_id = $1', [id]);
+    const result = await pool.query('UPDATE servicecategory SET active = FALSE WHERE category_id = $1', [id]);
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Deleted successfully' });
     } else {
@@ -821,7 +823,7 @@ router.get('/pets/:pet_id', async (req, res) => {
 
 // Get personnel details
 router.get('/personnel', async (req, res) => {
-  const query = `SELECT personnel_id, first_name, last_name, role,user_name FROM personnel`;
+  const query = `SELECT personnel_id, first_name, last_name, role,user_name FROM personnel where active = 'true'`;
 
   try {
     const result = await pool.query(query);
@@ -1429,7 +1431,7 @@ router.post('/personnel', async (req, res) => {
 
   try {
     // เข้ารหัสรหัสผ่าน
-    const hashedPassword = await bcrypt.hash(password_encrip, saltRounds);
+    const hashedPassword = await bcrypt.hash(password_encrip, 10); // ตรวจสอบว่า 10 ตรงกันในทุกการเข้ารหัส
 
     client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
     await client.query('BEGIN'); // เริ่มต้น Transaction
@@ -1459,7 +1461,7 @@ router.post('/personnel', async (req, res) => {
 router.get('/personnel', async (req, res) => { 
 
   const query = 
-    'SELECT * FROM personnel'
+   `SELECT * FROM personnel where active = 'true'`
   ;
 
   try {
@@ -1478,7 +1480,7 @@ router.delete('/personnel/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('DELETE FROM personnel WHERE personnel_id = $1', [id]);
+    const result = await pool.query('UPDATE personnel SET active = FALSE WHERE personnel_id = $1', [id]);
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Deleted successfully' });
     } else {
@@ -2035,17 +2037,17 @@ router.post('/sendLineReceipt', async (req, res) => {
   }
 });
 
+
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
+
   if (!username || !password) {
     return res.status(400).json({ success: false, error: 'Username and password are required' });
   }
-  const client = await pool.connect();
+
   try {
-    const result = await client.query(
-      'SELECT * FROM personnel WHERE user_name = $1',
-      [username]
-    );
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM personnel WHERE user_name = $1', [username]);
     client.release();
 
     if (result.rows.length === 0) {
@@ -2059,17 +2061,51 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Filter sensitive data before sending
-    const { user_id, user_name, first_name, last_name } = user;
+    // สร้าง JWT Token
+    const token = jwt.sign(
+      {
+        user_id: user.personnel_id,
+        username: user.user_name,
+        role: user.role,
+      },
+      secretKey,
+      { expiresIn: tokenExpiry }
+    );
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      user: { user_id, user_name, first_name, last_name },
+      token, // ส่ง Token ให้ Client
+      expiresIn: tokenExpiry,
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, error: 'Login failed' });
   }
+});
+
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Bearer Token
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, secretKey); // ตรวจสอบ Token
+    req.user = decoded; // เพิ่มข้อมูลผู้ใช้ใน Request
+    next(); // ดำเนินการต่อ
+  } catch (error) {
+    return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+  }
+};
+
+router.get('/validate-token', verifyToken, (req, res) => {
+  const {  user_name, role } = req.user; // เลือกเฉพาะข้อมูลสำคัญ
+  res.status(200).json({
+    success: true,
+    message: 'Token is valid',
+    user: { user_name, role },
+  });
 });
 
 

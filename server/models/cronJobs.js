@@ -24,6 +24,7 @@ const setupCronJobs = (io) => {
         io.emit("queue-alert", {
           message: `ยังมี ${rows.length} คิวที่ยังไม่ได้กดส่งคิว โปรดจัดการก่อนร้านปิด!`,
           queues: rows,
+          playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
         });
         console.log("Queue alert emitted:", rows);
       }
@@ -43,6 +44,7 @@ const setupCronJobs = (io) => {
         console.log('Appointment status updated to "ยกเลิกนัด" after 20:00');
         io.emit('notification', {
           message: 'มีคิวที่ถูกยกเลิกเนื่องจากเลยเวลา 20:00 น.',
+          playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
         });
       }
 
@@ -53,15 +55,43 @@ const setupCronJobs = (io) => {
   });
   
 
-
+  const ApproveAppointmentReminders = async () => {
+    const query = `
+    SELECT * FROM appointment
+    WHERE appointment_date >= CURRENT_DATE
+    AND status = 'รออนุมัติ';
+  `;
+  const { rows } = await pool.query(query);
+  // แจ้งเตือนคิวที่ยังไม่ได้กดส่ง
+  if (rows.length > 0) {
+    io.emit("queue-alert", {
+      message: `มี ${rows.length} นัดหมายใหม่รออนุมัติ`,
+      queues: rows,
+      playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
+    });
+    console.log("Queue alert emitted:", rows);
+  }
+  }
   // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
   const sendAppointmentReminders = async () => {
     const query = `
-      SELECT a.appointment_date, a.appointment_time, p.pet_name, o.line_id, a.appointment_id
-    FROM appointment a
-    JOIN owner o ON a.owner_id = o.owner_id
-    JOIN pets p ON a.pet_id = p.pet_id
-    WHERE a.status ='อนุมัติ'
+    SELECT 
+    a.appointment_date, 
+    a.appointment_time, 
+    p.pet_name, 
+    o.line_id, 
+    a.appointment_id
+    FROM 
+        appointment a
+    JOIN 
+        owner o ON a.owner_id = o.owner_id
+    JOIN 
+        pets p ON a.pet_id = p.pet_id
+    WHERE 
+        a.status = 'อนุมัติ'
+        AND a.queue_status = 'รอรับบริการ'
+        AND DATE(a.appointment_date) = DATE(NOW() + INTERVAL '1 day');
+
     `;
   
     try {
@@ -85,6 +115,8 @@ const setupCronJobs = (io) => {
 
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
   cron.schedule('0 9 * * *', sendAppointmentReminders);
+  cron.schedule('*/10 9-21 * * *', ApproveAppointmentReminders);
+
 };
 
 module.exports = setupCronJobs;
