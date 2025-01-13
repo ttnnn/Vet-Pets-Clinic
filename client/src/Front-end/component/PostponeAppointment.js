@@ -105,12 +105,16 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       }
 
 
-      console.log("format",date_format, " ",time_format)
+      // console.log("format",date_format, " ",time_format)
 
       const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
         appointment_date: date_format,
         appointment_time: time_format,
       });
+
+      if (isCustomer) {
+        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
+      }
 
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'เลื่อนนัดสำเร็จ!', severity: 'success' });

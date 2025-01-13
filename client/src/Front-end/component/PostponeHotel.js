@@ -31,7 +31,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppointments,isExtendBooking ,isAdmitBooking }) => {
+const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppointments,isExtendBooking ,isAdmitBooking ,isCustomer}) => {
   const [checkInDate, setCheckInDate] = useState(null);
   const [checkOutDate, setCheckOutDate] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -76,6 +76,9 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
       // อัปเดตสถานะเป็น admit เมื่อ isAdmitBooking เป็น true
       if (isAdmitBooking) {
         await axios.put(`${api}/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', reason: 'admit' });
+      }
+      if (isCustomer) {
+        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
       }
 
       const response = await axios.put(`${api}/postpone/hotels/${appointmentId}`, {

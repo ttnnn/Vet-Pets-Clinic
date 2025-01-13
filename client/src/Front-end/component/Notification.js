@@ -5,7 +5,6 @@ import io from 'socket.io-client';
 const Notification = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [socketId, setSocketId] = useState('');
 
   const timeoutRef = useRef(null); // เพื่อเก็บการตั้งเวลาไว้ในครั้งถัดไป
   // Connect to the 'clinic' room on socket server
@@ -19,6 +18,15 @@ const Notification = () => {
 
     socket.emit('join-room', 'clinic'); // Join 'clinic' room
 
+    // ฟังก์ชันสำหรับเล่นเสียง
+      const playSound = (soundPath) => {
+        const audio = new Audio(soundPath); // โหลดไฟล์เสียง
+        audio.play().catch((err) => {
+          console.error('Error playing sound:', err);
+        });
+      };
+
+
      // ฟังการแจ้งเตือนจากเซิร์ฟเวอร์
      socket.on('notification', (msg) => {
       console.log('Notification received:', msg); // ตรวจสอบข้อมูลที่ได้รับ
@@ -31,7 +39,10 @@ const Notification = () => {
         setMessage(msg.message);
         setOpen(true); // แสดง Snackbar
       }, 1000); // ปรับ delay ที่นี่ตามต้องการ (1000ms = 1 วินาที)
-
+      
+      // เล่นเสียงแจ้งเตือน
+        
+      playSound('/sounds/relax-message-tone.mp3'); // ระบุ path ของไฟล์เสียง
     });
 
 
@@ -42,6 +53,8 @@ const Notification = () => {
         setMessage(msg.message);
         setOpen(true); // Show Snackbar
       }
+      // เล่นเสียงแจ้งเตือน
+      playSound('/sounds/relax-message-tone.mp3'); // ระบุ path ของไฟล์เสียง
     });
 
     // Cleanup on component unmount
@@ -64,10 +77,10 @@ const Notification = () => {
       open={open}
       onClose={handleClose}
       anchorOrigin={{
-        vertical: 'bottom',
-        horizontal: 'left',
+        vertical: 'top',
+        horizontal: 'center',
       }}
-      autoHideDuration={6000} // Automatically close after 6 seconds
+      autoHideDuration={9000} // Automatically close after 6 seconds
     >
       <Alert
         onClose={handleClose}
