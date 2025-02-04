@@ -100,28 +100,6 @@ const PendingAppointments = ({ appointments ,update}) => {
     setOrderBy(property);
   };
   
-  // const handleSelectItem = (item) => {
-    // setSelectedItems((prevItems) => {
-      // const isDuplicate = prevItems.some(
-        // (i) =>
-          // i.id === item.id &&
-          // i.price_service === item.price_service &&
-          // i.category_name === item.category_name // เพิ่มตรวจสอบคุณสมบัติเฉพาะ
-      // );
-  // 
-      // if (isDuplicate) {
-        // return prevItems.map((i) =>
-          // i.id === item.id &&
-          // i.price_service === item.price_service &&
-          // i.category_name === item.category_name
-            // ? { ...i, quantity: i.quantity + 1 }
-            // : i
-        // );
-      // }
-  // 
-      // return [...prevItems, { ...item, quantity: 1 }];
-    // });
-  // };
   const handleSelectItem = (item) => {
     setSelectedItems((prevItems) => {
       const existingItem = prevItems.find(
@@ -236,6 +214,18 @@ const PendingAppointments = ({ appointments ,update}) => {
             }));
           }
           setSelectedItems(selectedItems || []);
+
+          // ดึง notes และกำหนดให้เป็นค่าว่างหากไม่มีข้อมูล
+          const vaccineNotes = selectedItems && selectedItems.length > 0 
+          ? selectedItems.map(item => item.notes || "").filter(note => note.trim() !== "").join(', ')
+          : "";
+
+        setSelectedAppointment(prev => ({
+          ...prev,
+          notes: vaccineNotes || "" // ป้องกันค่า undefined
+        }));
+
+
           break;
   
         case 'ฝากเลี้ยง':
@@ -358,15 +348,6 @@ const PendingAppointments = ({ appointments ,update}) => {
     setPage(newPage);
   };
 
-  // const filteredAppointments = appointments.filter((appointment) => {
-    // if (activeCategory === 'คิวทั้งหมด') {
-      // return (
-        // appointment.queue_status === 'รอชำระเงิน' &&
-        // appointment.status === 'อนุมัติ'
-      // );
-    // }
-    // return true;
-  // });
 
 
   const filterAppointments = (appointments) => {
@@ -602,7 +583,7 @@ const handleCloseReceiptDialog = () => {
               )}
             </Box>
           )}
-  
+
           <Typography variant="h8" gutterBottom  >
             เลือกบริการ
           </Typography>
@@ -706,7 +687,11 @@ const handleCloseReceiptDialog = () => {
                 )}
               </>
             )}
-
+            {selectedAppointment && selectedAppointment.type === "วัคซีน" && selectedAppointment.notes && selectedAppointment.notes.trim() !== "" && (
+                <Typography  variant="h7">
+                หมายเหตุ(เพิ่มเติม): {selectedAppointment.notes}
+               </Typography>
+              )}
           {selectedItems.length === 0 ? (
             <Typography>ไม่มีรายการ</Typography>
           ) : selectedAppointment.type === "ตรวจรักษา" ? (

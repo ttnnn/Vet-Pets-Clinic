@@ -1,4 +1,4 @@
-import React, {  useState } from 'react';
+import React, {  useState,useEffect } from 'react';
 import axios from 'axios';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -58,6 +58,13 @@ function getComparator(order, orderBy) {
 const formatDate = (dateString) => {
   return dayjs(dateString).format('DD/MM/YYYY'); // Use day.js for formatting
 };
+
+const formatTime = (timeString) => {
+  // แยกเวลาออกจากรูปแบบ 'HH:mm:ss+ZZ' และแสดงแค่ 'HH:mm'
+  const time = timeString.split(':');  // แยกเป็น [ '16', '00', '00+07' ]
+  return `${time[0]}:${time[1]}`;  // คืนค่าแค่ '16:00'
+};
+
 const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppointments , activeTab }) => {
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('appointment_date');
@@ -83,15 +90,9 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setSelectedPetId(petId); // Store pet_id
     setOpenPostponeDialog(true);
 
-    console.log('appointment:', appointmentId);
-    console.log('typeService:', typeService);
-    console.log('petId:', petId);
-  };
-
-  const formatTime = (timeString) => {
-    // แยกเวลาออกจากรูปแบบ 'HH:mm:ss+ZZ' และแสดงแค่ 'HH:mm'
-    const time = timeString.split(':');  // แยกเป็น [ '16', '00', '00+07' ]
-    return `${time[0]}:${time[1]}`;  // คืนค่าแค่ '16:00'
+    // console.log('appointment:', appointmentId);
+    // console.log('typeService:', typeService);
+    // console.log('petId:', petId);
   };
   
   const updateAppointments = () => {
@@ -134,17 +135,22 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   const handleConfirmApprove = () => {
     try {
       // Update the status to 'อนุมัติ' in the database
+      const appointment = appointments.find(a => a.appointment_id === approveAppointmentId);
+      const { appointment_date, appointment_time, pet_name , type_service } = appointment;
       axios.put(`${api}/appointment/${approveAppointmentId}`, {
         status: 'อนุมัติ',
         queue_status: 'รอรับบริการ'
       }).then(async () =>{
         updateAppointments()
+        const formattedDate = formatDate(appointment_date);
+        const formattedTime = formatTime(appointment_time || "ไม่ระบุเวลา");
+
         setSnackbarMessage(`การอนุมัตินัดหมายหมายเลข ${approveAppointmentId} เสร็จสิ้น!`);
         setSnackbarSeverity('success'); 
         setSnackbarOpen(true);
 
         const lineUserId = await getLineUserId(approveAppointmentId); // ดึง LINE User ID จากฐานข้อมูล
-        const message = `นัดหมายหมายเลข ${approveAppointmentId} ได้รับการอนุมัติแล้ว!`;
+        const message = `นัดหมาย ${type_service} ของสัตว์เลี้ยง ${pet_name} ในวันที่ ${formattedDate} เวลา ${formattedTime} ได้รับการอนุมัติแล้ว!`;
 
       if (lineUserId) {
         await sendLineMessage(lineUserId, message);
@@ -253,7 +259,13 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   .sort(getComparator(order, orderBy))
   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
- 
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(filteredAppointments.length / rowsPerPage) - 1);
+    if (page > maxPage) {
+      setPage(maxPage); // รีเซ็ต page หากเกินช่วงที่มีอยู่
+    }
+  }, [filteredAppointments, rowsPerPage]); // รันเมื่อ filteredAppointments หรือ rowsPerPage เปลี่ยน
+  
   // console.log(filteredAppointments)
   return (
     <Paper elevation={3} sx={{ p: 2}}>
@@ -343,14 +355,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
               <TableCell>
               <Box 
               sx={{
-                width: '15%',
                 bgcolor: appointment.massage_status === 'success' ? 'green' : 'transparent',
                 color: appointment.massage_status === 'success' ? 'white' : 'inherit',
                 textAlign: 'center',
                 borderRadius: 1, // เพิ่มมุมโค้งนิดหน่อย
                 width: '100%', // ขนาดของกล่องเป็น 60% ของช่อง
                 padding: '4px', 
-                borderRadius: '4px' 
               
               }}>
               {appointment.massage_status}
@@ -426,14 +436,15 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         </Table>
       </TableContainer>
       <TablePagination
-        rowsPerPageOptions={[15,25]} // เลือกจำนวนแถวต่อหน้า
+        rowsPerPageOptions={[15, 25]} // เลือกจำนวนแถวต่อหน้า
         component="div"
         count={filteredAppointments.length} // จำนวนทั้งหมด
         rowsPerPage={rowsPerPage}
-        page={page}
+        page={Math.min(page, Math.max(0, Math.ceil(filteredAppointments.length / rowsPerPage) - 1))} // ป้องกัน page เกินช่วง
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+
 
        {/* Confirmation Dialog */}
         <Dialog open={openDialog} onClose={handleDialogClose}>

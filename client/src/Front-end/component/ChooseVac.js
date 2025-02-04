@@ -229,8 +229,7 @@ const ChooseVac = ({
       <Dialog
         open={confirmationOpen}
         onClose={handleConfirmClose}
-        maxWidth="sm"
-        fullWidth
+
       >
         <DialogTitle>ยืนยันการบันทึก</DialogTitle>
         <DialogContent>

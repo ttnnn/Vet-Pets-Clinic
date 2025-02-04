@@ -8,7 +8,7 @@ require('dayjs/locale/th');
 
 const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
-  cron.schedule("*/1 9-21 * * *", async () => {
+  cron.schedule("*/10 9-21 * * *", async () => {
     try {
       const query = `
         SELECT * FROM appointment
@@ -104,18 +104,53 @@ const setupCronJobs = (io) => {
         const message = `แจ้งเตือนนัดหมาย:\n${appointment.pet_name} มีนัดหมายในวันพรุ่งนี้ วันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
 
         
-        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id);
+        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id,true);
       });
     } catch (error) {
       console.error('Error fetching appointments:', error);
     }
   };
   
-  // const message = `นัดหมายได้รับอนุมัติ  ${appointment.pet_name} มีนัดหมายหมายในวันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
+
+  const sendAlert = async () => {
+    const query = `
+        SELECT  
+        p.pet_name, 
+        o.line_id, 
+        a.appointment_id,
+        h.end_date
+    FROM 
+        appointment a
+    LEFT JOIN 
+        owner o ON a.owner_id = o.owner_id
+    LEFT JOIN 
+        pets p ON a.pet_id = p.pet_id
+    LEFT JOIN 
+        petshotel h ON h.appointment_id = a.appointment_id
+    WHERE 
+        h.end_date < CURRENT_DATE
+        AND a.queue_status IN ('กำลังให้บริการ','admit')
+        AND h.status = 'checkin' 
+
+    `;
+  
+    try {
+      const { rows } = await pool.query(query);
+      rows.forEach(appointment => {
+  
+        const message = `นัดหมายของคุณ เกินเวลาที่กำหนด กรุณาติดต่อเจ้าหน้าที่ เพื่อขยายเวลาเข้าพัก`;
+        
+        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id,false);
+      });
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+  };
 
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
   cron.schedule('0 9 * * *', sendAppointmentReminders);
-  cron.schedule('*/10 9-21 * * *', ApproveAppointmentReminders);
+  cron.schedule('*/5 9-21 * * *', ApproveAppointmentReminders);
+  cron.schedule('0 9 * * *', sendAlert);
 
 };
 

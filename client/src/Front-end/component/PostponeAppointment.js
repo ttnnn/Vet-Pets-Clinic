@@ -27,8 +27,6 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
     severity: 'success',
   });
   // console.log('isCustomer',isCustomer)
-  console.log('Appointment Date:', appointmentDates);
-  console.log('Appointment Time:', appointmentTimes);
 
   const handleDialogClose = () => {
     setOpenDialog(false);

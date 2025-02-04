@@ -163,34 +163,6 @@ const PetProfilePage = () => {
       setSelectedImage(file);
     }
   };
-  // Handle file selection
-  // const handleImageSave = async () => {
-    // if (!selectedImage) return; // Ensure an image is selected
-  // 
-    // const formData = new FormData();
-    // formData.append('image', selectedImage);
-  // 
-    // try {
-      // const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
-        // headers: { 'Content-Type': 'multipart/form-data' },
-      // });
-  // 
-      // if (response.status === 200) {
-        // setSnackbarOpen(true); // Notify success
-        // const updatedPetData = response.data;
-        // setPet((prevPet) => ({
-          // ...prevPet,
-          // image_url: updatedPetData.image_url, // Update image URL
-        // }));
-        // setEditImageOpen(false); // Close the dialog
-        // setSelectedImage(null); // Reset the temp state.
-        // 
-        // await fetchUpdatedPetData();
-      // }
-    // } catch (error) {
-      // console.error('Error uploading image:', error);
-    // }
-  // };
   const handleImageSave = async () => {
     if (!selectedImage) {
       alert('กรุณาเลือกรูปภาพก่อนบันทึก');
@@ -252,7 +224,7 @@ const handleUpdate = async (updatedData, type) => {
     });
 
     if (response.status === 200) {
-      setSnackbarMessage('Data updated successfully!');
+      setSnackbarMessage('แก้ไขข้อมูลสำเร็จ');
       setSnackbarOpen(true);
       // Update state with new data
       const updatedResponse = await axios.get(`${api}${endpoint}`);

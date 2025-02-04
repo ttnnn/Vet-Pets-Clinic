@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState ,useCallback } from 'react';
 import { 
   Box, TextField, Typography, AppBar, Toolbar, IconButton, Button, 
   Dialog, DialogTitle, DialogContent, DialogActions ,Snackbar
@@ -28,38 +28,31 @@ const PetsDetail = () => {
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
-
-  const fetchPetDetail = async () => {
+  const fetchPetDetail = useCallback(async () => {
     try {
-      // ดึงข้อมูลจาก API ที่หนึ่ง (ข้อมูลของสัตว์เลี้ยง)
       const petResponse = await axios.get(`${api}/pets/${petId}`);
-      
-      // ดึงข้อมูลจาก API ที่สอง (ข้อมูลประวัติการฉีดวัคซีน)
-      const historyResponse = await axios.get(`${api}/history/vaccien/${petId}`);
-      
-      if (petResponse.data && historyResponse.data) {
-        // รวมข้อมูลจากทั้งสอง API
-        const petData = petResponse.data;
-        const historyData = historyResponse.data;
-  
-        // ตัวอย่างการรวมข้อมูล (เพิ่ม history เข้าไปในข้อมูลของสัตว์เลี้ยง)
-        const updatedPetData = {
-          ...petData,   // ข้อมูลสัตว์เลี้ยง
-          vaccineHistory: historyData,  // ข้อมูลประวัติการฉีดวัคซีน
-        };
-  
-        // อัพเดต state ของ pet
+      if (petResponse.data) {
+        let updatedPetData = { ...petResponse.data };
+        try {
+          const historyResponse = await axios.get(`${api}/history/vaccien/${petId}`);
+          if (historyResponse.data?.length > 0) {
+            updatedPetData.vaccineHistory = historyResponse.data;
+          }
+        } catch (historyError) {
+          console.warn("No vaccine history found or API error:", historyError.message);
+        }
         setPet(updatedPetData);
       }
     } catch (error) {
-      console.error('Error fetching pet details:', error.message);
+      console.error("Error fetching pet details:", error.message);
     }
-  };
+  }, [petId]); 
   
-
+ 
   useEffect(() => {
     fetchPetDetail();
-  }, [petId]);
+  }, [fetchPetDetail]);
+  
 
   const handleBackToPets = () => {
     navigate('/customer/pets');

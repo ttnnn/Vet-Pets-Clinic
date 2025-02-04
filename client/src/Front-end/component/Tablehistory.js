@@ -8,6 +8,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
+import { jwtDecode } from 'jwt-decode';
 
 dayjs.locale('th');
 const api = 'http://localhost:8080/api/clinic';
@@ -83,11 +84,18 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const [details, setDetails] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   // console.log('appointments',appointments)
   const handleEdit = (id) => {
     onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
   };
-
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setUserRole(decodedToken?.role);
+    }
+  }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
 
   useEffect(() => {
     const fetchVaccines = async () => {
@@ -290,7 +298,12 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         <Button onClick={handleCloseDialog} color="secondary">
           ปิด
         </Button>
-        <Button onClick={() => handleEdit(details.appointment_id)}>แก้ไข</Button>
+        <Button onClick={() => handleEdit(details.appointment_id)} 
+           disabled={
+            userRole !== 'สัตวแพทย์'
+          }
+          
+          >แก้ไข</Button>
      
       </DialogActions>
     </Dialog>

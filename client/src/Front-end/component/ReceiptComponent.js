@@ -15,6 +15,9 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
+  console.log('receiptData',receiptData)
+  console.log('receiptData.invoice_id',receiptData.invoice_id)
+  console.log('DataReceipt',DataReceipt)
   useEffect(() => {
     // console.log('ReceiptData Props:', receiptData); // ตรวจสอบ props ที่ส่งมา
     fetchDataReceipt();
@@ -60,8 +63,11 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
     }
   
     if (receiptRef.current) {
-      const canvas = await html2canvas(receiptRef.current, { scale: 1 });
-  
+      // const canvas = await html2canvas(receiptRef.current, { scale: 1 });
+      const canvas = await html2canvas(receiptRef.current, { 
+        scale: 3, 
+        backgroundColor: '#fff' 
+      });
       canvas.toBlob(async (blob) => {
         if (!blob) {
           return;
@@ -127,10 +133,6 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
   
   
 
-  if (loading) {
-    return <p>กำลังโหลดข้อมูล...</p>;
-  }
-
   return (
     <div style={{ padding: '20px', backgroundColor: '#f9f9f9', textAlign: 'center' ,maxWidth: '100%',  // ไม่ให้เกินขนาด Dialog
       height: 'auto'}}>
@@ -179,7 +181,7 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
         {DataReceipt.length > 0 ? (
           <>
             <p>
-              รหัสชำระเงิน: <strong>#{receiptData.invoice_id}-{dayjs().format('YYYYMMDD')}</strong>
+              รหัสชำระเงิน: <strong>#{receiptData.payment_id}-{dayjs(receiptData.invoice_date).format('YYYYMMDD')}</strong>
             </p>
             <p>ชื่อลูกค้า: <strong>{DataReceipt[0]?.fullname || 'ไม่ระบุชื่อ'}</strong></p>
             <p>วันที่ออกใบเสร็จ: <strong>{new Date().toLocaleDateString()}</strong></p>
@@ -207,10 +209,11 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
         ) : (
           <p>ไม่มีข้อมูลใบเสร็จ</p>
         )}
+
         <p style={{ textAlign: 'right' }}>
-            ยอดชำระ: <strong>{DataReceipt[0].total_payment} บาท</strong>
+            ยอดชำระ: <strong>{DataReceipt[0]?.total_payment || 'ไม่พบข้อมูล'} บาท</strong>
         </p>
-        
+
         <p style={{ textAlign: 'center' }}> <strong>ขอบคุณที่ใช้บริการ</strong> </p>
 
       </div>
@@ -247,18 +250,9 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            disabled={loading} // ปิดการกดปุ่มระหว่างโหลด
+           /// ปิดการกดปุ่มระหว่างโหลด
           >
-            {loading && (
-              <CircularProgress
-                size={24}
-                sx={{
-                  color: '#fff',
-                  position: 'absolute',
-                }}
-              />
-            )}
-            {!loading && 'ส่งใบเสร็จไปที่ LINE'}
+            ส่งใบเสร็จไปที่ LINE
           </button>                
         )}
 

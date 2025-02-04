@@ -87,7 +87,8 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
         num_day : totalDays ,
         pet_cage_id: selectedCage,
         personnel_id: selectedPersonnel.personnel_id,
-        pet_id : petId
+        pet_id : petId ,
+        status : isAdmitBooking? 'checkin' : 'รอเข้าพัก'
       });
 
       if (response.status === 200) {

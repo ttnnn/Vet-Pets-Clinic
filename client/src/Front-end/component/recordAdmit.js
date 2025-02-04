@@ -11,6 +11,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import FolderIcon from '@mui/icons-material/Folder';
 import dayjs from 'dayjs';
+import { jwtDecode } from 'jwt-decode';
+
 import 'dayjs/locale/th';
 dayjs.locale('th');
 
@@ -76,26 +78,22 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // useEffect(() => {
-    // if (updatedRecords && updatedRecords.length > 0) {
-      // setRecords(updatedRecords);
-      // setFilteredRecords(updatedRecords);
-    // }
-  // }, [updatedRecords]);
-
   useEffect(() => {
-    if (Array.isArray(updatedRecords) && updatedRecords.length > 0) {
-      // setRecords(updatedRecords);
-      setFilteredRecords(updatedRecords);
+    // กรองข้อมูล updatedRecords ที่สัมพันธ์กับ appointment นี้เท่านั้น
+    if (Array.isArray(updatedRecords)) {
+      const appointmentRecords = updatedRecords.filter(
+        (record) => record.appointment_id === appointment.appointment_id
+      );
+      setFilteredRecords(appointmentRecords);
     }
-  }, [updatedRecords]);
+  }, [updatedRecords, appointment.appointment_id]);
 
   useEffect(() => {
     const fetchRecords = async () => {
-      if (!appointment.appointment_id) {
-        console.warn("Appointment ID is missing.");
-        return;
-      }
+      // if (!appointment.appointment_id) {
+        // console.warn("Appointment ID is missing.");
+        // return;
+      // }
       
       setIsLoading(true);
       try {
@@ -270,7 +268,7 @@ const RecordMedical = ({
   const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
   const [openSnackbar, setOpenSnackbar] = useState(false); 
   const [recordUpdate, setUpdateRecords] = useState([]);
-
+  const [userRole, setUserRole] = useState(null);
   const [formMedical, setFormMedical] = useState({
     admit_temp: null,
     admit_pressure: null,
@@ -280,7 +278,15 @@ const RecordMedical = ({
     record_medical:'',
     record_medicine:''
   });
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setUserRole(decodedToken?.role);
+    }
+  }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
 
+  //console.log('appointments',appointments)
   const handleMedicalChange = (field) => (event) => {
     setFormMedical({
       ...formMedical,
@@ -313,15 +319,15 @@ const RecordMedical = ({
       rec_date: now.format('YYYY-MM-DD'),
     });}
 
-  const updateAdmitrecord = () => {
-    axios
-        .get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
-        .then((response) => {
-          setUpdateRecords(response.data.data); // อัปเดตข้อมูลใน state
-        })
-        .catch((error) => console.error('Error fetching updated records:', error));
-    };
-      
+  // const updateAdmitrecord = () => {
+    // axios
+        // .get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
+        // .then((response) => {
+          // setUpdateRecords(response.data.data  || []); // อัปเดตข้อมูลใน state
+        // })
+        // .catch((error) => console.error('Error fetching updated records:', error));
+    // };
+      // 
 
   const handleSubmit = async () => {
   
@@ -336,6 +342,13 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกข้อมูลบันทึกอาการ");
       setAlertSeverity("warning");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      return;
+    }
+    const pressureRegex = /^\d{2,3}\/\d{2,3}$/; // รูปแบบต้องเป็น "ตัวเลข/ตัวเลข" เช่น 120/80
+    if (formMedical.rec_pressure && !pressureRegex.test(formMedical.rec_pressure)) {
+      setAlertMessage("กรุณากรอกค่าความดันโลหิตในรูปแบบที่ถูกต้อง เช่น 120/80");
+      setAlertSeverity("warning");
+      setOpenSnackbar(true);
       return;
     }
 
@@ -356,12 +369,18 @@ const RecordMedical = ({
     try {
  
       await axios.post(`${api}/admitrecord`, payload);
+      const response = await axios.get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`);
+      setUpdateRecords((prevRecords) => {
+        const filteredPrevRecords = prevRecords.filter(
+          (record) => record.appointment_id !== selectedAppointment?.appointment_id
+        );
+        return [...filteredPrevRecords, ...response.data.data];
+      });
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert
       setOpenSnackbar(true);
       handleCloseDialog();
 
-      updateAdmitrecord();
       
     } catch (error) {
       setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -580,7 +599,9 @@ const RecordMedical = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="error">ยกเลิก</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">บันทึก</Button>
+          <Button onClick={handleSubmit} 
+           disabled={ userRole !== 'สัตวแพทย์'}
+           variant="contained" color="primary">บันทึก</Button>
         </DialogActions>
       </Dialog>
     </Paper>

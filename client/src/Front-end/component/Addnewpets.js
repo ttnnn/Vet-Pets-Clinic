@@ -51,7 +51,6 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   };
 
   const clearPetForm = () => {
-      console.log("clearPetForm")
       setPetName('');
       setPetColor('');
       setPetBreed('');
@@ -155,7 +154,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       fullWidth
       required
       onChange={(e) => {
-        console.log(e.target.value); 
+        // console.log(e.target.value); 
         setPetSpecies(e.target.value);
       }}
       sx={{ mb: 2 }}
@@ -174,11 +173,15 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       sx={{ mb: 2 }}
     />
   ) : (
-      <Autocomplete
-        options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
-        value={petBreed}
+
+            <Autocomplete
+        options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []} // ใช้ DogBreed ถ้าเป็นหมา
+        value={petBreed} 
         onChange={(event, newValue) => {
-          setPetBreed(newValue);
+          setPetBreed(newValue); // อัปเดตค่าที่เลือกจากรายการ
+        }}
+        onInputChange={(event, newInputValue) => {
+          setPetBreed(newInputValue); // อัปเดตค่าที่พิมพ์เอง
         }}
         renderInput={(params) => (
           <TextField 
@@ -189,16 +192,17 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
             fullWidth 
           />
         )}
-        freeSolo // Allow custom input
         sx={{ 
           '& .MuiAutocomplete-listbox': {
             maxHeight: '200px', 
             overflowY: 'auto',
           }
         }}
+        freeSolo // อนุญาตให้พิมพ์เอง
         isOptionEqualToValue={(option, value) => option === value}
         getOptionLabel={(option) => option}
-      />
+/>
+
     )}
 
       <TextField

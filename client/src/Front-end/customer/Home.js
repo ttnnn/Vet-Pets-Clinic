@@ -16,7 +16,7 @@ const api = 'http://localhost:8080/api/customer';
 const Home = () => {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState();
-  const [profilePicture, setProfilePicture] = useState('https://via.placeholder.com/150');
+  const [profilePicture, setProfilePicture] = useState('');
   const [navValue, setNavValue] = useState(0);
   const [appointments, setAppointments] = useState([]);
   const isFetched = useRef(false); // ย้ายมาไว้ภายนอก useEffect
@@ -239,6 +239,9 @@ const Home = () => {
                   backgroundColor: '#f5f5f5',
                 }}
               >
+                 <Typography color="textSecondary" sx={{ textAlign: 'right', pr: 2 , mt: 2 }}>
+                    {appt.appointment_id}
+                 </Typography>
                 <CardContent sx={{ paddingTop: 1 }}>
                   <Grid container spacing={2}>
                     <Grid item xs={4} container justifyContent="center" alignItems="center">

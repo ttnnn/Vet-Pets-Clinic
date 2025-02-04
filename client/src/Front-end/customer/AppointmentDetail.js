@@ -57,8 +57,8 @@ const AppointmentDetail = () => {
   // ฟังก์ชันสำหรับยกเลิกนัด
   const handleCancelAppointment = async () => {
     try {
-      const response = await axios.post(`${api}/appointment/cancel`, { appointmentId });
-
+      const response = await axios.put(`${api}/appointment/cancel`, { appointmentId });
+      // console.log('appointmentId',appointmentId)
       if (response.data.success) {
         setSnackbarMessage('การนัดหมายถูกยกเลิกแล้ว');
         setOpenSnackbar(true);
@@ -104,11 +104,11 @@ const AppointmentDetail = () => {
     setSelectedPetId(petId);
     setOpenPostponeDialog(true);
   
-    console.log('appointment:', appointmentId);
-    console.log('typeService:', typeService);
-    console.log('petId:', petId);
-    console.log('appointmentDate:', appointmentDate);
-    console.log('appointmentTime:', appointmentTime);
+    // console.log('appointment:', appointmentId);
+    // console.log('typeService:', typeService);
+    // console.log('petId:', petId);
+    // console.log('appointmentDate:', appointmentDate);
+    // console.log('appointmentTime:', appointmentTime);
   };
   
 

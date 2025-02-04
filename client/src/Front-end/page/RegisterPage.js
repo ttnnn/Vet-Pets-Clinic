@@ -52,7 +52,7 @@ const RegisterPage = () => {
   const [open, setOpen] = useState(false);
   const [gender, setGender] = useState('male');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthDate, setBirthDate] = useState(null);
   const [age, setAge] = useState('');
   const [firstNameOwner , setFirstName] = useState('');
   const [lastNameOwner , setLastNameOwner] = useState('');
@@ -193,7 +193,7 @@ const RegisterPage = () => {
   };
 
   const calculateAge = (date) => {
-    if (!date) return;
+    if (!date || !(date instanceof Date)) return;
     const today = dayjs();
     const birthDay = dayjs(date);
     const years = today.diff(birthDay, 'year');

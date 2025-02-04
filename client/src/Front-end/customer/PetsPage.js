@@ -41,7 +41,7 @@ const PetsPage = () => {
         },
       });
 
-      console.log('Fetched pets:', response.data);
+      // console.log('Fetched pets:', response.data);
 
       // ตรวจสอบว่า response มีข้อมูล pets หรือไม่
       if (response.data && Array.isArray(response.data.pets)) {

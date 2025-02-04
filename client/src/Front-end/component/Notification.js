@@ -11,10 +11,10 @@ const Notification = () => {
   useEffect(() => {
     const socket = io('http://localhost:8080'); // Connect to the server
 
-    socket.on('connect', () => {
-      // setSocketId(socket.id);  // เก็บค่า socket.id เมื่อเชื่อมต่อสำเร็จ
-      console.log('Socket connected', socket.id); // ตรวจสอบการเชื่อมต่อ
-    });
+    // socket.on('connect', () => {
+      //setSocketId(socket.id);  // เก็บค่า socket.id เมื่อเชื่อมต่อสำเร็จ
+      // console.log('Socket connected', socket.id); // ตรวจสอบการเชื่อมต่อ
+    // });
 
     socket.emit('join-room', 'clinic'); // Join 'clinic' room
 
@@ -48,7 +48,7 @@ const Notification = () => {
 
     // Listen for 'queue-alert' event
     socket.on('queue-alert', (msg) => {
-      console.log('Queue alert received:', msg); // Debug received message
+      // console.log('Queue alert received:', msg); // Debug received message
       if (msg.message) {
         setMessage(msg.message);
         setOpen(true); // Show Snackbar

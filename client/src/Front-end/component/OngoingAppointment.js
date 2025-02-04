@@ -25,12 +25,15 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import PostponeHotel from './PostponeHotel';
 import ChooseVac from './ChooseVac';
+import { jwtDecode } from 'jwt-decode';
+
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 
 const categories = ['ฝากเลี้ยง','อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน'];
 const api = 'http://localhost:8080/api/clinic';
+
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -89,8 +92,20 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [appointmentCounts, setAppointmentCounts] = useState({}); //นับจำนวนนัดหมายแยกประเภท 
-  const navigate = useNavigate();
+  const [openRevertDialog, setOpenRevertDialog] = useState(false);
+  const [revertAppointmentId, setRevertAppointmentId] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
+  const navigate = useNavigate();
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setUserRole(decodedToken?.role);
+    }
+  }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+
+  // console.log("Current userRole:", userRole);
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -118,18 +133,14 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const sortedData = (data) =>
     data.sort(getComparator(order, orderBy));
 
-  // const filteredData =
-    // activeCategory === 'ฝากเลี้ยง'
-      // ? sortedData(filterAppointments(appointmentHotel, activeCategory))
-      // : sortedData(filterAppointments(appointments, activeCategory))
-      // ;
-      const filteredData = sortedData(
-        filterAppointments(
-          activeCategory === 'ฝากเลี้ยง' ? appointmentHotel : appointments,
-          activeCategory
-        )
-      );
-      
+  const filteredData = sortedData(
+    filterAppointments(
+      activeCategory === 'ฝากเลี้ยง' ? appointmentHotel : appointments,
+      activeCategory
+    )
+  );
+  // console.log('filteredData',filteredData)
+  // console.log('appointments',appointments)
 
 
   const handleOpenConfirmDialog = (appointment) => {
@@ -176,8 +187,9 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
       // console.log('ownerId' , appointment.owner_id )
       switch (appointment.type_service) {
         case 'ฝากเลี้ยง':
-          await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
-          await fetchAppointments(); // อัปเดตข้อมูลใหม่
+          handleOpenConfirmDialog(appointment);
+          // await onMoveToPending(appointment.appointment_id); // Action for "ปล่อยกลับ"
+          // await fetchAppointments(); // อัปเดตข้อมูลใหม่
           break;
   
         case 'ตรวจรักษา':
@@ -193,7 +205,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   
   
         default:
-          await onRevertToPending(appointment.appointment_id); // Action for other types
+          await  handleOpenRevertDialog(appointment.appointment_id)
           break;
       }
     } catch (error) {
@@ -218,13 +230,23 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
     }, {});
   
     setAppointmentCounts(counts);
-  }, [appointments, appointmentHotel , categories]);
+  }, [appointments, appointmentHotel ]);
   
+    const handleOpenRevertDialog = (appointmentId) => {
+      setRevertAppointmentId(appointmentId);
+      setOpenRevertDialog(true);
+  };
+
+  const handleCloseRevertDialog = () => {
+      setOpenRevertDialog(false);
+      setRevertAppointmentId(null);
+  };
 
 
   const handleChangeCategory = (event, newValue) => {
     setActiveCategory(newValue);
   };
+
 
   return (
     <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
@@ -315,7 +337,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                   ? '#fa1f14' // สีแดงอ่อนหากเกินกำหนด
                   : isEndDateToday
                   ? '#fa9993' // สีแดงอีกเฉดหากกำหนดออกเป็นวันนี้
-                  : appointment.status_hotel === 'เข้าพัก'
+                  : appointment.status_hotel === 'checkin'
                   ? '#fffacd' // สีเหลืองสำหรับสถานะ 'เข้าพัก'
                   : 'transparent'; // สีพื้นหลังโปร่งใสสำหรับสถานะอื่น ๆ
               
@@ -373,11 +395,17 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                       </>
                     )}
                     <TableCell>
+                      
                     <Box display="flex" gap={1}>
                       <Button
                         variant="contained"
                         color="secondary"
                         onClick={() => handleButtonAction(appointment)}
+                        // disabled={userRole !== 'สัตวแพทย์'}
+                        disabled={
+                          appointment.type_service === 'ตรวจรักษา' &&
+                          userRole !== 'สัตวแพทย์'
+                        }
                         
                       >
                         {appointment.type_service === 'ฝากเลี้ยง'
@@ -391,7 +419,10 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                           variant="contained"
                           color="primary"
                           onClick={() => handleAppointmentAction(appointment)}
-                         
+                          disabled={
+                            appointment.type_service === 'วัคซีน' &&
+                            userRole !== 'สัตวแพทย์'
+                          }
                         >
                           {appointment.type_service === 'ฝากเลี้ยง' 
                           ? 'จองต่อ' 
@@ -431,8 +462,6 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
         <Dialog
         open={openConfirmDialog}
         onClose={handleCloseConfirmDialog}
-        aria-labelledby="confirm-dialog-title"
-        aria-describedby="confirm-dialog-description"
       >
         <DialogTitle id="confirm-dialog-title">ยืนยันการส่งคิว</DialogTitle>
         <DialogContent>
@@ -449,6 +478,30 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
           </Button>
         </DialogActions>
       </Dialog>
+      
+      <Dialog open={openRevertDialog} onClose={handleCloseRevertDialog}>
+        <DialogTitle>ยืนยันการคืนคิว</DialogTitle>
+        <DialogContent>
+            <DialogContentText>
+                คุณต้องการคืนคิวสำหรับสัตว์เลี้ยง {selectedAppointment?.pet_name} ใช่หรือไม่?
+            </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={handleCloseRevertDialog} color="secondary">
+                ยกเลิก
+            </Button>
+            <Button
+                onClick={() => {
+                    onRevertToPending(revertAppointmentId);
+                    handleCloseRevertDialog();
+                }}
+                color="primary"
+            >
+                ยืนยัน
+            </Button>
+        </DialogActions>
+    </Dialog>
+
     </Paper>
   );
 };

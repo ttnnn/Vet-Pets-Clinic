@@ -32,6 +32,8 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
+      // console.log('username',username)
+      // console.log('password',password)
       const response = await axios.post(`${api}/login`, { username, password });
 
       if (response.data.success) {
@@ -44,13 +46,13 @@ const LoginPage = ({ onLogin }) => {
         
         navigate('/clinic/home');
       } else {
-        setSnackbarMessage('ชื่อหรือรหัสผ่านไม่ถูกต้อง');
+        setSnackbarMessage('username หรือ password ไม่ถูกต้อง');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     } catch (error) {
       console.error('Login failed:', error);
-      setSnackbarMessage('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+      setSnackbarMessage('username หรือ password ไม่ถูกต้อง');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }

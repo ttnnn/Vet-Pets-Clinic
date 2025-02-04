@@ -46,7 +46,7 @@ const LineAuth = () => {
                 navigate("/customer/login", { state: { idToken, pictureUrl } });
             }
         } catch (err) {
-            console.error("Error during login:", err);
+            //console.error("Error during login:", err);
             setError("Failed to log in with LINE.");
         } finally {
             setLoading(false);
@@ -55,7 +55,7 @@ const LineAuth = () => {
 
     useEffect(() => {
         if (!lineliff) {
-            console.error("LIFF ID is not set. Please check your .env configuration.");
+           // console.error("LIFF ID is not set. Please check your .env configuration.");
             setError("LIFF ID is missing.");
             setLoading(false);
             return;
@@ -63,11 +63,11 @@ const LineAuth = () => {
 
         liff.init({ liffId: lineliff })
             .then(() => {
-                console.log("LIFF initialized");
+              //  console.log("LIFF initialized");
                 handleLogin();
             })
             .catch((err) => {
-                console.error("LIFF initialization failed. Check if the LIFF ID is correct:", err);
+                //console.error("LIFF initialization failed. Check if the LIFF ID is correct:", err);
                 setError("Failed to initialize LIFF. Please try again later.");
                 setLoading(false);
             });
@@ -76,17 +76,7 @@ const LineAuth = () => {
     if (loading) {
         return <div style={{ textAlign: "center", marginTop: "50px" }}>Loading, please wait...</div>;
     }
-
-    if (error) {
-        return (
-            <div style={{ textAlign: "center", marginTop: "50px", color: "red" }}>
-                <h3>Error</h3>
-                <p>{error}</p>
-                <p>Please try reloading the page or contact support.</p>
-            </div>
-        );
-    }
-
+    
     return null;
 };
 

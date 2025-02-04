@@ -1,6 +1,6 @@
 import React, { useState , useEffect } from 'react';
 import {  Box, Paper, Button, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogTitle, TableCell,
-     TableRow ,TableContainer,Table,TableBody,TableHead ,TableSortLabel,Typography, IconButton,TextField ,Alert,Snackbar} from '@mui/material';
+     TableRow ,TableContainer,Table,TableBody,TableHead ,TableSortLabel,Typography, IconButton,TextField ,Alert,Snackbar,DialogContentText} from '@mui/material';
 import { styled } from '@mui/system';
 import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
@@ -57,6 +57,9 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
     const [openPopup, setOpenPopup] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [age, setAge] = useState('');
+    const [openCancelDialog, setOpenCancelDialog] = useState(false);
+    const [cancelAppointmentId, setCancelAppointmentId] = useState(null);
+
     const [formMedical, setFormMedical] = useState({
       rec_weight: '',
       diag_cc: '',
@@ -77,7 +80,7 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
       }));
     };
     const handleBodyscoreTreeSubmit = (data) => {
-     console.log('data',data)
+    //  console.log('data',data)
       setFormData({
         ...formData,
         ribs: data.ribs, // or any additional fields
@@ -186,6 +189,15 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
         setOpenSnackbar(false);  // ปิด Snackbar
       };
 
+      const handleOpenCancelDialog = (appointmentId) => {
+        setCancelAppointmentId(appointmentId);
+        setOpenCancelDialog(true);
+    };
+    
+    const handleCloseCancelDialog = () => {
+        setOpenCancelDialog(false);
+        setCancelAppointmentId(null);
+    };
     
     return (
       <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
@@ -283,7 +295,7 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
                           variant="contained"
                           color="secondary"
                           sx={{ mr: 1 }}
-                          onClick={() => onCancelAppointment(appointment.appointment_id)}
+                          onClick={() => handleOpenCancelDialog(appointment.appointment_id)}
                         >
                           ยกเลิก
                         </Button>
@@ -411,6 +423,30 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
             </Button>
           </DialogActions>
         </Dialog>
+            
+        <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
+          <DialogTitle>ยืนยันการยกเลิก</DialogTitle>
+          <DialogContent>
+              <DialogContentText>
+                  คุณต้องการยกเลิกการนัดหมายนี้ใช่หรือไม่?
+              </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+              <Button onClick={handleCloseCancelDialog} color="secondary">
+                  ยกเลิก
+              </Button>
+              <Button
+                  onClick={() => {
+                      onCancelAppointment(cancelAppointmentId);
+                      handleCloseCancelDialog();
+                  }}
+                  color="primary"
+              >
+                  ยืนยัน
+              </Button>
+          </DialogActions>
+      </Dialog>
+
       </Paper>
       
     );

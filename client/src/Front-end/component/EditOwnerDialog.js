@@ -31,7 +31,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
             province: data.province,
             postal_code: data.postal_code,
           });
-          console('owner',data.owner_id)
+          // console.log('owner', data.owner_id); 
         } else {
           console.error('Error fetching pet data:', data);
         }
@@ -58,7 +58,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
         body: JSON.stringify(formData),
       });
       if (response.ok) {
-        console.log('Data updated successfully');
+        // console.log('Data updated successfully');
         onSave(formData);// ส่งข้อมูลกลับไปยัง parent
         onClose(); // ปิด dialog
       } else {

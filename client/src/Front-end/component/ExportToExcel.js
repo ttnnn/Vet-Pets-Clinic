@@ -8,7 +8,7 @@ dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษ�
 
 
 const ExportAppointmentsByYear = ({ filteredAppointments }) => {
-  const [selectedYear, setSelectedYear] = useState(null); // ค่าเริ่มต้นเป็น null
+  const [selectedYear, setSelectedYear] = useState(""); // ค่าเริ่มต้นเป็น null
 
   // สร้างรายการปีที่มีข้อมูลจาก filteredAppointments
   const availableYears = Array.from(

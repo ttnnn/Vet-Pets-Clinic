@@ -8,7 +8,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TimeSlotPicker from './TimeSlot';
 import Alert from '@mui/material/Alert';
-import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import {useLocation,useNavigate} from 'react-router-dom';
@@ -94,7 +93,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     const fetchPersonnel = async () => {
       try {
         const response = await axios.get(`${api}/personnel`);
-        console.log('response',response)
+        // console.log('response',response)
         setPersonnelList(response.data);
       } catch (error) {
         console.error('Error fetching personnel:', error);
@@ -180,7 +179,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   };
 
   const handleDateChange = useCallback((dateType, newDate) => {
-    console.log("Selected Date: ", newDate);
+    // console.log("Selected Date: ", newDate);
     if (dateType === 'checkIn') {
       setCheckInDate(newDate);
       if (activeTab === 1) setCheckOutDate(newDate); // สำหรับ Daytime Booking
@@ -261,7 +260,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
       const { data: appointmentResponse } = await axios.post(`${api}/create-appointment`, appointmentData);
   
       // ตรวจสอบการตอบกลับ
-      console.log('Appointment Response:', appointmentResponse);
+      // console.log('Appointment Response:', appointmentResponse);
       if (appointmentResponse.error) {
         setAlertSeverity('error');
         setAlertMessage(appointmentResponse.error);
@@ -324,11 +323,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
         <Typography variant="h6" gutterBottom>
           เพิ่มการนัดหมายใหม่
         </Typography>
-        {alertMessage && (
-          <Alert severity={alertSeverity} icon={alertSeverity === 'success' ? <CheckIcon fontSize="inherit" /> : undefined}>
-            {alertMessage}
-          </Alert>
-        )}
+
         <Snackbar open={!!alertMessage} autoHideDuration={6000} 
          anchorOrigin={{
             vertical: 'top',
@@ -358,7 +353,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
             }
             renderInput={(params) => 
               <TextField {...params} 
-                label="Select Owner" 
+                label="ชื่อ-นามสกุล" 
                 variant="outlined" 
                 fullWidth
                 onChange={(e) => {
@@ -384,7 +379,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
             value={selectedPetId ? pets.find(pet => pet.pet_id === selectedPetId) : null}
             renderInput={(params) => (
               <TextField {...params} 
-                label="Select Pet" 
+                label="เลือกสัตว์เลี้ยง" 
                 variant="outlined" 
                 fullWidth />
             )}

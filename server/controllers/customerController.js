@@ -356,13 +356,13 @@ router.get('/history/vaccien/:pet_id', async (req, res) => {
 
 
 // API สำหรับยกเลิกนัดหมาย
-router.post('/appointment/cancel', async (req, res) => {
+router.put('/appointment/cancel', async (req, res) => {
   const { appointmentId } = req.body; // รับ appointmentId จาก request body
-
+  console.log('cancle appointmentid',req.body)
   try {
     // อัพเดตสถานะการนัดหมายในฐานข้อมูล
-    const query = 'UPDATE appointment SET queue_status = $1, status = $2 WHERE appointment_id = $3';
-    const values = ['ยกเลิกนัด', 'ยกเลิกนัด', appointmentId];
+    const query = 'UPDATE appointment SET queue_status = $1, status = $2 , massage_status = $3 WHERE appointment_id = $4';
+    const values = ['ยกเลิกนัด', 'ยกเลิกนัด','cancle', appointmentId];
 
     const result = await pool.query(query, values);
 

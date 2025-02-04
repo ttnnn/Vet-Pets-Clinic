@@ -601,14 +601,13 @@ router.post('/pets', async (req, res) => {
 router.put('/postpone/hotels/:id', async (req, res) => {
   console.log('/postpone/hotels/:id', req.params);
   const { id } = req.params;
-  const { start_date, end_date, pet_cage_id, num_day, personnel_id ,pet_id } = req.body;
+  const { start_date, end_date, pet_cage_id, num_day, personnel_id ,pet_id , status} = req.body;
 
   if (!start_date || !end_date || !pet_cage_id || !personnel_id) {
     return res.status(400).send({
       message: 'start_date, end_date, pet_cage_id, and personnel_id are required',
     });
   }
-  const status  = 'เข้าพัก'
 
 
   // Start a transaction
@@ -833,7 +832,6 @@ router.get('/personnel', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 router.put('/appointment/:id', async (req, res) => {
   const { id } = req.params;
   const { status, queue_status, reason } = req.body;
@@ -862,16 +860,23 @@ router.put('/appointment/:id', async (req, res) => {
 
     const { type_service, reason: currentReason } = currentResult.rows[0];
 
-    // Check if type_service is 'ฝากเลี้ยง'
+    // ตรวจสอบว่าเป็นบริการฝากเลี้ยงหรือไม่
     if (type_service === 'ฝากเลี้ยง') {
-      // Update pethotel status if status is provided
-      if (status) {
+      let petHotelStatus = null;
+
+      if (status === 'อนุมัติ') {
+        petHotelStatus = 'checkin';
+      } else if (status === 'ยกเลิกนัด') {
+        petHotelStatus = 'checkout';
+      }
+
+      if (petHotelStatus) {
         const petHotelUpdateQuery = `
           UPDATE petshotel 
           SET status = $1 
           WHERE appointment_id = $2
         `;
-        const petHotelResult = await client.query(petHotelUpdateQuery, [status, id]);
+        const petHotelResult = await client.query(petHotelUpdateQuery, [petHotelStatus, id]);
 
         if (petHotelResult.rowCount === 0) {
           await client.query('ROLLBACK');
@@ -880,10 +885,10 @@ router.put('/appointment/:id', async (req, res) => {
       }
     }
 
-    // Use currentReason if reason is not provided
+    // ใช้ค่า reason เดิมหากไม่ได้ส่ง reason ใหม่มา
     const updatedReason = reason || currentReason;
 
-    // Update appointment table
+    // อัปเดตตาราง appointment
     const appointmentUpdateQuery = `
       UPDATE appointment 
       SET queue_status = $1, status = $2, reason = $3
@@ -997,30 +1002,30 @@ router.get('/appointments/:appointmentId', async (req, res) => {
 //ข้อมูลฝากเลี้ยง
 router.get('/appointment/hotel', async (req, res) => {
   const query = `
-    SELECT 
-      appointment.appointment_id,
-      appointment.status,
-      appointment.detail_service,
-      appointment.type_service,
-      appointment.queue_status,
-      pets.pet_name,
-      pets.pet_id,
-      pets.pet_species,
-      owner.owner_id,
-      owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
-      petshotel.start_date,
-      petshotel.end_date,
-      petshotel.num_day,
-      petshotel.status As status_hotel,
-      petshotel.pet_cage_id,
-      personnel.first_name || ' ' || personnel.last_name AS personnel_name
+    SELECT  appointment.appointment_id,
+     appointment.status,
+     appointment.detail_service,
+     appointment.type_service,
+     appointment.queue_status,
+     pets.pet_name,
+     pets.pet_id,
+     pets.pet_species,
+     owner.owner_id,
+     owner.first_name || ' ' || owner.last_name AS full_name,  -- ใช้ || สำหรับการเชื่อมสตริง
+     petshotel.start_date,
+     petshotel.end_date,
+     petshotel.num_day,
+     petshotel.status As status_hotel,
+     petshotel.pet_cage_id,
+     personnel.first_name || ' ' || personnel.last_name AS personnel_name
+   FROM appointment
+   JOIN pets ON appointment.pet_id = pets.pet_id
+   JOIN owner ON appointment.owner_id = owner.owner_id
+   JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
+   LEFT JOIN personnel ON appointment.personnel_id = personnel.personnel_id
+   
+   where appointment.type_service = 'ฝากเลี้ยง'  OR appointment.queue_status = 'admit'
 
-    FROM appointment
-    JOIN pets ON appointment.pet_id = pets.pet_id
-    JOIN owner ON appointment.owner_id = owner.owner_id
-    JOIN personnel ON appointment.personnel_id = personnel.personnel_id
-    LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
-    where appointment.type_service = 'ฝากเลี้ยง'  OR appointment.queue_status = 'admit'
   `;
 
   try {
@@ -1494,12 +1499,12 @@ router.delete('/personnel/:id', async (req, res) => {
 
 router.put('/personnel/:id', async (req, res) => {
   const { id } = req.params;
-  const { first_name, last_name, user_name, password_encrip,role  } = req.body;
+  const { first_name, last_name, user_name,role  } = req.body;
 
   try {
     const result = await pool.query(
-      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, password_encrip = $4,  role = $5 WHERE personnel_id = $6',
-      [first_name, last_name, user_name, password_encrip, role, id]
+      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, role = $4 WHERE personnel_id = $5',
+      [first_name, last_name, user_name,  role, id]
     );
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Updated successfully' });
@@ -1514,9 +1519,12 @@ router.put('/personnel/:id', async (req, res) => {
 
 router.get('/history/vaccine/:appointment_id', async (req, res) => {
   const appointment_id = req.params.appointment_id; // Get pet_id from req.params
-  const query = `SELECT historyvaccine.category_id , servicecategory.category_name , servicecategory.price_service FROM historyvaccine
-  JOIN servicecategory on  servicecategory.category_id = historyvaccine.category_id
-  WHERE appointment_id = $1`;
+  const query = `SELECT historyvaccine.category_id ,
+                  historyvaccine.notes ,
+                  servicecategory.category_name , 
+                  servicecategory.price_service FROM historyvaccine
+                  JOIN servicecategory on  servicecategory.category_id = historyvaccine.category_id
+                  WHERE appointment_id = $1`;
 
   try {
     const result = await pool.query(query, [appointment_id]);
@@ -1858,7 +1866,8 @@ router.get('/finance', async (req, res) => {
       SELECT 
       i.*,
       pay.*,
-      owner.first_name ||' ' || owner.last_name AS fullname
+      owner.first_name ||' ' || owner.last_name AS fullname,
+      a.queue_status
 
       FROM invoice i
       LEFT JOIN appointment a  ON i.appointment_id = a.appointment_id
@@ -1938,7 +1947,7 @@ router.get('/dashboard', async (req, res) => {
       ? `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM appointment_date) = EXTRACT(YEAR FROM CURRENT_DATE)`
       : year
       ? `EXTRACT(YEAR FROM appointment_date) = ${year}`
-      : '1=1';
+      : '1=1'; 
 
     // WHERE เงื่อนไขสำหรับสถานะ
     const statusCondition = "AND a.status = 'อนุมัติ' AND a.queue_status = 'เสร็จสิ้น'";
@@ -2037,7 +2046,6 @@ router.post('/sendLineReceipt', async (req, res) => {
   }
 });
 
-
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -2047,7 +2055,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM personnel WHERE user_name = $1', [username]);
+    const result = await client.query('SELECT * FROM personnel WHERE user_name = $1 LIMIT 1', [username]);
     client.release();
 
     if (result.rows.length === 0) {
@@ -2055,6 +2063,14 @@ router.post('/login', async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    // เช็คว่าค่ารหัสผ่านจากฐานข้อมูลเป็น null หรือ undefined หรือไม่
+    if (!user.password_encrip) {
+      console.error("Error: Password hash not found in database");
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // เปรียบเทียบรหัสผ่าน
     const isPasswordMatch = await bcrypt.compare(password, user.password_encrip);
 
     if (!isPasswordMatch) {
@@ -2075,14 +2091,16 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      token, // ส่ง Token ให้ Client
+      token,
       expiresIn: tokenExpiry,
     });
+
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, error: 'Login failed' });
   }
 });
+
 
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1]; // Bearer Token

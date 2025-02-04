@@ -125,8 +125,7 @@ const FinancePage = () => {
       service.fullname.toLowerCase().includes(searchLower)
     );
   }).filter((service) => {
-    if (activeTab === 0) return service.status_pay === 'pending';
-    if (activeTab === 1) return service.status_pay === 'Paid';
+    if (activeTab === 0) return service.status_pay === 'Paid';
     return true;
   });
 
@@ -141,10 +140,9 @@ const FinancePage = () => {
           <Box p={3}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Tabs value={activeTab} onChange={handleChangeTab} indicatorColor="primary" textColor="primary">
-              <Tab label="ลูกค้าที่ค้างชำระ" />
               <Tab label="ประวัติการชำระ" />
             </Tabs>
-            {activeTab === 1 && (<ExportFinanceToExcel filteredAppointments={DataFinance} />)}
+            {activeTab === 0 && (<ExportFinanceToExcel filteredAppointments={DataFinance} />)}
             </Box>
             <FormRow sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
@@ -169,7 +167,7 @@ const FinancePage = () => {
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ชื่อลูกค้า</TableCell>
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ยอดชำระ</TableCell>
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>สถานะ</TableCell>
-                      {activeTab === 1 && (
+                      {activeTab === 0 && (
                         <>
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}>ดาวน์โหลด</TableCell>
                       <TableCell align="center" sx={{ backgroundColor: '#e0e0e0', fontWeight: 'bold', fontSize: '16px' }}></TableCell>
@@ -186,7 +184,7 @@ const FinancePage = () => {
                         <TableCell align="center">{service.fullname}</TableCell>
                         <TableCell align="center">{service.total_pay_invoice} บาท</TableCell>
                         <TableCell align="center">{service.status_pay}</TableCell>
-                        {activeTab === 1 && (
+                        {activeTab === 0 && (
                            <TableCell align="center">
                             <Button
                               onClick={() => handleOpenDialog({...service,isPending: true})}

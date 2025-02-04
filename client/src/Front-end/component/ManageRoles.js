@@ -87,7 +87,7 @@ const ManageRoles = () => {
   
     try {
       // เรียก API เพื่อเปลี่ยนรหัสผ่าน
-      const response = await axios.put(`${api}/personnel/change-password`, {
+      const response = await axios.put(`${api} `, {
         user_name: newAdmin.user_name,
         oldPassword,
         newPassword,
@@ -150,7 +150,7 @@ const ManageRoles = () => {
         last_name: admin.last_name,
         user_name: admin.user_name,
         role: admin.role,
-        password_encrip: '', 
+        // password_encrip: '', 
       });
     }
   };
@@ -249,7 +249,7 @@ const ManageRoles = () => {
       last_name: admin.last_name,
       user_name: admin.user_name,
       role: admin.role,
-      password_encrip: admin.password_encrip,
+      // password_encrip: admin.password_encrip,
     });
     setDialogOpen(true);
   };

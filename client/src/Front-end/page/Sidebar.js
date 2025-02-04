@@ -31,7 +31,9 @@ const Sidebar = () => {
     console.log('Logged out');
 
     // ตัวอย่าง: ลบโทเค็นและเปลี่ยนเส้นทางไปที่หน้า Login
-    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('isAuthenticated');
+    
     navigate('/login'); // Navigate to the home page or login page
   };
 

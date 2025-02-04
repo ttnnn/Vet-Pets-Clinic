@@ -7,17 +7,11 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
 import { debounce } from 'lodash';
-
+import { jwtDecode } from 'jwt-decode';
 
 // Categories for filtering
 const api = 'http://localhost:8080/api/clinic';
 
-
-// const formatTime = (timeString) => {
- // แยกเวลาออกจากรูปแบบ 'HH:mm:ss+ZZ' และแสดงแค่ 'HH:mm'
-//   const time = timeString.split(':');  // แยกเป็น [ '16', '00', '00+07' ]
-//   return `${time[0]}:${time[1]}`;  // คืนค่าแค่ '16:00'
-// };
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) return -1;
   if (b[orderBy] > a[orderBy]) return 1;
@@ -37,8 +31,16 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const [openAdmitDialog, setOpenAdmitDialog] = useState(false);
     const [selectedPetId, setSelectedPetId] = useState(null);
     const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
+    const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
-
+    useEffect(() => {
+      const token = sessionStorage.getItem('token');
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        setUserRole(decodedToken?.role);
+      }
+    }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+    
     const formatAppointmentDate = (date) => dayjs(date).format('DD/MM/YYYY');
     const fetchAppointments = async () => {
         try {
@@ -151,7 +153,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                         ? '#fa1f14' // สีแดงอ่อนหากเกินกำหนด
                         : isEndDateToday
                         ? '#fa9993' // สีแดงอีกเฉดหากเป็นวันสิ้นสุด
-                        : appointment.status_hotel === 'เข้าพัก'
+                        : appointment.status_hotel === 'checkin'
                         ? '#fffacd' // สีเหลืองสำหรับสถานะ 'เข้าพัก'
                         : 'transparent'; // สีพื้นหลังโปร่งใสสำหรับสถานะอื่น ๆ
                     
@@ -202,11 +204,14 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                               >
                                 ปล่อยกลับ
                               </Button>
-                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleToAdmit(appointment)}>
+                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleToAdmit(appointment)} >
                                 ขยายเวลา
                               </Button>
                               
-                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleButtonAction(appointment)}>
+                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  
+                               onClick={() => handleButtonAction(appointment)}
+                               disabled={userRole !== 'สัตวแพทย์'}
+                              >
                                 บันทึกรักษา
                               </Button>
                               

@@ -10,7 +10,7 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService
   start.setHours(startHour, 0, 0, 0);
 
   const end = new Date();
-  console.log('typeService',typeService)
+  // console.log('typeService',typeService)
   if (typeService === 'อาบน้ำ-ตัดขน') {
     end.setHours(18, 0, 0, 0); // จำกัดให้สิ้นสุดที่ 18:00 สำหรับ "อาบน้ำ-ตัดขน"
   } else {
@@ -68,12 +68,12 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
     const fetchBookedSlots = async () => {
       if (selectedDate && TypeService) {
         const formattedDate = formatDate(selectedDate);
-        console.log('selectedDate', selectedDate);
-        console.log('formattedDate', formattedDate);
+        // console.log('selectedDate', selectedDate);
+        // console.log('formattedDate', formattedDate);
 
         try {
           const response = await axios.get(`${api}/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
-          console.log('API Response:', response.data);
+          // console.log('API Response:', response.data);
 
           const cleanedBookedSlots = Array.isArray(response.data)
             ? response.data.map(slot => (typeof slot === 'string' ? slot.replace('+07', '') : slot))

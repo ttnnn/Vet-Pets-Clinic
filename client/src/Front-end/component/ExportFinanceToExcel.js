@@ -1,43 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { Button, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import dayjs from 'dayjs';
-import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
-dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
-
-
+import 'dayjs/locale/th';
+dayjs.locale('th');
 
 const ExportFinanceToExcel = ({ filteredAppointments }) => {
-  const [selectedYear, setSelectedYear] = useState(null); // ค่าเริ่มต้นเป็น null
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [availableYears, setAvailableYears] = useState([]);
 
-  // สร้างรายการปีที่มีข้อมูลจาก filteredAppointments
-  const availableYears = Array.from(
-    new Set(
-      filteredAppointments.map((appointment) =>
-        new Date(appointment.payment_date).getFullYear()
+  useEffect(() => {
+    // Generate the list of available years when appointments change
+    const years = Array.from(
+      new Set(
+        filteredAppointments.map((appointment) =>
+          new Date(appointment.payment_date).getFullYear()
+        )
       )
-    )
-  ).sort(); // ลำดับปีจากน้อยไปมาก
+    ).sort();
 
-  // ฟังก์ชันสำหรับกรองข้อมูลตามปี
+    setAvailableYears(years);
+
+    // Set default year if the current selectedYear is invalid
+    if (years.length > 0 && !years.includes(selectedYear)) {
+      setSelectedYear(years[0]);
+    }
+  }, [filteredAppointments, selectedYear]);
+
   const filterAppointmentsByYear = () => {
     return filteredAppointments.filter((appointment) => {
       const appointmentYear = new Date(appointment.payment_date).getFullYear();
       return appointmentYear === selectedYear;
     });
   };
+
   const formatDate = (dateString) => {
-    return dayjs(dateString).format('DD/MM/YYYY'); // Use day.js for formatting
+    return dayjs(dateString).format('DD/MM/YYYY');
   };
-  // ฟังก์ชันสำหรับ Export
+
   const handleExport = () => {
     const dataToExport = filterAppointmentsByYear().map((appointment) => ({
-        วันที่: formatDate(appointment.payment_date_date),
-        "รหัสชำระเงิน": `${appointment.payment_id}-${dayjs(appointment.invoice_date).format('YYYYMMDD')}`,
-        "ชื่อลูกค้า": appointment.fullname,
-        "เลขที่นัดหมาย": appointment.appointment_id,
-        "ยอดชำระ" :appointment.total_pay_invoice
-      }));
+      วันที่: formatDate(appointment.payment_date),
+      "รหัสชำระเงิน": `${appointment.payment_id}-${dayjs(appointment.invoice_date).format('YYYYMMDD')}`,
+      "ชื่อลูกค้า": appointment.fullname,
+      "เลขที่นัดหมาย": appointment.appointment_id,
+      "ยอดชำระ": appointment.total_pay_invoice,
+    }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
@@ -50,7 +58,7 @@ const ExportFinanceToExcel = ({ filteredAppointments }) => {
       <FormControl sx={{ minWidth: 150, marginRight: 2 }}>
         <InputLabel>เลือกปี</InputLabel>
         <Select
-          value={selectedYear}
+          value={selectedYear || ''}
           onChange={(e) => setSelectedYear(e.target.value)}
           label="เลือกปี"
         >
@@ -66,7 +74,7 @@ const ExportFinanceToExcel = ({ filteredAppointments }) => {
         color="primary"
         onClick={handleExport}
         sx={{ marginTop: "10px" }}
-        disabled={!selectedYear} // ปิดปุ่มถ้าไม่ได้เลือกปี
+        disabled={!selectedYear} // Disable the button if no year is selected
       >
         ดาวน์โหลด Excel
       </Button>

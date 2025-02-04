@@ -228,6 +228,14 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
       return;
     }
+    // ตรวจสอบค่าความดันโลหิต (Pressure) ว่ามีและอยู่ในรูปแบบที่ถูกต้อง
+  const pressureRegex = /^\d{2,3}\/\d{2,3}$/; // รูปแบบต้องเป็น "ตัวเลข/ตัวเลข" เช่น 120/80
+  if (formMedical.rec_pressure && !pressureRegex.test(formMedical.rec_pressure)) {
+    setAlertMessage("กรุณากรอกค่าความดันโลหิตในรูปแบบที่ถูกต้อง เช่น 120/80");
+    setAlertSeverity("warning");
+    setOpenSnackbar(true);
+    return;
+  }
     // รวมวันที่และเวลา
     const timestamp = dayjs(`${formMedical.rec_date} ${formMedical.rec_timee}`).format('YYYY-MM-DD HH:mm:ss');
     // console.log('personnel_id' , selectedPersonnel)
@@ -290,14 +298,6 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     return matchesSearch && matchesCategory;
   });
 
-  //เพิ่มรายการที่เลือก
-  // const handleServiceSelect = (event, value) => {
-    // if (value && !selectedItems.some((item) => item.category_id === value.category_id)) {
-      // setSelectedItems([...selectedItems, { ...value, quantity: 1 }]);
-      // setSelectedService(null); // รีเซตค่าที่เลือกใน Autocomplete
-      // setSearchTerm(''); // รีเซตค่าในกล่องค้นหา
-    // }
-  // };
 
   const paginatedServices = filteredServices.slice(
     (currentPage - 1) * itemsPerPage,
@@ -314,14 +314,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     setSelectedCategory(e.target.value);
   };
 
-  //จำนวนสินค้าที่ต้องการ 
-  // const handleQuantityChange = (category_id, quantity) => {
-    // setSelectedItems((prevItems) =>
-      // prevItems.map((item) =>
-        // item.category_id === category_id ? { ...item, quantity: Number(quantity) } : item
-      // )
-    // );
-  // };
+  
   const handleQuantityChange = (categoryId, value) => {
     // เช็คว่าเป็นค่าว่างหรือไม่ และเปลี่ยนให้เป็น 0 ถ้าเป็นค่าว่าง
     const quantity = value === '' ? 0 : Math.max(0, parseInt(value)); // ตรวจสอบให้มีค่าต่ำสุดที่ 0
