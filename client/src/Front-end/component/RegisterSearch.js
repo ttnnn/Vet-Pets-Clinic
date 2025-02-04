@@ -59,29 +59,29 @@ const RegisterSearch = () => {
       <Box display="flex" gap={2} alignItems="center">
         {/* Autocomplete for searching and selecting owners */}
         <Autocomplete 
-            options={owners || []} // ป้องกัน owners เป็น undefined
-            getOptionLabel={(owner) => `${owner.first_name} ${owner.last_name}`}
-            onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
-            value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) || null : null}
-            isOptionEqualToValue={(option, value) => option?.owner_id === value?.owner_id} // ป้องกัน error ถ้า value เป็น null
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="ค้นหาข้อมูลด้วย ชื่อ-นามสกุล"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-              />
-            )}
-            sx={{ width: '48%' }}
-            renderOption={(props, option) => (
-              <li {...props} key={option.owner_id}>
-                {`${option.first_name} ${option.last_name}`}
-              </li>
-            )}
-          />
-          
-          
+          options={owners || []} // ป้องกัน owners เป็น undefined
+          getOptionLabel={(owner) => `${owner.first_name} ${owner.last_name}`}
+          onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
+          value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) || null : null}
+          isOptionEqualToValue={(option, value) => option?.owner_id === value?.owner_id} // ป้องกัน error ถ้า value เป็น null
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="ค้นหาข้อมูลด้วย ชื่อ-นามสกุล"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+            />
+          )}
+          sx={{ width: '48%' }}
+          renderOption={(props, option) => (
+            <li {...props} key={option.owner_id}>
+              {`${option.first_name} ${option.last_name}`}
+            </li>
+          )}
+        />
+    
+    
         {/* Always display TextField for phone number */}
         <TextField
           label="เบอร์โทรศัพท์"

@@ -23,8 +23,6 @@ const api = 'http://localhost:8080/api/clinic';
 const ExamStatusOptions = ['normal', 'abnormal', 'no exam'];
 
 const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
-  // console.log('Pet ID:', petId);
-  // console.log('appointmentId:', appointmentId);
   const [personnelList, setPersonnelList] = useState([]); 
   const [selectedPersonnel, setSelectedPersonnel] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,23 +30,19 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [categories, setCategories] = useState([]);
-  // const [selectedService, setSelectedService] = useState(null);
   const [isDataSaved, setIsDataSaved] = useState(false); //ใช้เช็คว่าเซฟรึยัง
   const [alertMessage, setAlertMessage] = useState("");   // ข้อความสำหรับ Alert
   const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
   const [openSnackbar, setOpenSnackbar] = useState(false); 
-  // const [appointmentHotel, setAppointmentHotel] = useState([]);
   const [openAdmitDialog, setOpenAdmitDialog] = useState(false);
   const [selectedPetId, setSelectedPetId] = useState(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
   const [isQueueSent, setIsQueueSent] = useState(false); // Track if the queue is sent
-  const [appointmentHotel, setAppointmentHotel] = useState([]);
 
   const location = useLocation();
   const fromOngoing = location.state?.fromOngoing || false;  //สำหรับเช็คว่าถ้ามาจากการกดส่งคิวรักษาจะสามารถกดปุ่มต่างๆได้ แต่ถ้ามาจากการแก้ประวัติจะบันทึกข้อมูลได้อย่างเดียว
-  // console.log('Is from ongoing:', fromOngoing);
+  
 
-  // console.log('Appointment ID:', appointmentId);
   const navigate = useNavigate();
   // State for medical record
   const [formMedical, setFormMedical] = useState({
@@ -120,7 +114,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         // Fetch Medical Data
         setLoading();
         const medicalResponse = await axios.get(`${api}/medical/form/${appointmentId}`);
-        // console.log('medicalResponse',medicalResponse)
+    
         if (medicalResponse.data && medicalResponse.data.length > 0) {
           const medicalData = medicalResponse.data[0];
           setFormMedical({
@@ -462,17 +456,6 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     } else {
       // ถ้าไม่มีให้เพิ่ม item ใหม่
       setSelectedItems([...selectedItems, { ...service, quantity: 1 }]);
-    }
-  };
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${api}/appointment/hotel`);
-      setAppointmentHotel(response.data);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -818,8 +801,6 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         appointmentId={selectedAppointmentId}
         petId={selectedPetId}
         isAdmitBooking={true} 
-        updateAppointments={fetchAppointments}
-        
       />
     </Paper>
   );

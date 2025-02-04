@@ -33,13 +33,13 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
     const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
+    const token = sessionStorage.getItem('token');
     useEffect(() => {
-      const token = sessionStorage.getItem('token');
       if (token) {
         const decodedToken = jwtDecode(token);
         setUserRole(decodedToken?.role);
       }
-    }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+    }, [token]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
     
     const formatAppointmentDate = (date) => dayjs(date).format('DD/MM/YYYY');
     const fetchAppointments = async () => {

@@ -90,9 +90,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setSelectedPetId(petId); // Store pet_id
     setOpenPostponeDialog(true);
 
-    // console.log('appointment:', appointmentId);
-    // console.log('typeService:', typeService);
-    // console.log('petId:', petId);
   };
   
   const updateAppointments = () => {
@@ -264,7 +261,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     if (page > maxPage) {
       setPage(maxPage); // รีเซ็ต page หากเกินช่วงที่มีอยู่
     }
-  }, [filteredAppointments, rowsPerPage]); // รันเมื่อ filteredAppointments หรือ rowsPerPage เปลี่ยน
+  }, [filteredAppointments, rowsPerPage,page]); // รันเมื่อ filteredAppointments หรือ rowsPerPage เปลี่ยน
   
   // console.log(filteredAppointments)
   return (

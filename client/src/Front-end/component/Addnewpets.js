@@ -141,7 +141,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     <Box sx={{ flex: 2 }}>
       <TextField
         label="ชื่อสัตว์เลี้ยง"
-        value={petName}
+        value={petName || ''} 
         fullWidth
         required
         onChange={(e) => setPetName(e.target.value)}
@@ -150,7 +150,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       <TextField
       select
       label="ประเภทสัตว์เลี้ยง"
-      value={petSpecies}
+      value={petSpecies || ''}
       fullWidth
       required
       onChange={(e) => {
@@ -166,7 +166,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     {petSpecies === "อื่นๆ" ? (
     <TextField
       label="กรุณาระบุประเภทสัตว์เลี้ยง"
-      value={otherPetSpecies}
+      value={otherPetSpecies || ''}
       fullWidth
       required
       onChange={(e) => setOtherPetSpecies(e.target.value)}
@@ -207,7 +207,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
 
       <TextField
         label="สี/ตำหนิ"
-        value={petColor}
+        value={petColor || ''}
         fullWidth
         onChange={(e) => setPetColor(e.target.value)}
         sx={{ mb: 2 , mt:2}}
@@ -224,7 +224,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       </Box>
       <DatePicker
         label="วันเกิด"
-        value={birthDate}
+        value={birthDate || '' }
         onChange={handleBirthDateChange}
         maxDate={new Date()}
         renderInput={(params) => <TextField {...params} fullWidth />}
@@ -253,7 +253,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       </Box>
       
       <ToggleButtonGroup
-        value={gender}
+        value={gender || '' }
         exclusive
         onChange={handleGenderChange}
         fullWidth
@@ -271,7 +271,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
 
       <TextField
         label="MicrochipNumber"
-        value={petMicrochip}
+        value={petMicrochip || '' }
         fullWidth
         inputProps={{ maxLength: 15 }} 
         onChange={(e) => setMicrochip(e.target.value)}

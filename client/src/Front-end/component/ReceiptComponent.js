@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect ,useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import { CircularProgress, Backdrop ,Snackbar, Alert} from '@mui/material';
 import dayjs from 'dayjs';
@@ -15,25 +15,22 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  console.log('receiptData',receiptData)
-  console.log('receiptData.invoice_id',receiptData.invoice_id)
-  console.log('DataReceipt',DataReceipt)
-  useEffect(() => {
-    // console.log('ReceiptData Props:', receiptData); // ตรวจสอบ props ที่ส่งมา
-    fetchDataReceipt();
-  }, []);
-
-  const fetchDataReceipt = async () => {
+  const fetchDataReceipt = useCallback(async () => {
     try {
       const response = await axios.get(`${api}/product/receipt/${receiptData.invoice_id}`);
-    //   console.log('API Response:', response.data); // ตรวจสอบข้อมูลที่ได้จาก API
+      // console.log('API Response:', response.data); // ตรวจสอบข้อมูลที่ได้จาก API
       setDataReceipt(response.data); // เก็บข้อมูลใน state
     } catch (error) {
       console.error('Error fetching DataReceipt:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [receiptData.invoice_id]); // Add dependencies for dynamic values
+  useEffect(() => {
+    fetchDataReceipt();
+  }, [fetchDataReceipt]); // Add fetchDataReceipt to the dependency array
+  
+
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };

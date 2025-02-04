@@ -66,7 +66,7 @@ const Dashboard = () => {
         }
       })
       .catch((error) => console.error(error));
-  }, []);
+  }, [year]);
 
   if (!data) return <Typography>Loading...</Typography>;
 

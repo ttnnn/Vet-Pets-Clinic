@@ -21,14 +21,39 @@ import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 import ServiceAppointment from './Front-end/customer/ServiceAppointment';
 import Dashboard from './Front-end/page/Dashboard';
 import { Navigate } from 'react-router-dom';
+import axios from 'axios'; // import axios
+import liff from "@line/liff";
 
-import axios from 'axios';
+const api = 'http://localhost:8080/api/customer';
 
-const api = 'http://localhost:8080/api/clinic';
+
 const ProtectedRoute = ({ children }) => {
   const token = sessionStorage.getItem('token');
   return token ? children : <Navigate to="/login" />;
 };
+
+const ProtectedRouteLine = ({ element }) => {
+  const lineToken = localStorage.getItem("lineToken");
+
+  if (!lineToken) {
+    return <Navigate to="/customer/login" />;
+  }
+
+  return element;
+};
+
+const NotFoundRedirect = () => {
+  const location = useLocation();
+
+  if (location.pathname.startsWith("/customer")) {
+    return <Navigate to="/customer/line-login" replace />;
+  } else if (location.pathname.startsWith("/clinic")) {
+    return <Navigate to="/login" replace />;
+  } else {
+    return <Navigate to="/" replace />;
+  }
+};
+
 
 const theme = createTheme();
 
@@ -146,18 +171,23 @@ function App() {
             />
 
             {/* สำหรับลูกค้า */}
-            <Route path="/customer/line-login" element={<Line />} />
-            <Route path="/customer/line" element={<LineAuth />} /> 
-            <Route path="/customer/login" element={<Register />} />
+           
+              {/* ต้อง Login LINE ก่อน */}
+              <Route path="/customer/line-login" element={<Line />} />
+              <Route path="/customer/line" element={<LineAuth />} />
+              <Route path="/customer/login" element={<Register />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/customer/home" element={<Home />} />
-              <Route path="/customer/history" element={<HistoryPage />} />
-              <Route path="/customer/pets" element={<PetsPage />} />
-              <Route path="/customer/serviceappointment" element={<ServiceAppointment />} />
-              <Route path="/customer/appointment" element={<AppointmentDetail />} />
-              <Route path="/customer/petsdetail" element={<PetsDetail />} />
-            </Route>
+              {/* เส้นทางที่ต้อง Login ก่อนเข้าใช้งาน */}
+              <Route path="/customer/home" element={<ProtectedRouteLine element={<Home />} />} />
+              <Route path="/customer/history" element={<ProtectedRouteLine element={<HistoryPage />} />} />
+              <Route path="/customer/pets" element={<ProtectedRouteLine element={<PetsPage />} />} />
+              <Route path="/customer/serviceappointment" element={<ProtectedRouteLine element={<ServiceAppointment />} />} />
+              <Route path="/customer/appointment" element={<ProtectedRouteLine element={<AppointmentDetail />} />} />
+              <Route path="/customer/petsdetail" element={<ProtectedRouteLine element={<PetsDetail />} />} />
+              
+               {/* แยกเส้นทาง 404 ตามประเภทของ user */}
+            <Route path="*" element={<NotFoundRedirect />} />
+
           </Routes>
         </div>
       </div>

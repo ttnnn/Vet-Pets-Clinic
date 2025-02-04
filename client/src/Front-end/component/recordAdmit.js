@@ -278,13 +278,14 @@ const RecordMedical = ({
     record_medical:'',
     record_medicine:''
   });
+  const token = sessionStorage.getItem('token');
+
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
     if (token) {
       const decodedToken = jwtDecode(token);
       setUserRole(decodedToken?.role);
     }
-  }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+  }, [token]);  // ใช้ token เป็น dependency ตอนนี้ React สามารถตรวจสอบได้
 
   //console.log('appointments',appointments)
   const handleMedicalChange = (field) => (event) => {

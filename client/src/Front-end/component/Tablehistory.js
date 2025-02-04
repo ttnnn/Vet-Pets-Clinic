@@ -83,19 +83,18 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const [mergedAppointments, setMergedAppointments] = useState([]);
   const [details, setDetails] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [userRole, setUserRole] = useState(null);
   // console.log('appointments',appointments)
   const handleEdit = (id) => {
     onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
   };
+  const token = sessionStorage.getItem('token');
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
     if (token) {
       const decodedToken = jwtDecode(token);
       setUserRole(decodedToken?.role);
     }
-  }, [sessionStorage.getItem('token')]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+  }, [token]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
 
   useEffect(() => {
     const fetchVaccines = async () => {
@@ -142,7 +141,6 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
 
   const handleOpenDialog = (appointment) => {
-    setSelectedAppointment(appointment);
     fetchDetails(appointment.appointment_id);
     setDialogOpen(true);
   };

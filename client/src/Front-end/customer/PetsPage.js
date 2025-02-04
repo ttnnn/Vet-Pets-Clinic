@@ -15,50 +15,44 @@ const PetsPage = () => {
 
   const user = JSON.parse(sessionStorage.getItem('user')); // จากการล็อกอินของผู้ใช้
 
-  // Fetch pet data
-  const fetchPets = async () => {
-    if (!user) {
-      console.error('User data not found');
-      setPets([]); // กรณีไม่มีข้อมูลผู้ใช้
-      return;
-    }
-
-    try {
-      const { first_name, last_name, phone_number } = user;
-
-      if (!first_name || !last_name || !phone_number) {
-        console.error('Incomplete user data for fetching pets');
-        setPets([]); // กรณีข้อมูลผู้ใช้ไม่ครบ
+  useEffect(() => {
+    const fetchPets = async () => {
+      if (!user) {
+        console.error('User data not found');
+        setPets([]); // กรณีไม่มีข้อมูลผู้ใช้
         return;
       }
-
-      // เรียกข้อมูลการนัดหมายจาก API
-      const response = await axios.get(`${api}/pets`, {
-        params: {
-          first_name,
-          last_name,
-          phone_number,
-        },
-      });
-
-      // console.log('Fetched pets:', response.data);
-
-      // ตรวจสอบว่า response มีข้อมูล pets หรือไม่
-      if (response.data && Array.isArray(response.data.pets)) {
-        setPets(response.data.pets);
-      } else {
-        console.warn('No pets found or invalid data format');
-        setPets([]);
+      try {
+        const { first_name, last_name, phone_number } = user;
+        if (!first_name || !last_name || !phone_number) {
+          console.error('Incomplete user data for fetching pets');
+          setPets([]); // กรณีข้อมูลผู้ใช้ไม่ครบ
+          return;
+        }
+        // เรียกข้อมูลการนัดหมายจาก API
+        const response = await axios.get(`${api}/pets`, {
+          params: {
+            first_name,
+            last_name,
+            phone_number,
+          },
+        });
+        // ตรวจสอบว่า response มีข้อมูล pets หรือไม่
+        if (response.data && Array.isArray(response.data.pets)) {
+          setPets(response.data.pets);
+        } else {
+          console.warn('No pets found or invalid data format');
+          setPets([]);
+        }
+      } catch (error) {
+        console.error('Error fetching pets:', error.message);
+        setPets([]); // ตั้งค่าเป็นอาร์เรย์ว่างในกรณีเกิดข้อผิดพลาด
       }
-    } catch (error) {
-      console.error('Error fetching pets:', error.message);
-      setPets([]); // ตั้งค่าเป็นอาร์เรย์ว่างในกรณีเกิดข้อผิดพลาด
-    }
-  };
-
-  useEffect(() => {
+    };
+  
     fetchPets();
-  }, []);
+  }, [user]);  // Adding `user` as a dependency so it runs when `user` changes
+
 
   // Handle bottom navigation
   const handleNavChange = (event, newValue) => {

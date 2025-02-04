@@ -11,7 +11,6 @@ import {
   Table,
   TableBody,
   TableHead,
-  TableSortLabel,
   Typography,
   Dialog,
   DialogActions,
@@ -47,29 +46,11 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const formatTime = (timeString) => {
-  const time = timeString.split(':');
-  return `${time[0]}:${time[1]}`;
-};
-
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) return -1;
-  if (b[orderBy] > a[orderBy]) return 1;
-  return 0;
-}
-
-function getComparator(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
 
 const PendingAppointments = ({ appointments ,update}) => {
   const [activeCategory, setActiveCategory] = useState('คิวทั้งหมด');
   const [openPopup, setOpenPopup] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('appointment_date');
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -81,7 +62,6 @@ const PendingAppointments = ({ appointments ,update}) => {
   const [alertSeverity, setAlertSeverity] = useState("info"); // กำหนดประเภทของ alert
   const [openSnackbar, setOpenSnackbar] = useState(false); 
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [filteredAppointments, setFilteredAppointments] = useState(appointments);
   const [receiptData, setReceiptData] = useState(null); // สถานะสำหรับข้อมูลใบเสร็จ
   const [showReceipt, setShowReceipt] = useState(false); // สถานะควบคุมการแสดงใบเสร็จ
   const [isReceiptDialogOpen, setReceiptDialogOpen] = useState(false);
@@ -94,11 +74,6 @@ const PendingAppointments = ({ appointments ,update}) => {
     resetPage();
   };
 
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
   
   const handleSelectItem = (item) => {
     setSelectedItems((prevItems) => {
@@ -349,19 +324,6 @@ const PendingAppointments = ({ appointments ,update}) => {
   };
 
 
-
-  const filterAppointments = (appointments) => {
-    const updatedAppointments = appointments.filter((appointment) => {
-      if (activeCategory === 'คิวทั้งหมด') {
-        return (
-          appointment.queue_status === 'รอชำระเงิน' &&
-          appointment.status === 'อนุมัติ'
-        );
-      }
-      return true;
-    });
-    setFilteredAppointments(updatedAppointments);
-  };
   // console.log('filteredAppointments',filteredAppointments)
 
   const filteredCategories = categories.filter(service => 
@@ -393,10 +355,10 @@ const PendingAppointments = ({ appointments ,update}) => {
       setOpenSnackbar(true); // เปิดการแสดง Snackbar
       return; // ยกเลิกการทำงานถ้าข้อมูลไม่ครบ
     }
-     console.log('requestData' , requestData)
+     //console.log('requestData' , requestData)
     try {
       const response = await axios.post(`${api}/create-invoice/payment`, requestData);
-      console.log("Response:", response.data);
+      //console.log("Response:", response.data);
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert
       setOpenSnackbar(true);
@@ -495,8 +457,7 @@ const handleCloseReceiptDialog = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredAppointments
-              .sort(getComparator(order, orderBy))
+            {appointments
               .map((appointment) => (
                 <TableRow key={appointment.appointment_id}>
                   <TableCell>{dayjs(appointment.appointment_date).format('DD/MM/YYYY')}</TableCell>

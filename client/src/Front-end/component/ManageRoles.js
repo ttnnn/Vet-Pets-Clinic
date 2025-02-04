@@ -92,6 +92,13 @@ const ManageRoles = () => {
         oldPassword,
         newPassword,
       });
+      if (response.status === 200) {
+        console.log("Password changed successfully!");
+        // Handle success, e.g., show a success message to the user
+      } else {
+        console.warn("Password change failed.");
+        // Handle error, e.g., show an error message to the user
+      }
   
       setSnackbar({ open: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ', severity: 'success' });
       handleChangePasswordDialogClose();

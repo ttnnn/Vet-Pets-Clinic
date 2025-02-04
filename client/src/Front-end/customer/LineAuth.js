@@ -36,6 +36,7 @@ const LineAuth = () => {
                     liff.login();
                     return;
                 }
+                localStorage.setItem("lineToken", idToken);
 
                 const profile = await liff.getProfile();
                 const { pictureUrl } = profile;
@@ -72,12 +73,17 @@ const LineAuth = () => {
                 setLoading(false);
             });
     }, [handleLogin]);
-
-    if (loading) {
-        return <div style={{ textAlign: "center", marginTop: "50px" }}>Loading, please wait...</div>;
-    }
     
-    return null;
+    return (
+        <div>
+          {loading ? (
+            <div style={{ textAlign: "center", marginTop: "50px" }}>Loading, please wait...</div>
+          ) : (
+            error && <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>{error}</div>
+          )}
+        </div>
+      );
+      
 };
 
 export default LineAuth;
