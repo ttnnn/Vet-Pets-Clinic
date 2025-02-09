@@ -13,6 +13,7 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json()); 
 const server = http.createServer(app);
+const PORT = process.env.PORT || 3001;
 
 // การเชื่อมต่อฐานข้อมูล
 pool.connect()
@@ -38,6 +39,6 @@ const io = setupSocketServer(server);
 setupCronJobs(io);
 
   
-server.listen(8080, function () {
-    console.log('Server running on port 8080');
+server.listen(PORT, function () {
+    console.log('Server running on port');
 });

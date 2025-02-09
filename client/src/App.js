@@ -22,7 +22,6 @@ import ServiceAppointment from './Front-end/customer/ServiceAppointment';
 import Dashboard from './Front-end/page/Dashboard';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios'; // import axios
-import liff from "@line/liff";
 
 const api = 'http://localhost:8080/api/customer';
 

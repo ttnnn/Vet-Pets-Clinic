@@ -15,8 +15,6 @@ import { clinicAPI } from "../../utils/api";
 const MemoizedAutocomplete = React.memo(Autocomplete);
 
 
-const API_BASE_URL = 'http://localhost:8080/API_BASE_URL/clinic';
-
 
 const categories = ['ทั้งหมด', 'อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
 const sub_categories = ['จ่ายยา','ทำแผล','ตรวจทั่วไป','ดูอาการ',] ;

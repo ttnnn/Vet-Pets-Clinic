@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, TextField, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions,  ToggleButtonGroup, ToggleButton, MenuItem
     , Autocomplete,Checkbox,FormControlLabel
    } from '@mui/material';
-import axios from 'axios';
 import { DogBreed, CatBreed } from './Breeds';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
