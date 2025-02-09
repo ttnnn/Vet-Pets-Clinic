@@ -21,10 +21,7 @@ import SecurityAdminPage from './Front-end/page/SecurityAdminPage';
 import ServiceAppointment from './Front-end/customer/ServiceAppointment';
 import Dashboard from './Front-end/page/Dashboard';
 import { Navigate } from 'react-router-dom';
-import axios from 'axios'; // import axios
-
-const api = 'http://localhost:8080/api/customer';
-
+import { customerAPI  } from "./utils/api";
 
 const ProtectedRoute = ({ children }) => {
   const token = sessionStorage.getItem('token');
@@ -66,8 +63,8 @@ function App() {
      useEffect(() => {
       const token = sessionStorage.getItem('token');
       if (token) {
-        axios
-          .get(`${api}/validate-token`, {
+        customerAPI
+          .get(`/validate-token`, {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((response) => {
