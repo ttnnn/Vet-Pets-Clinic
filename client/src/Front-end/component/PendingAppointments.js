@@ -21,15 +21,13 @@ import {
   TextField, Alert,Snackbar ,DialogTitle,IconButton
 } from '@mui/material';
 import { styled } from '@mui/system';
-import axios from 'axios';
+import { clinicAPI } from "../../utils/api";
 import ReceiptComponent from './ReceiptComponent';
 import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // นำเข้า locale ภาษาไทย
 
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
-
-const api = 'http://localhost:8080/api/clinic';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -131,7 +129,7 @@ const PendingAppointments = ({ appointments ,update}) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${api}/servicecategory`);
+        const response = await clinicAPI.get(`/servicecategory`);
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -146,7 +144,7 @@ const PendingAppointments = ({ appointments ,update}) => {
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async (url) => {
     try {
-      const response = await fetch(url);
+      const response = await clinicAPI.get(url);
       if (!response.ok) {
         console.error("Failed to fetch data", response.status);
         return null;
@@ -179,7 +177,7 @@ const PendingAppointments = ({ appointments ,update}) => {
   
       switch (appointment.type_service) {
         case 'วัคซีน':
-          selectedItems = await fetchData(`${api}/history/vaccine/${appointment.appointment_id}`);
+          selectedItems = await fetchData(`/history/vaccine/${appointment.appointment_id}`);
           console.log('Fetched vaccine items:', selectedItems); 
           if (selectedItems && selectedItems.length > 0) {
             selectedItems = selectedItems.map((item) => ({
@@ -204,7 +202,7 @@ const PendingAppointments = ({ appointments ,update}) => {
           break;
   
         case 'ฝากเลี้ยง':
-          additionalData = await fetchData(`${api}/appointment/hotel/${appointment.appointment_id}`);
+          additionalData = await fetchData(`/appointment/hotel/${appointment.appointment_id}`);
           if (additionalData && additionalData.length > 0) {
             const hotelInfo = additionalData[0];
             setSelectedAppointment((prev) => ({
@@ -220,7 +218,7 @@ const PendingAppointments = ({ appointments ,update}) => {
   
         case 'ตรวจรักษา':
           // ดึงข้อมูล invoice
-          selectedItems = await fetchData(`${api}/medical/invoice/${appointment.appointment_id}`);
+          selectedItems = await fetchData(`/medical/invoice/${appointment.appointment_id}`);
           console.log('Fetched items medical:', selectedItems); 
           if (selectedItems) {
             selectedItems = selectedItems.map((item) => ({
@@ -235,7 +233,7 @@ const PendingAppointments = ({ appointments ,update}) => {
           }
   
           // ดึงข้อมูล record_medicine
-          const recordMedicineData = await fetchData(`${api}/appointment/hotel/${appointment.appointment_id}`);
+          const recordMedicineData = await fetchData(`/appointment/hotel/${appointment.appointment_id}`);
           if (recordMedicineData) {
             setSelectedAppointment((prev) => ({
               ...prev,
@@ -260,12 +258,12 @@ const PendingAppointments = ({ appointments ,update}) => {
     try {
       if (item.category_id && item.invoice_id) {
         // กรณีเป็นรายการที่มาจากฐานข้อมูล
-        const response = await axios.delete(`${api}/delete/item/${item.category_id}/${item.invoice_id}`);
+        const response = await clinicAPI.delete(`/delete/item/${item.category_id}/${item.invoice_id}`);
         if (response.status === 200) {
           console.log('Deleted item from database');
   
           // ดึงข้อมูลใหม่จากฐานข้อมูลหลังจากการลบ
-          const updatedItems = await fetchData(`${api}/medical/invoice/${item.appointment_id}`);
+          const updatedItems = await fetchData(`/medical/invoice/${item.appointment_id}`);
   
           // กรองรายการใน UI ที่ไม่ได้ถูกลบออกจาก selectedItems
           setSelectedItems((prevItems) => {
@@ -357,7 +355,7 @@ const PendingAppointments = ({ appointments ,update}) => {
     }
      //console.log('requestData' , requestData)
     try {
-      const response = await axios.post(`${api}/create-invoice/payment`, requestData);
+      const response = await clinicAPI.post(`/create-invoice/payment`, requestData);
       //console.log("Response:", response.data);
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert

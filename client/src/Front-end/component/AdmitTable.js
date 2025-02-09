@@ -8,9 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
 import { debounce } from 'lodash';
 import { jwtDecode } from 'jwt-decode';
-
+import { clinicAPI } from "../../utils/api";
 // Categories for filtering
-const api = 'http://localhost:8080/api/clinic';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) return -1;
@@ -45,7 +44,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const fetchAppointments = async () => {
         try {
           setLoading(true);
-          const response = await axios.get(`${api}/appointment/hotel`);
+          const response = await clinicAPI.get(`/appointment/hotel`);
           // console.log('API Response:', response.data);
           setAppointmentHotel(response.data);
           

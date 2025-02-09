@@ -4,15 +4,12 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions ,Snackbar
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CircularProgress from '@mui/material/CircularProgress';
+import { customerAPI  } from "../../utils/api";
 
-
-
-const api = 'http://localhost:8080/api/customer';
 
 const PetsDetail = () => {
   const navigate = useNavigate();
@@ -30,11 +27,11 @@ const PetsDetail = () => {
   };
   const fetchPetDetail = useCallback(async () => {
     try {
-      const petResponse = await axios.get(`${api}/pets/${petId}`);
+      const petResponse = await customerAPI.get(`/pets/${petId}`);
       if (petResponse.data) {
         let updatedPetData = { ...petResponse.data };
         try {
-          const historyResponse = await axios.get(`${api}/history/vaccien/${petId}`);
+          const historyResponse = await customerAPI.get(`/history/vaccien/${petId}`);
           if (historyResponse.data?.length > 0) {
             updatedPetData.vaccineHistory = historyResponse.data;
           }
@@ -76,7 +73,7 @@ const PetsDetail = () => {
     
     try {
       setLoading(true); // เริ่มโหลด
-      const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
+      const response = await customerAPI.put(`/pets/${pet.pet_id}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     

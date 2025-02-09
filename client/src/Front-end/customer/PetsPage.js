@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Grid, Card, CardContent, Typography, Box, AppBar, Toolbar, BottomNavigation, BottomNavigationAction } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import HomeIcon from '@mui/icons-material/Home';
 import HistoryIcon from '@mui/icons-material/History';
 import PetsIcon from '@mui/icons-material/Pets';
-
-const api = 'http://localhost:8080/api/customer';
+import { customerAPI  } from "../../utils/api";
 
 const PetsPage = () => {
   const navigate = useNavigate();
@@ -30,7 +28,7 @@ const PetsPage = () => {
           return;
         }
         // เรียกข้อมูลการนัดหมายจาก API
-        const response = await axios.get(`${api}/pets`, {
+        const response = await customerAPI.get(`/pets`, {
           params: {
             first_name,
             last_name,

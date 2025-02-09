@@ -5,13 +5,12 @@ import { styled } from '@mui/system';
 import CloseIcon from '@mui/icons-material/Close';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
-import axios from 'axios';
 import Bodyscore from './Bodyscore';
-
+import { clinicAPI } from "../../utils/api";
 
 // Categories for filtering
 const categories = ['คิววันนี้', 'อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
-const api = 'http://localhost:8080/api/clinic';
+
 
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -113,7 +112,7 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
           }
         }
 
-        const response = await axios.post(`${api}/medical/symptom`, {
+        const response = await clinicAPI.post(`/medical/symptom`, {
           appointment_id: appointmentId,
           rec_weight: formMedical.rec_weight,
           diag_cc: formMedical.diag_cc,

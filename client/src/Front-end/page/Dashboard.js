@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Bar } from 'react-chartjs-2';
-import axios from 'axios';
+
 import Sidebar from './Sidebar';
 import {
   Chart as ChartJS,
@@ -25,8 +25,7 @@ import {
   Legend,
   LineElement,
 } from 'chart.js';
-
-const api = 'http://localhost:8080/api/clinic';
+import { clinicAPI } from "../../utils/api";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -47,8 +46,8 @@ const Dashboard = () => {
   const serviceTypes = ['อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน', 'ฝากเลี้ยง'];
 
   useEffect(() => {
-    axios
-      .get(`${api}/dashboard`, {
+    clinicAPI
+      .get(`dashboard`, {
         params: { petType, timeFilter, year: timeFilter === 'year' ? year : undefined },
       })
       .then((response) => setData(response.data))
@@ -56,8 +55,8 @@ const Dashboard = () => {
   }, [petType, timeFilter, year]);
 
   useEffect(() => {
-    axios
-      .get(`${api}/available-years`)
+    clinicAPI
+      .get(`/available-years`)
       .then((response) => {
         const fetchedYears = response.data.years;
         setAvailableYears(fetchedYears);

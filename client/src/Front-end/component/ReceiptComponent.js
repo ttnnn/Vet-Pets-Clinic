@@ -4,8 +4,7 @@ import { CircularProgress, Backdrop ,Snackbar, Alert} from '@mui/material';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import 'dayjs/locale/th';
-
-const api = 'http://localhost:8080/api/clinic';
+import { clinicAPI } from "../../utils/api";
 
 const ReceiptComponent = ({ receiptData , isPending }) => {
   const [DataReceipt, setDataReceipt] = useState([]);
@@ -17,7 +16,7 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
 
   const fetchDataReceipt = useCallback(async () => {
     try {
-      const response = await axios.get(`${api}/product/receipt/${receiptData.invoice_id}`);
+      const response = await clinicAPI.get(`/product/receipt/${receiptData.invoice_id}`);
       // console.log('API Response:', response.data); // ตรวจสอบข้อมูลที่ได้จาก API
       setDataReceipt(response.data); // เก็บข้อมูลใน state
     } catch (error) {
@@ -76,7 +75,7 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
         try {
           setLoading(true); 
           // ขอ Signature จากเซิร์ฟเวอร์
-          const signatureResponse = await axios.post(`${api}/generate-signature`, {
+          const signatureResponse = await clinicAPI.post(`/generate-signature`, {
             timestamp,
             upload_preset: uploadPreset,
           });
@@ -106,7 +105,7 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
                  // ส่ง URL ไปยัง LINE ผ่าน API
 
                  
-          const lineResponse = await axios.post(`${api}/sendLineReceipt`, {
+          const lineResponse = await clinicAPI.post(`/sendLineReceipt`, {
               lineId: DataReceipt[0]?.line_id,  // LINE ID ของลูกค้า
               imageUrl: imageUrl,  // URL ของรูปใบเสร็จ
             });

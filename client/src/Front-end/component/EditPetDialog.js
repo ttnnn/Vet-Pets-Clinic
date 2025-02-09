@@ -3,9 +3,9 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, A
 import dayjs from 'dayjs';
 import { DogBreed, CatBreed } from './Breeds';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
-
+import { clinicAPI } from "../../utils/api";
 dayjs.locale('th'); // Set dayjs to use Thai locale
-const api = 'http://localhost:8080/api/clinic';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const EditPetDialog = ({ open, onClose, pet, onSave }) => {
   const [formData, setFormData] = useState({
@@ -24,7 +24,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
   useEffect(() => {
     const fetchPetData = async () => {
       try {
-        const response = await fetch(`${api}/pets/${pet.pet_id}`);
+        const response = await clinicAPI.get(`/pets/${pet.pet_id}`);
         const data = await response.json();
         if (response.ok) {
           setFormData({
@@ -64,11 +64,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     };
   
     try {
-      const response = await fetch(`${api}/pets/${pet.pet_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
-      });
+      const response = await clinicAPI.put(`/pets/${pet.pet_id}`, updatedData);
   
       if (response.ok) {
         console.log('Data updated successfully');

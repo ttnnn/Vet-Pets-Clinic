@@ -5,8 +5,7 @@ import {
 } from '@mui/material';
 import PetDialog from './Addnewpets';
 import { useNavigate ,useLocation} from 'react-router-dom';
-
-const api = 'http://localhost:8080/api/clinic'; // Replace with your actual API base URL
+import { clinicAPI } from "../../utils/api";
 
 const RegisterSearch = () => {
   const [owners, setOwners] = useState([]);
@@ -30,7 +29,7 @@ const RegisterSearch = () => {
 
   useEffect(() => {
     // Fetch owners when component mounts
-    axios.get(`${api}/owners`)
+    clinicAPI.get(`/owners`)
       .then(response => setOwners(response.data))
       .catch(error => console.error('Error fetching owners:', error));
 
@@ -43,7 +42,7 @@ const RegisterSearch = () => {
   useEffect(() => {
     // Fetch pets when an owner is selected
     if (selectedOwnerId) {
-      axios.get(`${api}/pets?owner_id=${selectedOwnerId}`)
+      clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`)
         .then(response => {
           setPets(response.data);
           // console.log('setPets', response.data);

@@ -1,6 +1,7 @@
 import React, { useState,useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
-const api = 'http://localhost:8080/api/clinic';
+
+import { clinicAPI } from "../../utils/api";
 
 const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
 
@@ -18,7 +19,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
   useEffect(() => {
     const fetchOwnerData = async () => {
       try {
-        const response = await fetch(`${api}/owners/${owner.owner_id}`);
+        const response = await clinicAPI.get(`/owners/${owner.owner_id}`);
         const data = await response.json();
         if (response.ok) {
           setFormData({
@@ -50,25 +51,19 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
   };
 
   const handleSave = async () => {
-  
     try {
-      const response = await fetch(`${api}/owners/${owner.owner_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (response.ok) {
-        // console.log('Data updated successfully');
-        onSave(formData);// ส่งข้อมูลกลับไปยัง parent
+      const response = await clinicAPI.put(`/owners/${owner.owner_id}`, formData);
+  
+      if (response.status === 200) {
+        onSave(formData); // ส่งข้อมูลกลับไปยัง parent
         onClose(); // ปิด dialog
       } else {
-        console.error('Failed to update data');
+        console.error("Failed to update data");
       }
     } catch (error) {
-      console.error('Error updating data:', error);
+      console.error("Error updating data:", error);
     }
   };
-  
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

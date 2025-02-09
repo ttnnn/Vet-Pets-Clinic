@@ -150,9 +150,6 @@ router.put('/pets/:id', async (req, res) => {
 
 router.put('/owners/:owner_id', (req, res) => {
   const { owner_id } = req.params; // Move this line up to avoid referencing id before it's declared.
-  console.log('Updating owner:', owner_id);
-  console.log(req.body);
-  
   const {
     first_name,
     last_name,

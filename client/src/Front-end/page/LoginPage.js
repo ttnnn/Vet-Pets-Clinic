@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Paper, Grid, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { clinicAPI } from "../../utils/api";
 
-const api = 'http://localhost:8080/api/clinic';
+
 
 const LoginPage = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -34,7 +34,7 @@ const LoginPage = ({ onLogin }) => {
     try {
       // console.log('username',username)
       // console.log('password',password)
-      const response = await axios.post(`${api}/login`, { username, password });
+      const response = await clinicAPI.post(`/login`, { username, password });
 
       if (response.data.success) {
         sessionStorage.setItem('token', response.data.token);

@@ -9,16 +9,15 @@ import { TextField, Button, Paper, Box, Typography,
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
-import axios from 'axios';
+import clinicAPI from 'clinicAPI';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate , useLocation } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
 import { debounce } from 'lodash';
-
+import { clinicAPI } from "../../utils/api";
 
 dayjs.locale('th'); // Set dayjs to use Thai locale
-const api = 'http://localhost:8080/api/clinic';
 
 const ExamStatusOptions = ['normal', 'abnormal', 'no exam'];
 
@@ -113,7 +112,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
   
         // Fetch Medical Data
         setLoading();
-        const medicalResponse = await axios.get(`${api}/medical/form/${appointmentId}`);
+        const medicalResponse = await clinicAPI.get(`/medical/form/${appointmentId}`);
     
         if (medicalResponse.data && medicalResponse.data.length > 0) {
           const medicalData = medicalResponse.data[0];
@@ -166,11 +165,11 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         }
     
         // Fetch Personnel Data
-        const personnelResponse = await axios.get(`${api}/personnel`);
+        const personnelResponse = await clinicAPI.get(`/personnel`);
         setPersonnelList(personnelResponse.data);
   
         // Fetch Service Categories
-        const response = await axios.get(`${api}/servicecategory`);
+        const response = await clinicAPI.get(`/servicecategory`);
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -255,7 +254,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     console.log("data:",payload);
     try {
  
-      await axios.post(`${api}/treatment/diagnosis`, payload);
+      await clinicAPI.post(`/treatment/diagnosis`, payload);
       setIsDataSaved(true);  // เมื่อบันทึกสำเร็จให้เปลี่ยนสถานะ
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
       setAlertSeverity("success");  // ประเภทของ Alert
@@ -390,7 +389,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         queue_status: 'รอชำระเงิน',
       };
 
-      await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
+      await clinicAPI.put(`/appointment/${appointmentId}`, statusUpdates);
       showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
       setIsQueueSent(true); // กำหนดสถานะคิวว่าได้ถูกส่งไปแล้ว
       return; // หยุดการทำงานเมื่อไม่มีรายการสินค้า
@@ -411,7 +410,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       };
       console.log('paymentData',paymentData)
       // 2. เรียก API เพื่อบันทึกข้อมูลทั้งหมด (ใบเสร็จ, การชำระเงิน, รายการสินค้า)
-      const response = await axios.post(`${api}/create-invoice`, {
+      const response = await clinicAPI.post(`/create-invoice`, {
         appointmentId,
         selectedItems: selectedItemsData,
         totalAmount: paymentData.total_payment,
@@ -431,7 +430,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
           queue_status: 'รอชำระเงิน',
         };
   
-        await axios.put(`${api}/appointment/${appointmentId}`, statusUpdates);
+        await clinicAPI.put(`/appointment/${appointmentId}`, statusUpdates);
         showAlert("ข้อมูลถูกส่งเข้าคิวสำเร็จ", "success");
   
 

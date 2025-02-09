@@ -9,9 +9,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
 import { jwtDecode } from 'jwt-decode';
-
+import { clinicAPI } from "../../utils/api";
 dayjs.locale('th');
-const api = 'http://localhost:8080/api/clinic';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
@@ -104,7 +104,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
             .filter((appointment) => appointment.type_service === 'วัคซีน')
             .map((appointment) => appointment.appointment_id);
 
-          const response = await axios.post(`${api}/appointment/vaccien`, { ids });
+          const response = await clinicAPI.post(`/appointment/vaccien`, { ids });
           const vaccineDataMap = response.data.reduce((acc, curr) => {
             acc[curr.appointment_id] = curr.category_name;
             return acc;
@@ -131,7 +131,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     if (!appointmentId || appointmentId === details?.appointmentId) return;
   
     try {
-      const response = await axios.get(`${api}/history/medical/${appointmentId}`);
+      const response = await clinicAPI.get(`/history/medical/${appointmentId}`);
       setDetails({ ...response.data, appointmentId }); // เก็บ appointmentId เพื่อการตรวจสอบ
     } catch (error) {
       console.error('Error fetching details:', error);

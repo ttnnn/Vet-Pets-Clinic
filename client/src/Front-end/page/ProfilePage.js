@@ -7,16 +7,14 @@ import Sidebar from './Sidebar';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditPetDialog from '../component/EditPetDialog';
 import EditOwnerDialog from '../component/EditOwnerDialog';
-import axios from 'axios';
+
 import EditIcon from '@mui/icons-material/Edit';
 import DiagnosisForm from '../component/Diagnosisform';
 import TableHistory from '../component/Tablehistory';
 import RecordMedical from '../component/recordAdmit';
 import CircularProgress from '@mui/material/CircularProgress';
+import { clinicAPI } from "../../utils/api";
 
-
-
-const api = 'http://localhost:8080/api/clinic'
 const PetProfilePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,8 +49,8 @@ const PetProfilePage = () => {
       if (!petId || !ownerId) return;
 
       const [petResponse, ownerResponse] = await Promise.all([
-        axios.get(`${api}/pets/${petId}`),
-        axios.get(`${api}/owners/${ownerId}`)
+        clinicAPI.get(`/pets/${petId}`),
+        clinicAPI.get(`/owners/${ownerId}`)
       ]);
       if (petResponse.status === 200) {
         setPet((prevPet) => {
@@ -150,7 +148,7 @@ const PetProfilePage = () => {
 
   const updateAppointments = async () => {
     try {
-      const appointmentsResponse = await axios.get(`${api}/appointment`);
+      const appointmentsResponse = await clinicAPI.get(`/appointment`);
       setAppointments(appointmentsResponse.data);
     } catch (error) {
       console.error('Error fetching updated appointments:', error);
@@ -174,7 +172,7 @@ const PetProfilePage = () => {
   
     try {
       setLoading(true); // เริ่มโหลด
-      const response = await axios.put(`${api}/pets/${pet.pet_id}/image`, formData, {
+      const response = await clinicAPI.put(`/pets/${pet.pet_id}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
   
@@ -204,7 +202,7 @@ const PetProfilePage = () => {
   
   const fetchUpdatedPetData = async () => {
     try {
-      const response = await axios.get(`${api}/pets/${pet.pet_id}`);
+      const response = await clinicAPI.get(`/pets/${pet.pet_id}`);
       if (response.status === 200) {
         setPet(response.data); // Update pet data in state
       }
@@ -219,7 +217,7 @@ const handleUpdate = async (updatedData, type) => {
   const endpoint = type === 'pet' ? `/pets/${pet.pet_id}` : `/owners/${owner.owner_id}`;
 
   try {
-    const response = await axios.put(`${api}${endpoint}`, updatedData, {
+    const response = await clinicAPI.put(`${endpoint}`, updatedData, {
       headers: { 'Content-Type': 'application/json' },
     });
 
@@ -227,7 +225,7 @@ const handleUpdate = async (updatedData, type) => {
       setSnackbarMessage('แก้ไขข้อมูลสำเร็จ');
       setSnackbarOpen(true);
       // Update state with new data
-      const updatedResponse = await axios.get(`${api}${endpoint}`);
+      const updatedResponse = await clinicAPI.get(`${endpoint}`);
       if (type === 'pet') {
         setPet(updatedResponse.data);  // Update pet state with new data
       } else {

@@ -12,13 +12,11 @@ import PostponeHotel from './PostponeHotel';
 import sendLineMessage from './sendLine'
 import dayjs from 'dayjs';
 
-
+import { clinicAPI } from "../../utils/api";
 
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
-
-const api = 'http://localhost:8080/api/clinic';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -93,7 +91,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   };
   
   const updateAppointments = () => {
-    axios.get(`${api}/appointment`) // Assuming a GET endpoint to fetch all appointments
+    clinicAPI.get(`/appointment`) // Assuming a GET endpoint to fetch all appointments
       .then((response) => setAppointments(response.data))
       .catch((error) => console.error('Error fetching updated appointments:', error));
   };
@@ -120,7 +118,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
   const getLineUserId = async (appointmentId) => {
     try {
-      const response = await axios.get(`${api}/get-line-user/${appointmentId}`);
+      const response = await clinicAPI.get(`/get-line-user/${appointmentId}`);
       return response.data.lineUserId; // สมมติว่า API ส่ง lineUserId กลับมา
     } catch (error) {
       console.error('Failed to fetch LINE User ID:', error);
@@ -134,7 +132,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       // Update the status to 'อนุมัติ' in the database
       const appointment = appointments.find(a => a.appointment_id === approveAppointmentId);
       const { appointment_date, appointment_time, pet_name , type_service } = appointment;
-      axios.put(`${api}/appointment/${approveAppointmentId}`, {
+      clinicAPI.put(`/appointment/${approveAppointmentId}`, {
         status: 'อนุมัติ',
         queue_status: 'รอรับบริการ'
       }).then(async () =>{
@@ -173,7 +171,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   
   
   const deleteAppointment = (AppointmentID) => {
-    axios.put(`${api}/appointment/${AppointmentID}`,{
+    clinicAPI.put(`/appointment/${AppointmentID}`,{
        status: 'ยกเลิกนัด',
        queue_status: 'ยกเลิกนัด',
        massage_status:'cancle'

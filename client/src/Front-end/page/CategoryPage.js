@@ -10,8 +10,8 @@ import Sidebar from './Sidebar';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
+import { clinicAPI } from "../../utils/api";
 
-const api = 'http://localhost:8080/api/clinic';
 const CategoryContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   flexGrow: 1,
@@ -55,7 +55,7 @@ const CategoryPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${api}/servicecategory`);
+      const response = await clinicAPI.get(`/servicecategory`);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -104,7 +104,7 @@ const CategoryPage = () => {
     const updatedCategory = { ...newCategory, price_service: price };
 
     try {
-      await axios.post(`${api}/servicecategory`, updatedCategory);
+      await clinicAPI.post(`/servicecategory`, updatedCategory);
       fetchCategories();
       setSnackbar({ open: true, message: 'เพิ่มข้อมูลสำเร็จ!', severity: 'success' });
       handleDialogClose();
@@ -125,7 +125,7 @@ const CategoryPage = () => {
     const updatedCategory = { ...newCategory, price_service: price };
 
     try {
-      const response = await axios.put(`${api}/servicecategory/${newCategory.category_id}`, updatedCategory);
+      const response = await clinicAPI.put(`/servicecategory/${newCategory.category_id}`, updatedCategory);
       if (response.status === 200) {
         setCategories(prevCategories => prevCategories.map(category =>
           category.category_id === newCategory.category_id ? updatedCategory : category
@@ -141,7 +141,7 @@ const CategoryPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await axios.delete(`${api}/servicecategory/${id}`);
+      const response = await clinicAPI.delete(`/servicecategory/${id}`);
       if (response.status === 200) {
         fetchCategories();
         setSnackbar({ open: true, message: 'ลบรายการสำเร็จ', severity: 'success' });

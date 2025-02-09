@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Snackbar, Alert } from '@mui/material';
-import axios from 'axios'; // import axios
-
-const api = 'http://localhost:8080/api/customer';
+import { customerAPI  } from "../../utils/api";
 
 const Register = () => {
   const [first_name, setFirstName] = useState('');
@@ -38,8 +36,8 @@ const Register = () => {
     }
  
     try {
-      const response = await axios.post(
-        `${api}/owner/check-owner`,
+      const response = await customerAPI.post(
+        `/owner/check-owner`,
         { first_name, last_name, phone_number },
         { headers: { Authorization: `Bearer ${idToken}` } }
       );

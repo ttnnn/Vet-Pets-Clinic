@@ -1,17 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Typography, Card, CardContent, Button, Box, AppBar, Toolbar, IconButton, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Postpone from '../component/PostponeAppointment';
 import PostponeHotel from '../component/PostponeHotel';
-
+import { customerAPI  } from "../../utils/api";
 
 dayjs.locale('th'); // ใช้ locale ภาษาไทย
 
-const api = 'http://localhost:8080/api/customer';
 
 const AppointmentDetail = () => {
   const navigate = useNavigate();
@@ -33,7 +31,7 @@ const AppointmentDetail = () => {
     try {
       if (!appointmentId) return;
 
-      const response = await axios.get(`${api}/appointments/detail/${appointmentId}`);
+      const response = await customerAPI.get(`/appointments/detail/${appointmentId}`);
       if (response.data.success && response.data.data.queue_status !== 'ยกเลิกนัด') {
         setAppointment(response.data.data);
       } else {
@@ -57,7 +55,7 @@ const AppointmentDetail = () => {
   // ฟังก์ชันสำหรับยกเลิกนัด
   const handleCancelAppointment = async () => {
     try {
-      const response = await axios.put(`${api}/appointment/cancel`, { appointmentId });
+      const response = await customerAPI.put(`/appointment/cancel`, { appointmentId });
       // console.log('appointmentId',appointmentId)
       if (response.data.success) {
         setSnackbarMessage('การนัดหมายถูกยกเลิกแล้ว');

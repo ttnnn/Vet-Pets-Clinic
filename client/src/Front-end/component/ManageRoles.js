@@ -11,10 +11,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-
+import { clinicAPI } from "../../utils/api";
 const roles = ['เจ้าหน้าที่คลินิก', 'สัตวแพทย์'];
 
-const api = 'http://localhost:8080/api/clinic';
 
 const FormRow = styled(Box)({
   display: 'flex',
@@ -87,7 +86,7 @@ const ManageRoles = () => {
   
     try {
       // เรียก API เพื่อเปลี่ยนรหัสผ่าน
-      const response = await axios.put(`${api} `, {
+      const response = await clinicAPI.put(`/personnel/change-password`, {
         user_name: newAdmin.user_name,
         oldPassword,
         newPassword,
@@ -115,7 +114,7 @@ const ManageRoles = () => {
 
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get(`${api}/personnel`);
+      const response = await clinicAPI.get(`/personnel`);
       setAdmins(response.data);
     } catch (error) {
       console.error('Error fetching admins:', error);
@@ -184,7 +183,7 @@ const ManageRoles = () => {
   }
     try {
       // console.log('Adding new admin:', newAdmin); // ดูค่าที่บันทึก
-      await axios.post(`${api}/personnel`, newAdmin);
+      await clinicAPI.post(`/personnel`, newAdmin);
       fetchAdmins();
       setSnackbar({ open: true, message: 'เพิ่มผู้ดูแลสำเร็จ!', severity: 'success' });
       handleDialogClose();
@@ -197,7 +196,7 @@ const ManageRoles = () => {
   const handleUpdateAdmin = async () => {
     try {
       console.log('Updating admin:', newAdmin); // ดูค่าที่ถูกแก้ไข
-      const response = await axios.put(`${api}/personnel/${newAdmin.personnel_id}`, newAdmin);
+      const response = await clinicAPI.put(`/personnel/${newAdmin.personnel_id}`, newAdmin);
       if (response.status === 200) {
         // รีเฟรชข้อมูลผู้ดูแลจากฐานข้อมูล
         setAdmins((prevAdmins) => 
@@ -216,7 +215,7 @@ const ManageRoles = () => {
   
   const handleDelete = async (id) => {
     try {
-      const response = await axios.delete(`${api}/personnel/${id}`);
+      const response = await clinicAPI.delete(`/personnel/${id}`);
       if (response.status === 200) {
         fetchAdmins();
         setSnackbar({ open: true, message: 'ลบผู้ดูแลสำเร็จ', severity: 'success' });

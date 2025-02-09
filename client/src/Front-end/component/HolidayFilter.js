@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { isWithinInterval, parseISO, format } from 'date-fns';
-import axios from 'axios';
+import { clinicAPI } from "../../utils/api";
 
-const api = 'http://localhost:8080/api/clinic';
 
 const HolidayFilter = ({ children }) => {
   const [holidays, setHolidays] = useState([]);
@@ -12,7 +11,7 @@ const HolidayFilter = ({ children }) => {
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
-        const response = await axios.get(`${api}/dayoff`);
+        const response = await clinicAPI.get(`/dayoff`);
         setHolidays(response.data);
       } catch (error) {
         console.error('Error fetching holidays:', error);

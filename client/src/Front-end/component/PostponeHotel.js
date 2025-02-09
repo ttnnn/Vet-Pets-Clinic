@@ -11,9 +11,8 @@ import 'dayjs/locale/th';
 import { styled } from '@mui/material/styles';
 import HolidayFilter from './HolidayFilter';
 import { useNavigate  } from 'react-router-dom';
+import { clinicAPI } from "../../utils/api";
 dayjs.locale('th');
-
-const api = 'http://localhost:8080/api/clinic';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -75,13 +74,13 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
 
       // อัปเดตสถานะเป็น admit เมื่อ isAdmitBooking เป็น true
       if (isAdmitBooking) {
-        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', reason: 'admit' });
+        await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', reason: 'admit' });
       }
       if (isCustomer) {
-        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
+        await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
       }
 
-      const response = await axios.put(`${api}/postpone/hotels/${appointmentId}`, {
+      const response = await clinicAPI.put(`/postpone/hotels/${appointmentId}`, {
         start_date: formatDate(checkInDate),
         end_date: formatDate(checkOutDate),
         num_day : totalDays ,
@@ -126,7 +125,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
   useEffect(() => {
     const fetchPetSpecies = async () => {
       try {
-        const response = await axios.get(`${api}/pets/${petId}`);
+        const response = await clinicAPI.get(`/pets/${petId}`);
         setPetSpecies(response.data.pet_species);
         setPetName(response.data.pet_name);
       } catch (error) {
@@ -145,8 +144,8 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
       const formattedCheckOutDate = checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : null;
       if (formattedCheckInDate && formattedCheckOutDate && petSpecies) {
         try {
-          const response = await axios.get(
-            `${api}/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
+          const response = await clinicAPI.get(
+            `/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
           );
           setPetCages(response.data);
         } catch (error) {
@@ -160,7 +159,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
   useEffect(() => {
     const fetchPersonnel = async () => {
       try {
-        const response = await axios.get(`${api}/personnel`);
+        const response = await clinicAPI.get(`/personnel`);
         setPersonnelList(response.data);
       } catch (error) {
         console.error('Error fetching personnel:', error);
@@ -173,7 +172,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
     if ( appointmentId) { 
       const fetchAppointmentDetails = async () => {
         try {
-          const response = await axios.get(`${api}/appointments/${appointmentId}`);
+          const response = await clinicAPI.get(`/appointments/${appointmentId}`);
           console.log('Response from API:', response.data); // ตรวจสอบข้อมูลที่ส่งกลับมา
           const appointmentDate = new Date(response.data.appointment_date);
           setInitialCheckInDate(appointmentDate);

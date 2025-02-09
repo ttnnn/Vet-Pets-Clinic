@@ -2,7 +2,6 @@ import React, { useState, useEffect , useMemo ,useCallback} from 'react';
 import { Box, Button, Typography, Paper, MenuItem, Select, FormControl, InputLabel, TextField, Autocomplete,
   Tabs, Tab,Checkbox, FormControlLabel,Snackbar  ,Dialog, DialogActions, 
   DialogContent, DialogTitle,} from '@mui/material';
-import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -12,10 +11,11 @@ import { styled } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import {useLocation,useNavigate} from 'react-router-dom';
 import HolidayFilter from './HolidayFilter';
+import { clinicAPI } from "../../utils/api";
 const MemoizedAutocomplete = React.memo(Autocomplete);
 
 
-const api = 'http://localhost:8080/api/clinic';
+const API_BASE_URL = 'http://localhost:8080/API_BASE_URL/clinic';
 
 
 const categories = ['ทั้งหมด', 'อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'ฝากเลี้ยง', 'วัคซีน'];
@@ -79,7 +79,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     }
     const fetchOwners = async () => {
       try {
-        const response = await axios.get(`${api}/owners`);
+        const response = await clinicAPI.get(`/owners`);
         setOwners(response.data);
       } catch (error) {
         console.error('Error fetching owners:', error);
@@ -92,7 +92,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   useEffect(() => {
     const fetchPersonnel = async () => {
       try {
-        const response = await axios.get(`${api}/personnel`);
+        const response = await clinicAPI.get(`/personnel`);
         // console.log('response',response)
         setPersonnelList(response.data);
       } catch (error) {
@@ -107,7 +107,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   useEffect(() => {
     const fetchFilteredOwners = async () => {
       try {
-        const response = await axios.get(`${api}/owners?search=${searchOwner}`);
+        const response = await clinicAPI.get(`/owners?search=${searchOwner}`);
         setOwners(response.data);
       } catch (error) {
         console.error('Error fetching owners:', error);
@@ -127,7 +127,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   useEffect(() => {
     const fetchPets = async () => {
       try {
-        const response = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
+        const response = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
         setPets(response.data);
         setSelectedPetId(locationPetID || "");
       } catch (error) {
@@ -150,8 +150,8 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
       const formattedCheckOutDate = checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : null;
       if (formattedCheckInDate && formattedCheckOutDate) {
         try {
-          const response = await axios.get(
-            `${api}/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
+          const response = await clinicAPI.get(
+            `/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
           );
           setPetCages(response.data); 
           console.log('cage' , response.data) // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
@@ -257,7 +257,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
       }
   
       // ส่งข้อมูลไปยัง API
-      const { data: appointmentResponse } = await axios.post(`${api}/create-appointment`, appointmentData);
+      const { data: appointmentResponse } = await clinicAPI.post(`/create-appointment`, appointmentData);
   
       // ตรวจสอบการตอบกลับ
       // console.log('Appointment Response:', appointmentResponse);

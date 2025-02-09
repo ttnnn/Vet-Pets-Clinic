@@ -1,7 +1,6 @@
 import React, { useState , useEffect} from 'react';
 import {  Typography, Box, Paper} from '@mui/material';
 import Sidebar from './Sidebar'; // Assuming Sidebar is in the same directory
-import axios from 'axios';
 import dayjs from 'dayjs';
 import AppointmentList from '../component/AppointmentList';
 import OngoingAppointments from '../component/OngoingAppointment';
@@ -10,8 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import AdmitTable from '../component/AdmitTable';
 import {useLocation } from 'react-router-dom';
 // Categories for filtering
-
-const api = 'http://localhost:8080/api/clinic';
+import { clinicAPI } from "../../utils/api";
 
 const formatDate = (date) => {
   const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -99,7 +97,7 @@ const HomeDashboard = () => {
   const fetchAppointments = async () => {
     setLoading(true); // Start loading
     try {
-      const response = await axios.get(`${api}/appointment`);
+      const response = await clinicAPI.get(`/appointment`);
       setAppointments(response.data);
       // console.log('Fetched appointments:', response.data);
     } catch (error) {
@@ -112,7 +110,7 @@ const HomeDashboard = () => {
 
   const updateAppointmentStatus = async (appointment_id, statusUpdates) => {
     try {
-      await axios.put(`${api}/appointment/${appointment_id}`, statusUpdates);
+      await clinicAPI.put(`/appointment/${appointment_id}`, statusUpdates);
       fetchAppointments();
     } catch (error) {
       console.error('Error updating appointment:', error);

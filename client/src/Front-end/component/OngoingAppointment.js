@@ -21,19 +21,16 @@ import {
   DialogTitle,Badge ,
 } from '@mui/material';
 import { styled } from '@mui/system';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import PostponeHotel from './PostponeHotel';
 import ChooseVac from './ChooseVac';
 import { jwtDecode } from 'jwt-decode';
-
+import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
 
 const categories = ['ฝากเลี้ยง','อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน'];
-const api = 'http://localhost:8080/api/clinic';
-
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -109,7 +106,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${api}/appointment/hotel`);
+      const response = await clinicAPI.get(`/appointment/hotel`);
       setAppointmentHotel(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);

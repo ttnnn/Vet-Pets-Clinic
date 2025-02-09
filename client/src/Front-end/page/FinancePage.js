@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Typography,
   Box,
@@ -27,11 +26,10 @@ import ReceiptComponent from '../component/ReceiptComponent';
 import DownloadIcon from '@mui/icons-material/Download';
 import { CircularProgress } from '@mui/material';
 import ExportFinanceToExcel from '../component/ExportFinanceToExcel';
-
+import { clinicAPI } from "../../utils/api";
 
 dayjs.locale('th');
 
-const api = 'http://localhost:8080/api/clinic';
 const CategoryContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   flexGrow: 1,
@@ -70,7 +68,7 @@ const FinancePage = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${api}/finance`);
+      const response = await clinicAPI.get(`/finance`);
       setDataFinance(response.data);
     } catch (error) {
       console.error('Error fetching DataFinance:', error);

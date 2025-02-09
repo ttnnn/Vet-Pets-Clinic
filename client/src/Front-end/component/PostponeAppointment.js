@@ -11,10 +11,10 @@ import TimeSlotPicker from './TimeSlot'; // Import TimeSlotPicker component
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
 import HolidayFilter from './HolidayFilter';
+import { clinicAPI } from "../../utils/api";
 
 dayjs.locale('th'); // Set dayjs to use Thai locale
 
-const api = 'http://localhost:8080/api/clinic';
 
 const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppointments ,isCustomer , appointmentDates, appointmentTimes }) => {
   const [appointmentDate, setAppointmentDate] = useState(null);
@@ -105,13 +105,13 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
 
       // console.log("format",date_format, " ",time_format)
 
-      const response = await axios.put(`${api}/postpone/appointment/${appointmentId}`, {
+      const response = await clinicAPI.put(`/postpone/appointment/${appointmentId}`, {
         appointment_date: date_format,
         appointment_time: time_format,
       });
 
       if (isCustomer) {
-        await axios.put(`${api}/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
+        await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
       }
 
       if (response.status === 200) {

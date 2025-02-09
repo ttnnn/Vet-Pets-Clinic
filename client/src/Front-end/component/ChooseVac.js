@@ -13,13 +13,11 @@ import {
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import axios from "axios";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-
+import { clinicAPI } from "../../utils/api";
 dayjs.locale("th");
 
-const api = "http://localhost:8080/api/clinic";
 
 const ChooseVac = ({
   open,
@@ -49,7 +47,7 @@ const ChooseVac = ({
       if (TypeService === "วัคซีน") {
         setLoading(true);
         try {
-          const response = await axios.get(`${api}/vaccines`);
+          const response = await clinicAPI.get(`/vaccines`);
           setVaccineList(response.data);
         } catch (error) {
           console.error("Error fetching vaccines:", error);
@@ -65,10 +63,10 @@ const ChooseVac = ({
   useEffect(() => {
     const fetchAppointmentAndPetDetails = async () => {
       try {
-        const appointmentResponse = await axios.get(
-          `${api}/appointments/${appointmentId}`
+        const appointmentResponse = await clinicAPI.get(
+          `/appointments/${appointmentId}`
         );
-        const petResponse = await axios.get(`${api}/pets/${petId}`);
+        const petResponse = await clinicAPI.get(`/pets/${petId}`);
         setAppointmentDetails(appointmentResponse.data);
         setPetDetails(petResponse.data);
       } catch (error) {
@@ -96,8 +94,8 @@ const ChooseVac = ({
     }
 
     try {
-      const response = await axios.post(
-        `${api}/appointments/${appointmentId}/vaccines`,
+      const response = await clinicAPI.post(
+        `/appointments/${appointmentId}/vaccines`,
         {
           pet_id: petId,
           vaccine_id: selectedVaccine,

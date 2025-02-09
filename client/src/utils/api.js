@@ -1,0 +1,15 @@
+import axios from "axios";
+
+const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+
+// API สำหรับลูกค้า
+export const customerAPI = axios.create({
+  baseURL: `${BASE_URL}/customer`,
+  headers: { "Content-Type": "application/json" },
+});
+
+// API สำหรับคลินิก
+export const clinicAPI = axios.create({
+  baseURL: `${BASE_URL}/clinic`,
+  headers: { "Content-Type": "application/json" },
+});

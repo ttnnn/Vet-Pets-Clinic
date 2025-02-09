@@ -5,8 +5,7 @@ import {
   TableSortLabel, Paper, Button, TextField, Box, Tabs, Tab
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-
-const api = 'http://localhost:8080/api/clinic';
+import { clinicAPI } from "../../utils/api";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -48,7 +47,7 @@ const QueueAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
   const deleteAppointment = (AppointmentID) => {
     console.log("Deleting appointment with ID:", AppointmentID);
-    axios.delete(`${api}/deleted/appointment/${AppointmentID}`)
+    clinicAPI.delete(`/deleted/appointment/${AppointmentID}`)
       .then(() => {
         // Update the list of appointments after successful deletion
         setAppointments(appointments.filter(appt => appt.appointment_id !== AppointmentID));

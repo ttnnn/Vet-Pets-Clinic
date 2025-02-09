@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@mui/material';
-import axios from 'axios';
-
-const api = 'http://localhost:8080/api/clinic';
+import { clinicAPI } from "../../utils/api";
 
 const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService) => {
   const slots = [];
@@ -72,7 +70,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
         // console.log('formattedDate', formattedDate);
 
         try {
-          const response = await axios.get(`${api}/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
+          const response = await clinicAPI.get(`/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
           // console.log('API Response:', response.data);
 
           const cleanedBookedSlots = Array.isArray(response.data)

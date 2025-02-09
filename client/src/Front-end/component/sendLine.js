@@ -1,9 +1,9 @@
 import axios from 'axios';
+import { clinicAPI } from "../../utils/api";
 
-const api = 'http://localhost:8080/api/clinic';
 const sendLineMessage = async (lineUserId, message, appointmentId) => {
   try {
-    const response = await axios.post(`${api}/send-line-message`, {
+    const response = await clinicAPI.post(`/send-line-message`, {
       lineUserId,
       message,
       appointmentId,

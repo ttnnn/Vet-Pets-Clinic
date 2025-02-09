@@ -7,12 +7,12 @@ import { DogBreed, CatBreed } from './Breeds';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { clinicAPI } from "../../utils/api";
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
-const api = 'http://localhost:8080/api/clinic'
 const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   const [petName , setPetName] = useState('');
   const [petColor , setPetColor] = useState('');
@@ -87,12 +87,12 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     console.log('petData',petData)
 
     try {
-        const response = await axios.post(`${api}/pets`, petData, {
+        const response = await clinicAPI.post(`/pets`, petData, {
             headers: { "Content-Type": "application/json" },
         });
 
         if (response.status === 200) {
-            const petsResponse = await axios.get(`${api}/pets?owner_id=${selectedOwnerId}`);
+            const petsResponse = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
             setPets(petsResponse.data);
             setAlertSeverity("success");
             setAlertMessage("ลงทะเบียนสำเร็จ");

@@ -7,6 +7,7 @@ import {
   Checkbox, FormGroup, FormControlLabel, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { styled } from '@mui/system';
+import { clinicAPI } from "../../utils/api";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
@@ -15,8 +16,6 @@ import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
 
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
-
-const api = 'http://localhost:8080/api/clinic';
 
 const FormRow = styled(Box)({
   display: 'flex',
@@ -70,7 +69,7 @@ const ManageHolidays = () => {
   
   const fetchHolidays = async () => {
     try {
-      const response = await axios.get(`${api}/dayoff`);
+      const response = await clinicAPI.get(`/dayoff`);
       const data = response.data.map((holiday) => {
         let recurringDays = [];
         try {
@@ -171,10 +170,10 @@ const ManageHolidays = () => {
   
     try {
       if (newHoliday.dayoff_id) {
-        await axios.put(`${api}/dayoff/${newHoliday.dayoff_id}`, holidayData);
+        await clinicAPI.put(`/dayoff/${newHoliday.dayoff_id}`, holidayData);
         setSnackbar({ open: true, message: 'แก้ไขวันหยุดสำเร็จ!', severity: 'success' });
       } else {
-        await axios.post(`${api}/dayoff`, holidayData);
+        await clinicAPI.post(`/dayoff`, holidayData);
         setSnackbar({ open: true, message: 'เพิ่มวันหยุดสำเร็จ!', severity: 'success' });
       }
       fetchHolidays();
@@ -188,7 +187,7 @@ const ManageHolidays = () => {
 
   const handleUpdateHoliday = async () => {
     try {
-      const response = await axios.put(`${api}/dayoff/${newHoliday.dayoff_id}`, newHoliday);
+      const response = await clinicAPI.put(`/dayoff/${newHoliday.dayoff_id}`, newHoliday);
       if (response.status === 200) {
         setHolidays((prevHolidays) =>
           prevHolidays.map((holiday) =>
@@ -206,7 +205,7 @@ const ManageHolidays = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${api}/dayoff/${id}`);
+      await clinicAPI.delete(`/dayoff/${id}`);
       fetchHolidays();
       setSnackbar({ open: true, message: 'ลบวันหยุดสำเร็จ', severity: 'success' });
     } catch (error) {

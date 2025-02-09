@@ -6,7 +6,6 @@ import { Button, TextField, Typography, Box, Paper, Tabs, Tab,
 import CloseIcon from '@mui/icons-material/Close';
 import Sidebar from './Sidebar';
 import { styled } from '@mui/material/styles';
-import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -21,11 +20,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 
 import { useLocation } from 'react-router-dom';
-
+import { clinicAPI } from "../../utils/api";
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
-
-const api = 'http://localhost:8080/api/clinic';
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   textTransform: 'none',
@@ -252,7 +249,7 @@ const RegisterPage = () => {
       console.log('data:',combinedData)
 
       if (combinedData.pets.length > 0) {
-        await axios.post(`${api}/create-owner-pet`, combinedData);
+        await clinicAPI.post(`/create-owner-pet`, combinedData);
         setSnackbar({
           open: true,
           message: 'ลงทะเบียนสำเร็จ',

@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Tabs, Tab, Select, MenuItem } from '@mui/material';
 import Sidebar from './Sidebar';
-import axios from 'axios';
 import TableAppointments from '../component/TableAppointment';
 import { styled } from '@mui/material/styles';
 import AddAppointment from '../component/CreateAppointment';
 import { DateTime } from 'luxon';
 import { useLocation } from 'react-router-dom';
 import ExportAppointmentsToExcel from '../component/ExportToExcel';
+import { clinicAPI } from "../../utils/api";
 
-
-const api = 'http://localhost:8080/api/clinic';
 
 // Styled Tab with custom colors
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -69,7 +67,7 @@ const AppointmentPage = () => {
 
   const updateAppointments = async () => {
     try {
-      const appointmentsResponse = await axios.get(`${api}/appointment`);
+      const appointmentsResponse = await clinicAPI.get(`/appointment`);
       setAppointments(appointmentsResponse.data);
     } catch (error) {
       console.error('Error fetching updated appointments:', error);

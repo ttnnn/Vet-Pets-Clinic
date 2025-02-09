@@ -8,15 +8,12 @@ import {
 } from '@mui/material';
 
 import CloseIcon from '@mui/icons-material/Close';
-import axios from 'axios';
 import FolderIcon from '@mui/icons-material/Folder';
 import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
-
+import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';
 dayjs.locale('th');
-
-const api = 'http://localhost:8080/api/clinic';
 
 // Utility functions
 const descendingComparator = (a, b, orderBy) => {
@@ -97,7 +94,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
       
       setIsLoading(true);
       try {
-        const response = await fetch(`${api}/admitrecord?appointment_id=${appointment.appointment_id}`);
+        const response = await clinicAPI.get(`/admitrecord?appointment_id=${appointment.appointment_id}`);
         if (!response.ok) {
           if (response.status === 404) {
             console.log("No records found for this appointment.");
@@ -322,7 +319,7 @@ const RecordMedical = ({
 
   // const updateAdmitrecord = () => {
     // axios
-        // .get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
+        // .get(`${API_BASE_URL}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
         // .then((response) => {
           // setUpdateRecords(response.data.data  || []); // อัปเดตข้อมูลใน state
         // })
@@ -369,8 +366,8 @@ const RecordMedical = ({
     console.log("data:",payload);
     try {
  
-      await axios.post(`${api}/admitrecord`, payload);
-      const response = await axios.get(`${api}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`);
+      await clinicAPI.post(`/admitrecord`, payload);
+      const response = await clinicAPI.get(`/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`);
       setUpdateRecords((prevRecords) => {
         const filteredPrevRecords = prevRecords.filter(
           (record) => record.appointment_id !== selectedAppointment?.appointment_id

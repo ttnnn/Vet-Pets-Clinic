@@ -2,12 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Card, CardContent, Grid, Avatar, Button, AppBar, Toolbar, Box, BottomNavigation, BottomNavigationAction, Select, MenuItem, FormControl } from '@mui/material';
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
-import axios from 'axios';
+import { customerAPI  } from "../../utils/api";
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 dayjs.locale('th'); // ใช้ภาษาไทย
 
-const api = 'http://localhost:8080/api/customer';
 
 const HistoryPage = () => {
   const navigate = useNavigate();
@@ -28,7 +27,7 @@ const HistoryPage = () => {
     try {
       const { first_name, last_name, phone_number } = user;
   
-      const response = await axios.get(`${api}/appointments/history`, {
+      const response = await customerAPI.get(`/appointments/history`, {
         params: { first_name, last_name, phone_number },
       });
   

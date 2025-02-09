@@ -2,16 +2,14 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Container, Typography, Card, CardContent, Grid, Avatar, Box, BottomNavigation, BottomNavigationAction, AppBar, Toolbar, Divider } from '@mui/material';
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import { customerAPI  } from "../../utils/api";
 import liff from "@line/liff";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 dayjs.extend(isSameOrAfter);
 
-
-const api = 'http://localhost:8080/api/customer';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -59,7 +57,7 @@ const Home = () => {
         return;
       }
   
-      const response = await axios.get(`${api}/appointments`, {
+      const response = await customerAPI.get(`/appointments`, {
         params: {
           first_name,
           last_name,
