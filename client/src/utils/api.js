@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+const BASE_URL = 'https://vet-pets-clinic.onrender.com';
 
 // API สำหรับลูกค้า
 export const customerAPI = axios.create({
