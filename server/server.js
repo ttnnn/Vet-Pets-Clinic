@@ -19,8 +19,10 @@ const PORT = process.env.PORT || 3001;
 pool.connect()
   .then(() => console.log('Connect PostgreSQL Success !!'))
   .catch(err => console.error('การเชื่อมต่อ PostgreSQL ล้มเหลว', err));
-const staticFolder = path.join(__dirname, 'client');
+// const staticFolder = path.join(__dirname, 'client');
 //ใช้ไฟล์ static สำหรับหน้าลูกค้าและคลินิก
+const staticFolder = path.join(__dirname, '../client/build');  // เปลี่ยนจาก 'client' เป็น 'client/build'
+app.use(express.static(staticFolder));
 
 app.use('/customer', express.static(staticFolder, { index: 'index.html' }));
 app.use('/clinic', express.static(staticFolder, { index: 'index.html' }));
