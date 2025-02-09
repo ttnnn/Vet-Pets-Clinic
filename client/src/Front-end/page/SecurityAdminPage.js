@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
 import ManageRoles from '../component/ManageRoles';  // Import ManageRole
 import ManageHolidays from '../component/ManageHolidays';  // Import ManageHolidays

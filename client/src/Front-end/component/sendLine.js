@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { clinicAPI } from "../../utils/api";
 
 const sendLineMessage = async (lineUserId, message, appointmentId) => {

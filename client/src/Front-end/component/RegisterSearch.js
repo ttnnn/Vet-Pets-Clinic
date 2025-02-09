@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Box, Typography, Autocomplete, TextField, Button,Avatar
 } from '@mui/material';

@@ -4,14 +4,12 @@ import {
   TableSortLabel, Paper, Button, TextField, Box, Typography, Dialog,
   DialogTitle, DialogContent, DialogActions,Divider
 } from '@mui/material';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
 import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 dayjs.locale('th');
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');

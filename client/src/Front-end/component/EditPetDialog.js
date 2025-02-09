@@ -5,7 +5,7 @@ import { DogBreed, CatBreed } from './Breeds';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
 import { clinicAPI } from "../../utils/api";
 dayjs.locale('th'); // Set dayjs to use Thai locale
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 
 const EditPetDialog = ({ open, onClose, pet, onSave }) => {
   const [formData, setFormData] = useState({

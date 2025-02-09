@@ -5,7 +5,6 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import { styled } from '@mui/material/styles';
