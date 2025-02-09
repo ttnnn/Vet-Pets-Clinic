@@ -38,7 +38,6 @@ const io = setupSocketServer(server);
 // Cron Jobs
 setupCronJobs(io);
 
-  
-server.listen(PORT, function () {
-    console.log('Server running on port');
+server.listen(PORT, "0.0.0.0", function () {
+  console.log(`Server running on port ${PORT}`);
 });
