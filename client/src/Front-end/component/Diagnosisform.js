@@ -9,7 +9,6 @@ import { TextField, Button, Paper, Box, Typography,
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Import Thai locale for dayjs
-import clinicAPI from 'clinicAPI';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate , useLocation } from 'react-router-dom';
