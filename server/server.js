@@ -13,22 +13,18 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json()); 
 const server = http.createServer(app);
-const PORT = process.env.PORT || 10000
+
 // การเชื่อมต่อฐานข้อมูล
 pool.connect()
   .then(() => console.log('Connect PostgreSQL Success !!'))
   .catch(err => console.error('การเชื่อมต่อ PostgreSQL ล้มเหลว', err));
+const staticFolder = path.join(__dirname, 'client');
+//ใช้ไฟล์ static สำหรับหน้าลูกค้าและคลินิก
 
-
-const staticFolder = path.join(__dirname, '../client/build');
-app.use(express.static(staticFolder));
 app.use('/customer', express.static(staticFolder, { index: 'index.html' }));
 app.use('/clinic', express.static(staticFolder, { index: 'index.html' }));
-
 app.use('/public', express.static(path.join(__dirname, '../client/public')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(staticFolder, 'index.html'));
-});
+app.use('/public', express.static(path.join(__dirname, '../customer/public')));
 
 
   // Routes + เส้นทาง API สำหรับคลินิกและลูกค้า
@@ -41,6 +37,7 @@ const io = setupSocketServer(server);
 // Cron Jobs
 setupCronJobs(io);
 
-server.listen(PORT, "0.0.0.0", function () {
-  console.log(`Server running on port ${PORT}`);
+  
+server.listen(8080, function () {
+    console.log('Server running on port 8080');
 });
