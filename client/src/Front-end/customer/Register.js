@@ -11,9 +11,14 @@ const Register = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { idToken, pictureUrl } = location.state || {};
+  const storedToken = localStorage.getItem("lineToken");
+  const storedPictureUrl = localStorage.getItem("pictureUrl");
+  
+  const idToken = storedToken || "";
+  const pictureUrl = storedPictureUrl || "";
 
-  console.log('location.state ',location.state )
+  console.log("ID Token from storage:", idToken);
+  
   const handleRegister = async (event) => {
     event.preventDefault();
 

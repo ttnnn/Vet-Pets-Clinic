@@ -37,15 +37,16 @@ const LineAuth = () => {
                     liff.login();
                     return;
                 }
-                localStorage.setItem("lineToken", idToken);
 
                 const profile = await liff.getProfile();
                 const { pictureUrl } = profile;
 
+                localStorage.setItem("lineToken", idToken);
+                localStorage.setItem("pictureUrl", pictureUrl);
                 // console.log("User Profile:", profile);
                 // console.log("ID Token:", idToken);
 
-                navigate("/customer/login", { state: { idToken, pictureUrl } });
+               navigate("/customer/login");
             }
         } catch (err) {
             //console.error("Error during login:", err);
