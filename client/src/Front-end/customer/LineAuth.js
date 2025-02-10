@@ -21,20 +21,19 @@ const LineAuth = () => {
     const handleLogin = useCallback(async () => {
         try {
             if (!liff.isLoggedIn()) {
-                liff.login({ redirectUri: "https://two-vet-pets-clinic.onrender.com/customer/login" });
-
+                liff.login();
             } else {
                 const idToken = liff.getIDToken();
                 if (!idToken) {
                     console.warn("ID Token not found. Redirecting to login...");
-                    liff.login({ redirectUri: "https://two-vet-pets-clinic.onrender.com/customer/login" });
+                    liff.login();
                     return;
                 }
 
                 if (isTokenExpired(idToken)) {
                     alert("Your session has expired. Please log in again.");
                     liff.logout();
-                    liff.login({ redirectUri: "https://two-vet-pets-clinic.onrender.com/customer/login" });
+                    liff.login();
                     return;
                 }
                 localStorage.setItem("lineToken", idToken);
