@@ -13,6 +13,7 @@ const Register = () => {
   const location = useLocation();
   const { idToken, pictureUrl } = location.state || {};
 
+  console.log('location.state ',location.state )
   const handleRegister = async (event) => {
     event.preventDefault();
 
