@@ -9,13 +9,8 @@ const Notification = () => {
   const timeoutRef = useRef(null); // เพื่อเก็บการตั้งเวลาไว้ในครั้งถัดไป
   // Connect to the 'clinic' room on socket server
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_API_URL || 'https://vet-pets-clinic.onrender.com/api');
- // Connect to the server
+    const socket = io(process.env.REACT_APP_API_URL || 'https://two-vet-pets-clinic.onrender.com');
 
-    // socket.on('connect', () => {
-      //setSocketId(socket.id);  // เก็บค่า socket.id เมื่อเชื่อมต่อสำเร็จ
-      // console.log('Socket connected', socket.id); // ตรวจสอบการเชื่อมต่อ
-    // });
 
     socket.emit('join-room', 'clinic'); // Join 'clinic' room
 
