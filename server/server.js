@@ -22,6 +22,8 @@ pool.connect()
 
 const staticFolder = path.join(__dirname, '../client/build');
 app.use(express.static(staticFolder));
+app.use('/customer', express.static(staticFolder, { index: 'index.html' }));
+app.use('/clinic', express.static(staticFolder, { index: 'index.html' }));
 
 app.use('/public', express.static(path.join(__dirname, '../client/public')));
 app.get('*', (req, res) => {
