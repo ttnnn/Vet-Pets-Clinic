@@ -23,6 +23,7 @@ const LineAuth = () => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
+                await liff.ready;
                 const idToken = liff.getIDToken();
                 if (!idToken) {
                     console.warn("ID Token not found. Redirecting to login...");
@@ -37,12 +38,12 @@ const LineAuth = () => {
                     return;
                 }
                 localStorage.setItem("lineToken", idToken);
-        
+
                 const profile = await liff.getProfile();
                 const { pictureUrl } = profile;
 
                 // console.log("User Profile:", profile);
-                console.log("ID Token:", idToken);
+                // console.log("ID Token:", idToken);
 
                 navigate("/customer/login", { state: { idToken, pictureUrl } });
             }
