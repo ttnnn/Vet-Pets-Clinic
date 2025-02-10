@@ -10,7 +10,7 @@ const Register = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // State for Snackbar
 
   const navigate = useNavigate();
-  const location = useLocation();
+ 
   const storedToken = localStorage.getItem("lineToken");
   const storedPictureUrl = localStorage.getItem("pictureUrl");
   
@@ -18,7 +18,7 @@ const Register = () => {
   const pictureUrl = storedPictureUrl || "";
 
   console.log("ID Token from storage:", idToken);
-  
+
   const handleRegister = async (event) => {
     event.preventDefault();
 
