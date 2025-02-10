@@ -97,7 +97,7 @@ const HomeDashboard = () => {
     setLoading(true);
     try {
       const response = await clinicAPI.get(`/appointment`);
-      console.log("Fetched appointments:", response.data);
+      // console.log("Fetched appointments:", response.data);
       setAppointments(Array.isArray(response.data) ? response.data : []); // แก้ให้เป็น array ถ้าไม่ใช่
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -187,7 +187,7 @@ const HomeDashboard = () => {
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayStart.getDate() + 1);
     if (!Array.isArray(appointments)) return []; // ป้องกัน .filter() error
-    
+
     return appointments.filter((a) => {
         const appointmentDate = new Date(a.appointment_date); // Assuming `a.date` is the appointment date
          if (status === "รอชำระเงิน") {

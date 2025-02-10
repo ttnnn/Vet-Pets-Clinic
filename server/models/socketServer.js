@@ -4,7 +4,7 @@ const pool = require('../db.js');
 const setupSocketServer = (server) => {
   const io = socketIo(server, {
     cors: {
-      origin: ["*"],
+      origin: ["https://two-vet-pets-clinic.onrender.com"],
       methods: ["GET", "POST"]
     }
   });
