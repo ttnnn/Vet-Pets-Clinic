@@ -13,7 +13,7 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json()); 
 const server = http.createServer(app);
-
+const PORT = process.env.PORT || 10000
 // การเชื่อมต่อฐานข้อมูล
 pool.connect()
   .then(() => console.log('Connect PostgreSQL Success !!'))
@@ -37,7 +37,6 @@ const io = setupSocketServer(server);
 // Cron Jobs
 setupCronJobs(io);
 
-  
-server.listen(8080, function () {
-    console.log('Server running on port 8080');
-});
+server.listen(PORT, "0.0.0.0", function () {
+  console.log(`Server running on port ${PORT}`);}
+)
