@@ -19,7 +19,11 @@ pool.connect()
   .then(() => console.log('Connect PostgreSQL Success !!'))
   .catch(err => console.error('การเชื่อมต่อ PostgreSQL ล้มเหลว', err));
 
-const staticFolder = path.join(__dirname, '..', 'client', 'build'); // ปรับ path ให้ถูกต้อง
+const staticFolder = path.resolve(__dirname, '..', 'client', 'build');
+app.get('/', (req, res) => {
+  res.redirect('/login'); // รีไดเรกต์ไปที่หน้า /login โดยอัตโนมัติ
+});
+
 
   app.use(express.static(staticFolder));
   app.get('*', (req, res) => {
