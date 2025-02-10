@@ -19,17 +19,15 @@ pool.connect()
   .then(() => console.log('Connect PostgreSQL Success !!'))
   .catch(err => console.error('การเชื่อมต่อ PostgreSQL ล้มเหลว', err));
 
-const staticFolder = path.resolve(__dirname, '..', 'client', 'build');
-app.get('/', (req, res) => {
-  res.redirect('/login'); // รีไดเรกต์ไปที่หน้า /login โดยอัตโนมัติ
+
+const staticFolder = path.join(__dirname, '../client/build');
+app.use(express.static(staticFolder));
+
+app.use('/public', express.static(path.join(__dirname, '../client/public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(staticFolder, 'index.html'));
 });
 
-
-  app.use(express.static(staticFolder));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(staticFolder, 'index.html'));
-  });
-  
 
   // Routes + เส้นทาง API สำหรับคลินิกและลูกค้า
 app.use('/api/clinic', clinicController);
