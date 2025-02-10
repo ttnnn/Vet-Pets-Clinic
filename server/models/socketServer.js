@@ -4,7 +4,7 @@ const pool = require('../db.js');
 const setupSocketServer = (server) => {
   const io = socketIo(server, {
     cors: {
-      origin: ["http://localhost:3000"],
+      origin: ["*"],
       methods: ["GET", "POST"]
     }
   });
