@@ -93,20 +93,20 @@ const HomeDashboard = () => {
   const [view, setView] = useState(location.state?.locationActiveTab === 1 ? 'ongoing' : 'total');
   const [loading, setLoading] = useState(false); // Loading state
  
-
   const fetchAppointments = async () => {
-    setLoading(true); // Start loading
+    setLoading(true);
     try {
       const response = await clinicAPI.get(`/appointment`);
-      setAppointments(response.data);
-      // console.log('Fetched appointments:', response.data);
+      console.log("Fetched appointments:", response.data);
+      setAppointments(Array.isArray(response.data) ? response.data : []); // แก้ให้เป็น array ถ้าไม่ใช่
     } catch (error) {
       console.error('Error fetching appointments:', error);
-    }
-    finally {
-      setLoading(false); // Stop loading
+      setAppointments([]); // ป้องกัน error ถ้า API ล้มเหลว
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   const updateAppointmentStatus = async (appointment_id, statusUpdates) => {
     try {
@@ -186,7 +186,8 @@ const HomeDashboard = () => {
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayStart.getDate() + 1);
-
+    if (!Array.isArray(appointments)) return []; // ป้องกัน .filter() error
+    
     return appointments.filter((a) => {
         const appointmentDate = new Date(a.appointment_date); // Assuming `a.date` is the appointment date
          if (status === "รอชำระเงิน") {
