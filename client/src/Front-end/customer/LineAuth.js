@@ -17,42 +17,40 @@ const LineAuth = () => {
             return true;
         }
     };
-
     const handleLogin = useCallback(async () => {
         try {
+            await liff.ready; // รอให้ LIFF โหลดเสร็จก่อน
             if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
-                const idToken = liff.getIDToken();
-                if (!idToken) {
-                    console.warn("ID Token not found. Redirecting to login...");
-                    liff.login();
-                    return;
-                }
-
-                if (isTokenExpired(idToken)) {
-                    alert("Your session has expired. Please log in again.");
-                    liff.logout();
-                    liff.login();
-                    return;
-                }
-                localStorage.setItem("lineToken", idToken);
-
-                const profile = await liff.getProfile();
-                const { pictureUrl } = profile;
-
-                // console.log("User Profile:", profile);
-                // console.log("ID Token:", idToken);
-
-                navigate("/customer/login", { state: { idToken, pictureUrl } });
+                liff.login({ redirectUri: window.location.href });
+                return;
             }
+            
+            const idToken = liff.getIDToken();
+            if (!idToken) {
+                console.warn("ID Token not found. Trying login again...");
+                liff.login({ redirectUri: window.location.href });
+                return;
+            }
+    
+            if (isTokenExpired(idToken)) {
+                alert("Your session has expired. Please log in again.");
+                liff.logout();
+                liff.login({ redirectUri: window.location.href });
+                return;
+            }
+    
+            localStorage.setItem("lineToken", idToken);
+            const profile = await liff.getProfile();
+            navigate("/customer/login", { state: { idToken, pictureUrl: profile.pictureUrl } });
+    
         } catch (err) {
-            //console.error("Error during login:", err);
+            console.error("Error during login:", err);
             setError("Failed to log in with LINE.");
         } finally {
             setLoading(false);
         }
     }, [navigate]);
+    
 
     useEffect(() => {
         if (!lineliff) {
