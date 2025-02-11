@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import liff from "@line/liff";
-
+console.log('LIFF SDK:', liff);
 const lineliff = process.env.REACT_APP_LIFF_ID;
 
 const LineAuth = () => {
@@ -48,7 +48,7 @@ const LineAuth = () => {
     
             localStorage.setItem("lineToken", idToken);
             localStorage.setItem("pictureUrl", pictureUrl);
-            console.log("User Profile:", profile);
+            console.log("idToken:", idToken);
     
             navigate("/customer/login");
         } catch (err) {
