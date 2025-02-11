@@ -8,7 +8,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Box,
+  Box,CircularProgress
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Bar } from 'react-chartjs-2';
@@ -67,7 +67,14 @@ const Dashboard = () => {
       .catch((error) => console.error(error));
   }, [year]);
 
-  if (!data) return <Typography>Loading...</Typography>;
+  if (!data) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
 
   const petsPerPeriodChartData = {
     labels: data.petsPerPeriod.map((item) => item.period),
@@ -81,6 +88,7 @@ const Dashboard = () => {
       },
     ],
   };
+  
 
   const revenueChartData = {
     labels: data.revenue.map((item) => item.period),
@@ -93,6 +101,7 @@ const Dashboard = () => {
       },
     ],
   };
+  console.log("Revenue Data:", data);
 
   return (
     <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >

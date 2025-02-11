@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box, Typography, Paper, Grid, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, Box, Typography, Paper, Grid, Snackbar, Alert, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { clinicAPI } from "../../utils/api";
-
-
 
 const LoginPage = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('error'); // error, success, info, warning
+  const [snackbarSeverity, setSnackbarSeverity] = useState('error');
   const navigate = useNavigate();
   const [usernameError, setUsernameError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
-  
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -24,16 +22,14 @@ const LoginPage = ({ onLogin }) => {
     setUsernameError(false);
     setPasswordError(false);
 
-    // Validate inputs
     if (!username || !password) {
       if (!username) setUsernameError(true);
       if (!password) setPasswordError(true);
       return;
     }
 
+    setLoading(true); // เริ่มโหลด
     try {
-      // console.log('username',username)
-      // console.log('password',password)
       const response = await clinicAPI.post(`/login`, { username, password });
 
       if (response.data.success) {
@@ -44,7 +40,7 @@ const LoginPage = ({ onLogin }) => {
         setSnackbarMessage('เข้าสู่ระบบสำเร็จ!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        
+
         navigate('/clinic/home');
       } else {
         setSnackbarMessage('username หรือ password ไม่ถูกต้อง');
@@ -57,17 +53,11 @@ const LoginPage = ({ onLogin }) => {
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
+    setLoading(false); // หยุดโหลด
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      height="100vh"
-      width="100vw"
-      bgcolor="#f5f5f5"
-    >
+    <Box display="flex" justifyContent="center" alignItems="center" height="100vh" width="100vw" bgcolor="#f5f5f5">
       <Paper
         elevation={3}
         sx={{
@@ -82,42 +72,15 @@ const LoginPage = ({ onLogin }) => {
       >
         <Grid container spacing={0} sx={{ height: '100%' }}>
           <Grid item xs={12} md={6} sx={{ height: '100%' }}>
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="100%"
-              overflow="hidden"
-            >
-              <img
-                src="/login.jpg"
-                alt="Animal"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%" overflow="hidden">
+              <img src="/login.jpg" alt="Animal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Box>
           </Grid>
 
           <Grid item xs={12} md={6} sx={{ height: '100%' }}>
-            <Box
-              display="flex"
-              flexDirection="column"
-              justifyContent="center"
-              alignItems="center"
-              height="100%"
-              padding={4}
-            >
-              <img
-                src="/Logo.jpg"
-                alt="Logo"
-                style={{ width: '150px', marginBottom: '20px' }}
-              />
-              <Typography variant="h5" gutterBottom>
-                เข้าสู่ระบบ
-              </Typography>
+            <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="100%" padding={4}>
+              <img src="/Logo.jpg" alt="Logo" style={{ width: '150px', marginBottom: '20px' }} />
+              <Typography variant="h5" gutterBottom>เข้าสู่ระบบ</Typography>
               <Box sx={{ width: '75%', maxWidth: '400px' }}>
                 <TextField
                   label="username"
@@ -148,8 +111,9 @@ const LoginPage = ({ onLogin }) => {
                   fullWidth
                   onClick={handleLogin}
                   sx={{ marginTop: 2 }}
+                  disabled={loading} // ปิดปุ่มระหว่างโหลด
                 >
-                  เข้าสู่ระบบ
+                  {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'เข้าสู่ระบบ'}
                 </Button>
               </Box>
             </Box>
