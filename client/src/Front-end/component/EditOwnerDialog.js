@@ -16,12 +16,13 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
     postal_code: owner?.postal_code || '',
   });
 
+
   useEffect(() => {
     const fetchOwnerData = async () => {
       try {
         const response = await clinicAPI.get(`/owners/${owner.owner_id}`);
-        const data = await response.json();
-        if (response.ok) {
+        if (response.status === 200) { // Check for a successful response
+          const data = response.data;
           setFormData({
             owner_id: data.owner_id,
             first_name: data.first_name,
@@ -34,16 +35,18 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
           });
           // console.log('owner', data.owner_id); 
         } else {
-          console.error('Error fetching pet data:', data);
+          console.error('Error fetching owner data:', response.data);
         }
       } catch (error) {
-        console.error('Error fetching pet data:', error);
+        console.error('Error fetching owner data:', error);
       }
     };
+  
     if (owner?.owner_id) {
       fetchOwnerData();
     }
   }, [owner]);
+  
 
   const handleChange = (event) => {
     const { name, value } = event.target;

@@ -145,16 +145,13 @@ const PendingAppointments = ({ appointments ,update}) => {
   const fetchData = async (url) => {
     try {
       const response = await clinicAPI.get(url);
-      if (!response.ok) {
-        console.error("Failed to fetch data", response.status);
-        return null;
-      }
-      return await response.json();
+      return response.data;  // ใช้ response.data แทน response.json()
     } catch (error) {
       console.error("Error fetching data:", error);
       return null;
     }
   };
+  
   
   // ฟังก์ชันหลัก
   const handleClickOpen = useCallback((appointment ,update) => {

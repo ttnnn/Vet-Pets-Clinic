@@ -1232,10 +1232,10 @@ router.get('/dayoff', async (req, res) => {
 });
 
 
-// Add New Day Off Record                                                                                                                                                                                                                                    router.post('/dayoff', async (req, res) => {
+// Add New Day Off Record                                                                                                                                                                                                                                   
 
 router.post('/dayoff', async (req, res) => {
-  console.log('/dayoff', req.body);
+  // console.log('/dayoff', req.body);
   const { date_start,date_end, dayoff_note, dayoff_type, recurring_days} = req.body;
 
   // Check for missing fields
@@ -1985,9 +1985,9 @@ router.get('/dashboard', async (req, res) => {
           : "TO_CHAR(payment_date, 'Month')"} AS period,  
         SUM(total_payment) AS amount
       FROM appointment a
-      LEFT JOIN invoice ON a.appointment_id = invoice.appointment_id
-      LEFT JOIN payment pay ON pay.payment_id = invoice.payment_id
-      LEFT JOIN pets p ON a.pet_id = p.pet_id 
+      inner JOIN payment pay ON pay.payment_id = invoice.payment_id
+      inner JOIN invoice ON a.appointment_id = invoice.appointment_id
+      inner JOIN pets p ON a.pet_id = p.pet_id 
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM payment_date)'  

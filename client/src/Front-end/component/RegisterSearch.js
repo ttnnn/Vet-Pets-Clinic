@@ -27,6 +27,17 @@ const RegisterSearch = () => {
   // console.log("locationOwnerID : ",locationOwnerID)
 
   useEffect(() => {
+    if (!open && selectedOwnerId) {
+      // รีเฟรชข้อมูลสัตว์เลี้ยงหลังจากปิด Dialog
+      clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`)
+        .then(response => setPets(response.data))
+        .catch(error => console.error('Error fetching pets:', error));
+    }
+  }, [open, selectedOwnerId]); // ตรวจจับการเปลี่ยนแปลงของ open และ selectedOwnerId
+  
+
+  
+  useEffect(() => {
     // Fetch owners when component mounts
     clinicAPI.get(`/owners`)
       .then(response => setOwners(response.data))

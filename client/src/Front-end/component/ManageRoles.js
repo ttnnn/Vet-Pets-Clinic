@@ -46,10 +46,6 @@ const ManageRoles = () => {
 
   const resetPage = () => setPage(0);
   
-  const [showPassword, setShowPassword] = useState(false);
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
 
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -419,31 +415,6 @@ const ManageRoles = () => {
             margin="normal"
             required
         />
-        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <TextField
-            label="รหัสผ่าน"
-            variant="outlined"
-            name="password_encrip"
-            value={newAdmin.password_encrip}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-            required
-            type={showPassword ? 'text' : 'password'}
-            disabled={newAdmin.personnel_id} // ถ้ามี personnel_id หมายถึงโหมดแก้ไข
-        />
-            <IconButton
-        onClick={togglePasswordVisibility}
-        sx={{
-            position: 'absolute',
-            right: 10,
-            top: '50%',
-            transform: 'translateY(-50%)',
-        }}
-        >
-        {showPassword ? <Visibility /> : <VisibilityOff />}
-        </IconButton>
-        </Box>
 
         </DialogContent>
         <Dialog open={changePasswordDialogOpen} onClose={handleChangePasswordDialogClose} maxWidth="sm" fullWidth>

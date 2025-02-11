@@ -9,6 +9,10 @@ require('dayjs/locale/th');
 const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
   cron.schedule("*/10 9-21 * * *", async () => {
+    const job = setTimeout(() => {
+      console.log("Job timed out");
+    }, 1000 * 60 * 5); // ตัดงานถ้าเกิน 5 นาที
+  
     try {
       const query = `
         SELECT * FROM appointment
@@ -51,7 +55,8 @@ const setupCronJobs = (io) => {
       console.log("Cron job executed successfully");
     } catch (error) {
       console.error("Error in cron job:", error);
-    }
+    }finally {
+      clearTimeout(job);}
   });
   
 

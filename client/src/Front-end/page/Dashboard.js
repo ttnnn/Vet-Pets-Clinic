@@ -115,7 +115,7 @@ const Dashboard = () => {
             borderRadius: 2,
             p: 3,
             width: '100%',
-            maxWidth: '2000px',
+            maxWidth: '1200px',
           }}
         >
           <Grid container spacing={2} marginBottom={3}>

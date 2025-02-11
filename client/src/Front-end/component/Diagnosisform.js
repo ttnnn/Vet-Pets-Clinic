@@ -179,6 +179,16 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     fetchMedicalAndPersonnel();
   }, [appointmentId]);
 
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      await clinicAPI.get(`/appointment/hotel`);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ตั้งค่าเริ่มต้น (วันที่และเวลา)
   useEffect(() => {
@@ -799,6 +809,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         appointmentId={selectedAppointmentId}
         petId={selectedPetId}
         isAdmitBooking={true} 
+        updateAppointments={fetchAppointments}
       />
     </Paper>
   );

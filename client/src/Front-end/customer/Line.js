@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
 import { Button, Grid, Box } from '@mui/material';
 import liff from '@line/liff';
-console.log('LIFF SDK:', liff);
 const lineliff = process.env.REACT_APP_LIFF_ID;
-console.log("Initializing LIFF with ID:", lineliff);
 const Line = () => {
   useEffect(() => {
     liff.init({  liffId: lineliff})

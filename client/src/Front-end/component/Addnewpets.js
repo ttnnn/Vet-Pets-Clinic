@@ -28,6 +28,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
 
+
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
       calculateAge(newDate);
@@ -61,15 +62,12 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       setPetSpecies('');
   };
 
-
   const handleSavePet = async () => {
     if (!petName || !petSpecies || (petSpecies !== "อื่นๆ" && !petBreed) || !birthDate) {
-      setAlertSeverity("error");
-      setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
-      setTimeout(() => {
-        setAlertMessage("");
-      }, 2000);
-      return;
+        setAlertSeverity("error");
+        setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
+        setTimeout(() => setAlertMessage(""), 2000);
+        return;
     }
 
     const petData = {
@@ -83,7 +81,6 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         microchip_number: petMicrochip,
         pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
     };
-    // console.log('petData',petData)
 
     try {
         const response = await clinicAPI.post(`/pets`, petData, {
@@ -91,25 +88,27 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         });
 
         if (response.status === 200) {
+            //  ดึงข้อมูลสัตว์เลี้ยงใหม่และอัปเดตทันที
             const petsResponse = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
             setPets(petsResponse.data);
+            
             setAlertSeverity("success");
             setAlertMessage("ลงทะเบียนสำเร็จ");
+
             setTimeout(() => {
                 setAlertMessage("");
-            }, 2000);
+                onClose(); // ปิด Dialog หลังอัปเดตเสร็จ
+            }, 1000);
 
             clearPetForm();
         } else {
-          alert("เพิ่มสัตว์เลี้ยงล้มเหลว")
+            alert("เพิ่มสัตว์เลี้ยงล้มเหลว");
         }
     } catch (error) {
         console.error("Error saving pet data:", error);
         setAlertSeverity("error");
         setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-        setTimeout(() => {
-            setAlertMessage("");
-        }, 2000);
+        setTimeout(() => setAlertMessage(""), 2000);
     }
 };
 
@@ -223,7 +222,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       </Box>
       <DatePicker
         label="วันเกิด"
-        value={birthDate || '' }
+        value={birthDate ? new Date(birthDate) : null}
         onChange={handleBirthDateChange}
         maxDate={new Date()}
         renderInput={(params) => <TextField {...params} fullWidth />}

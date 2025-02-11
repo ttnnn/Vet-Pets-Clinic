@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Snackbar, Alert } from '@mui/material';
 import { customerAPI  } from "../../utils/api";
 
@@ -10,15 +10,14 @@ const Register = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // State for Snackbar
 
   const navigate = useNavigate();
- 
+  const location = useLocation();
   const storedToken = localStorage.getItem("lineToken");
   const storedPictureUrl = localStorage.getItem("pictureUrl");
   
   const idToken = storedToken || "";
   const pictureUrl = storedPictureUrl || "";
-
-  console.log("ID Token from storage:", idToken);
-
+  
+  console.log('location.state ',location.state )
   const handleRegister = async (event) => {
     event.preventDefault();
 

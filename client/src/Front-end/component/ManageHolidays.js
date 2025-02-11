@@ -46,6 +46,7 @@ const ManageHolidays = () => {
     message: '',
     severity: 'success',
   });
+  
   // Handle checkbox change
   const handleCheckboxChange = (day) => {
     setNewHoliday((prev) => {
@@ -89,6 +90,7 @@ const ManageHolidays = () => {
         };
       });
       setHolidays(data);
+      console.log('data',data)
     } catch (error) {
       console.error('Error fetching holidays:', error);
       setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการโหลดข้อมูลวันหยุด', severity: 'error' });
@@ -142,6 +144,7 @@ const ManageHolidays = () => {
   };
 
   const handleAddHoliday = async () => {
+
     if (!newHoliday.dayoff_type || !newHoliday.dayoff_note) {
       setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบ', severity: 'warning' });
       return;

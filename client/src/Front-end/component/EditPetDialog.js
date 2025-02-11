@@ -25,8 +25,8 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     const fetchPetData = async () => {
       try {
         const response = await clinicAPI.get(`/pets/${pet.pet_id}`);
-        const data = await response.json();
-        if (response.ok) {
+        if (response.status === 200) {
+          const data = response.data;  // Axios parses the response body
           setFormData({
             owner_id: data.owner_id,
             pet_name: data.pet_name,
@@ -40,17 +40,18 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
             otherPetSpecies: data.pet_species === 'อื่นๆ' ? data.pet_species : '',
           });
         } else {
-          console.error('Error fetching pet data:', data);
+          console.error('Error fetching pet data:', response.data);
         }
       } catch (error) {
         console.error('Error fetching pet data:', error);
       }
     };
-
     if (pet?.pet_id) {
       fetchPetData();
     }
   }, [pet]);
+ 
+
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -65,18 +66,20 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
   
     try {
       const response = await clinicAPI.put(`/pets/${pet.pet_id}`, updatedData);
-  
-      if (response.ok) {
+      
+      // Check for success status code
+      if (response.status === 200) {
         console.log('Data updated successfully');
-        onSave(updatedData); // ส่งข้อมูลกลับไปยัง parent
-        onClose(); // ปิด dialog
+        onSave(updatedData); // Send updated data back to parent
+        onClose(); // Close the dialog
       } else {
-        console.error('Failed to update data');
+        console.error('Failed to update data:', response.data);
       }
     } catch (error) {
       console.error('Error updating data:', error);
     }
   };
+  
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
