@@ -11,13 +11,8 @@ const Register = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const storedToken = localStorage.getItem("lineToken");
-  const storedPictureUrl = localStorage.getItem("pictureUrl");
-  
-  const idToken = storedToken || "";
-  const pictureUrl = storedPictureUrl || "";
-  
-  console.log('location.state ',location.state )
+  const { idToken, pictureUrl } = location.state || {};
+
   const handleRegister = async (event) => {
     event.preventDefault();
 
