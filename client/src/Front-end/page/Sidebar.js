@@ -106,10 +106,10 @@ const Sidebar = () => {
           }}
         >
           <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#000' }}>
-            {username}
+            user : {username}
           </Typography>
         </Box>
-        
+
         <Button
           variant="contained"
           color="primary"

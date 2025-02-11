@@ -83,7 +83,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         microchip_number: petMicrochip,
         pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
     };
-    console.log('petData',petData)
+    // console.log('petData',petData)
 
     try {
         const response = await clinicAPI.post(`/pets`, petData, {

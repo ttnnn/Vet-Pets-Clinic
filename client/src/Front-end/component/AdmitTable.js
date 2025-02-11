@@ -48,7 +48,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
           setAppointmentHotel(response.data);
           
         } catch (error) {
-          console.error('Error fetching appointments:', error);
+          //console.error('Error fetching appointments:', error);
         } finally {
           setLoading(false);
         }
@@ -66,10 +66,10 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
       
     const handleToAdmit = debounce( async (appointment) =>  {
       
-      console.log('appointmentId', appointment.appointment_id);
-      console.log('petId', appointment.pet_id);
-      console.log('openAdmitDialog', openAdmitDialog);
-      
+      // console.log('appointmentId', appointment.appointment_id);
+      // console.log('petId', appointment.pet_id);
+      // console.log('openAdmitDialog', openAdmitDialog);
+      // 
       setSelectedAppointmentId(appointment.appointment_id);
       setSelectedPetId(appointment.pet_id);
       setOpenAdmitDialog(true);
@@ -98,7 +98,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
           });
         }
       } catch (error) {
-        console.error('Error handling button action:', error);
+        //console.error('Error handling button action:', error);
       }
     };
     
@@ -196,7 +196,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                                     await onMoveToPending(appointment.appointment_id);
                                     await fetchAppointments();
                                   } catch (error) {
-                                    console.error('Error in onClick action:', error);
+                                    // console.error('Error in onClick action:', error);
                                   }
                                 }}
                               >

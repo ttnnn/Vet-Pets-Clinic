@@ -337,7 +337,7 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
                 {/* รูปภาพ */}
                 <Box sx={{ marginRight: 2 }}>
                   <img
-                    src={`http://localhost:8080${selectedAppointment.image_url}`}
+                    src={selectedAppointment.image_url}
                     alt={selectedAppointment.pet_name}
                     style={{
                       width: '100px',

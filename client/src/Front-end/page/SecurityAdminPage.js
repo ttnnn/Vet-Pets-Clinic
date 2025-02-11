@@ -40,7 +40,7 @@ const SecurityAdminPage = () => {
   };
 
   return (
-    <Box display="flex" height="100vh">
+   <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >
       <Sidebar />
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Paper sx={{ p: 3 }}>

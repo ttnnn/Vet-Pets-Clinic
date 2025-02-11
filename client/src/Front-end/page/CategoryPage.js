@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Button, Select, MenuItem, Typography, Box, Paper, Table, TableBody, 
   TableCell, TableContainer, TableHead, TableRow, TextField, Dialog, 
-  DialogTitle, DialogContent, DialogActions, TablePagination, Snackbar, Alert 
+  DialogTitle, DialogContent, DialogActions, TablePagination, Snackbar, Alert ,CircularProgress 
 } from '@mui/material';
 import { styled } from '@mui/system';
 import Sidebar from './Sidebar';
@@ -101,7 +101,7 @@ const CategoryPage = () => {
     price = price.toFixed(2);
 
     const updatedCategory = { ...newCategory, price_service: price };
-
+    setLoading(true); // เริ่มโหลด
     try {
       await clinicAPI.post(`/servicecategory`, updatedCategory);
       fetchCategories();
@@ -110,19 +110,20 @@ const CategoryPage = () => {
     } catch (error) {
       console.error('Error adding category:', error);
       setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล', severity: 'error' });
-    }
+    }finally {
+      setLoading(false); } // ปิดโหลดหลังทำงานเสร็จ
   };
 
   const handleUpdateCategory = async () => {
+    
     let price = parseFloat(newCategory.price_service);
     if (isNaN(price)) {
       setSnackbar({ open: true, message: 'กรุณากรอกค่าบริการเป็นตัวเลข', severity: 'warning' });
       return;
     }
     price = price.toFixed(2);
-
+    setLoading(true);
     const updatedCategory = { ...newCategory, price_service: price };
-
     try {
       const response = await clinicAPI.put(`/servicecategory/${newCategory.category_id}`, updatedCategory);
       if (response.status === 200) {
@@ -135,7 +136,8 @@ const CategoryPage = () => {
     } catch (error) {
       console.error('Error updating category:', error);
       setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล', severity: 'error' });
-    }
+    }finally {
+      setLoading(false); } // ปิดโหลดหลังทำงานเสร็จ
   };
 
   const handleDelete = async (id) => {
@@ -329,8 +331,9 @@ const CategoryPage = () => {
             <Button onClick={newCategory.category_id ? handleUpdateCategory : handleAddCategory}
              color="primary"
              variant="contained"
+             disabled={loading}
             >
-              {newCategory.category_id ? 'บันทึก' : 'เพิ่ม'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : newCategory.category_id ? "บันทึก" : "เพิ่ม"}
             </Button>
           </DialogActions>
         </Dialog>

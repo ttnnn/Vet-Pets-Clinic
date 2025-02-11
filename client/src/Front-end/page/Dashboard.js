@@ -95,7 +95,7 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#f0f0f0', minHeight: '100vh' }}>
+    <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >
       <Sidebar />
 
       <Box
@@ -115,7 +115,7 @@ const Dashboard = () => {
             borderRadius: 2,
             p: 3,
             width: '100%',
-            maxWidth: '1200px',
+            maxWidth: '2000px',
           }}
         >
           <Grid container spacing={2} marginBottom={3}>
