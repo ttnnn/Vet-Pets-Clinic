@@ -19,6 +19,7 @@ const LineAuth = () => {
     };
 
     const handleLogin = useCallback(async () => {
+        console.log("handleLogin called");
         try {
             if (!liff.isLoggedIn()) {
                 console.warn("User not logged in. Redirecting to login...");
@@ -26,9 +27,12 @@ const LineAuth = () => {
                 return;
             }
     
-            await liff.ready; // รอให้ LIFF โหลดเสร็จก่อน
+            console.log("Waiting for LIFF to be ready...");
+            await liff.ready;
+            console.log("LIFF is ready");
+    
             const idToken = liff.getIDToken();
-            console.log("ID Token:", idToken); 
+            console.log("ID Token:", idToken);
     
             if (!idToken) {
                 console.error("ID Token is null. Trying to re-login...");
@@ -44,11 +48,10 @@ const LineAuth = () => {
             }
     
             const profile = await liff.getProfile();
-            const { pictureUrl } = profile;
+            console.log("User Profile:", profile);
     
             localStorage.setItem("lineToken", idToken);
-            localStorage.setItem("pictureUrl", pictureUrl);
-            console.log("idToken:", idToken);
+            localStorage.setItem("pictureUrl", profile.pictureUrl);
     
             navigate("/customer/login");
         } catch (err) {
@@ -59,26 +62,28 @@ const LineAuth = () => {
         }
     }, [navigate]);
     
-
     useEffect(() => {
+        console.log("useEffect triggered");
+    
         if (!lineliff) {
-           // console.error("LIFF ID is not set. Please check your .env configuration.");
+            console.error("LIFF ID is not set. Please check your .env configuration.");
             setError("LIFF ID is missing.");
             setLoading(false);
             return;
         }
-
+    
         liff.init({ liffId: lineliff })
             .then(() => {
-              //  console.log("LIFF initialized");
+                console.log("LIFF initialized successfully");
                 handleLogin();
             })
             .catch((err) => {
-                //console.error("LIFF initialization failed. Check if the LIFF ID is correct:", err);
+                console.error("LIFF initialization failed:", err);
                 setError("Failed to initialize LIFF. Please try again later.");
                 setLoading(false);
             });
     }, [handleLogin]);
+
     
     return (
         <div>
