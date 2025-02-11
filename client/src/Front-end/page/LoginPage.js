@@ -39,6 +39,7 @@ const LoginPage = ({ onLogin }) => {
       if (response.data.success) {
         sessionStorage.setItem('token', response.data.token);
         sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('username', username);
         onLogin(response.data.token);
         setSnackbarMessage('เข้าสู่ระบบสำเร็จ!');
         setSnackbarSeverity('success');

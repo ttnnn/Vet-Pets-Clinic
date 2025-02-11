@@ -16,6 +16,8 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate(); // Hook for navigation
 
+  const username = sessionStorage.getItem('username') || 'ผู้ใช้';
+
   const menuItems = [
     { text: 'หน้าหลัก', path: '/clinic/home', icon: <HomeIcon /> },
     { text: 'เวชระเบียน',  path: '/clinic/register', icon: <AssignmentIcon /> },
@@ -33,6 +35,7 @@ const Sidebar = () => {
     // ตัวอย่าง: ลบโทเค็นและเปลี่ยนเส้นทางไปที่หน้า Login
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('username');
     
     navigate('/login'); // Navigate to the home page or login page
   };
@@ -91,6 +94,22 @@ const Sidebar = () => {
       </List>
       {/* Log Out Button at the bottom */}
       <Box sx={{ position: 'absolute', bottom: 40, width: '100%', padding: 2 }}>
+      <Box 
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            mb: 2,
+            p: 1,
+            borderRadius: '10px',
+            backgroundColor: '#e0e0e0',
+          }}
+        >
+          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#000' }}>
+            {username}
+          </Typography>
+        </Box>
+        
         <Button
           variant="contained"
           color="primary"

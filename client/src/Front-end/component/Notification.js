@@ -9,7 +9,7 @@ const Notification = () => {
   const timeoutRef = useRef(null); // เพื่อเก็บการตั้งเวลาไว้ในครั้งถัดไป
   // Connect to the 'clinic' room on socket server
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'wss://two-vet-pets-clinic.onrender.com', {
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'wss://two-vet-pets-clinic-00fe.onrender.com', {
       transports: ["websocket", "polling"],  // รองรับทั้ง WebSocket และ Polling
       withCredentials: true
     });
