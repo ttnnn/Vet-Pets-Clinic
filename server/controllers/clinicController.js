@@ -1985,15 +1985,17 @@ router.get('/dashboard', async (req, res) => {
           : "TO_CHAR(payment_date, 'Month')"} AS period,  
         SUM(total_payment) AS amount
       FROM appointment a
-      WHERE EXTRACT(YEAR FROM payment_date) = $1 ${petTypeCondition} ${statusCondition}
+      inner JOIN invoice ON a.appointment_id = invoice.appointment_id
+      inner JOIN payment pay ON pay.payment_id = invoice.payment_id
+      inner JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM payment_date)'  
-        : "TO_CHAR(payment_date, 'Month'), EXTRACT(YEAR FROM payment_date)"} 
+        : "TO_CHAR(payment_date, 'Month')"} 
       ORDER BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM payment_date)'  
-        : "EXTRACT(MONTH FROM payment_date)"}  
-    `, [year]); 
-   
+        : "TO_CHAR(payment_date, 'Month')"}  
+    `);
     const revenue = resultRevenue.rows;
     
     // ส่งผลลัพธ์กลับ
