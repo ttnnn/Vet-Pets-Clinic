@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { TextField, Button, Container, Typography, Box, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, Container, Typography, Box, Snackbar, Alert,CircularProgress  } from '@mui/material';
 import { customerAPI  } from "../../utils/api";
 
 const Register = () => {
@@ -8,7 +8,7 @@ const Register = () => {
   const [last_name, setLastName] = useState('');
   const [phone_number, setPhone] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // State for Snackbar
-
+  const [loading, setLoading] = useState(false); // Loading 
   const navigate = useNavigate();
   const location = useLocation();
   const { idToken, pictureUrl } = location.state || {};
@@ -36,12 +36,13 @@ const Register = () => {
     }
  
     try {
+      setLoading(true);
       const response = await customerAPI.post(
         `/owner/check-owner`,
         { first_name, last_name, phone_number },
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
-
+      setLoading(false); // Stop loading
       if (response.data.success) {
         sessionStorage.setItem(
           "user",
@@ -121,7 +122,7 @@ const Register = () => {
           fullWidth
           sx={{ mt: 3 }}
         >
-          เข้าสู่ระบบ
+          {loading ? <CircularProgress size={24} color="inherit" /> : 'เข้าสู่ระบบ'}
         </Button>
       </Box>
       {/* Snackbar Component */}

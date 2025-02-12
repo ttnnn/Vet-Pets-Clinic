@@ -12,7 +12,7 @@ require('dotenv').config();
 // 
 
 const pool = new Pool({
-  connectionString: "postgresql://tthanaphon:MX8vASk8it2fOlMS3trGAPmJrjDSXXP1@dpg-cu2v6nogph6c73bkpm3g-a.singapore-postgres.render.com/pets_clinic_db",
+  connectionString : process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }, // ถ้า Render บังคับให้ใช้ SSL
 });
   

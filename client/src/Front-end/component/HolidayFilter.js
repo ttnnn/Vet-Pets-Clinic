@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { isWithinInterval, parseISO, format } from 'date-fns';
+import {format } from 'date-fns';
 import { clinicAPI } from "../../utils/api";
 
 
@@ -31,11 +31,13 @@ const HolidayFilter = ({ children }) => {
         return recurringDays.includes(dayOfWeek);
       }
       if (holiday.dayoff_type === 'temporary') {
-        return isWithinInterval(date, {
-          start: parseISO(holiday.date_start),
-          end: parseISO(holiday.date_end),
-        });
+        const startDate = new Date(holiday.date_start).setHours(0, 0, 0, 0);
+        const endDate = new Date(holiday.date_end).setHours(23, 59, 59, 999);
+        const checkDate = date.setHours(0, 0, 0, 0);
+      
+        return checkDate >= startDate && checkDate <= endDate;
       }
+      
       return false;
     });
   };

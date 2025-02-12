@@ -37,6 +37,9 @@ const io = setupSocketServer(server);
 
 // Cron Jobs
 setupCronJobs(io);
+app.get("/", (req, res) => {
+  res.redirect("/login");
+});
 
 // Start Server
 const PORT = process.env.PORT || 10000;

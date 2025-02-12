@@ -101,7 +101,6 @@ const Dashboard = () => {
       },
     ],
   };
-  console.log("Revenue Data:", data);
 
   return (
     <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >
