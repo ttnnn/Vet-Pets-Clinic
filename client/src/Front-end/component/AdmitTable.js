@@ -39,7 +39,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
         const response = await clinicAPI.get(`/personnel/${username}`);
         if (response.data.length > 0) {
           setUserRole(response.data[0].role);
-          console.log("response.data[0].role", response.data[0].role);
+          //console.log("response.data[0].role", response.data[0].role);
         } else {
           console.warn("User not found");
         }

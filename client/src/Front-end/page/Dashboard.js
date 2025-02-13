@@ -80,6 +80,7 @@ const Dashboard = () => {
     );
   }
   
+  console.log("Revenue Data:", data.revenue);
 
   const petsPerPeriodChartData = {
     labels: data.petsPerPeriod.map((item) => item.period),

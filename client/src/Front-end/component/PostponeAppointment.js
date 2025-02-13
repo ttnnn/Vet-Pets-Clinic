@@ -146,6 +146,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
                 onChange={(newDate) => setAppointmentDate(newDate)}
                 TextFieldComponent={(params) => <TextField {...params} fullWidth />}
                 disablePast
+                format="dd/MM/yyyy"
                 views={['year', 'month', 'day']}
               />
             </HolidayFilter>

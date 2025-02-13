@@ -99,7 +99,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
       const response = await clinicAPI.get(`/personnel/${username}`);
       if (response.data.length > 0) {
         setUserRole(response.data[0].role);
-        console.log("response.data[0].role", response.data[0].role);
+        // console.log("response.data[0].role", response.data[0].role);
       } else {
         console.warn("User not found");
       }
@@ -119,9 +119,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
     }
   }, [fetchUserRole]); // Now it's safely included
   
-    
-  console.log('user',username)
-  console.log("Current userRole:", userRole);
+  
   const fetchAppointments = async () => {
     try {
       setLoading(true);
