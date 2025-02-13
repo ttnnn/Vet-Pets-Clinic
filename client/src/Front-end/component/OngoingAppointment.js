@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -24,7 +24,6 @@ import { styled } from '@mui/system';
 import dayjs from 'dayjs';
 import PostponeHotel from './PostponeHotel';
 import ChooseVac from './ChooseVac';
-import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
@@ -92,17 +91,37 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
   const [openRevertDialog, setOpenRevertDialog] = useState(false);
   const [revertAppointmentId, setRevertAppointmentId] = useState(null);
   const [userRole, setUserRole] = useState(null);
-
+  const username = sessionStorage.getItem('username') ;
   const navigate = useNavigate();
-  const token = sessionStorage.getItem('token');
-  useEffect(() => {
-    if (token) {
-      const decodedToken = jwtDecode(token);
-      setUserRole(decodedToken?.role);
-    }
-  }, [token]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
 
-  // console.log("Current userRole:", userRole);
+  const fetchUserRole = useCallback(async () => {
+    try {
+      const response = await clinicAPI.get(`/personnel/${username}`);
+      if (response.data.length > 0) {
+        setUserRole(response.data[0].role);
+        console.log("response.data[0].role", response.data[0].role);
+      } else {
+        console.warn("User not found");
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+    }
+  }, [username]); // Add username as a dependency
+  
+  useEffect(() => {
+    fetchUserRole();
+  }, [fetchUserRole]); // Now it's safely included
+  
+  useEffect(() => {
+    if (sessionStorage.getItem("forceRoleUpdate") === "true") {
+      fetchUserRole();
+      sessionStorage.removeItem("forceRoleUpdate");
+    }
+  }, [fetchUserRole]); // Now it's safely included
+  
+    
+  console.log('user',username)
+  console.log("Current userRole:", userRole);
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -364,7 +383,7 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                           sx={{
                             bgcolor: backgroundColor, // สีพื้นหลังตามเงื่อนไข
                             fontWeight: isPastEndDate || isEndDateToday ? 'bold' : 'normal', // เน้นข้อความถ้าเป็นเงื่อนไขสีแดง
-                            width: '60%', // ขนาดของกล่องเป็น 60% ของช่อง
+                            width: '100%', // ขนาดของกล่องเป็น 60% ของช่อง
                             padding: '4px', 
                             borderRadius: '4px' 
                          }}>

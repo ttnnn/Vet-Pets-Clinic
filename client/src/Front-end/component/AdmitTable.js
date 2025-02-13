@@ -1,12 +1,11 @@
-import React, { useState , useEffect } from 'react';
-import {  Box, Paper, Button,  TableCell,
-     TableRow ,TableContainer,Table,TableBody,TableHead ,TableSortLabel,Typography} from '@mui/material';
+import React, { useState , useEffect,useCallback } from 'react';
+import { Box, Paper, Button, TableCell, TableRow, TableContainer, Table, TableBody, TableHead, 
+  TableSortLabel, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th'; // Thai localization
 import { useNavigate } from 'react-router-dom';
 import PostponeHotel from './PostponeHotel';
 import { debounce } from 'lodash';
-import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 // Categories for filtering
 
@@ -30,16 +29,42 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
     const [selectedPetId, setSelectedPetId] = useState(null);
     const [selectedAppointmentId, setSelectedAppointmentId] = useState(null); 
     const [userRole, setUserRole] = useState(null);
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+
+    const username = sessionStorage.getItem('username') ;
     const navigate = useNavigate();
-    const token = sessionStorage.getItem('token');
-    useEffect(() => {
-      if (token) {
-        const decodedToken = jwtDecode(token);
-        setUserRole(decodedToken?.role);
+
+    const fetchUserRole = useCallback(async () => {
+      try {
+        const response = await clinicAPI.get(`/personnel/${username}`);
+        if (response.data.length > 0) {
+          setUserRole(response.data[0].role);
+          console.log("response.data[0].role", response.data[0].role);
+        } else {
+          console.warn("User not found");
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
       }
-    }, [token]); // ให้ useEffect ทำงานเมื่อ token เปลี่ยน
+    }, [username]); // Add username as a dependency
     
-    const formatAppointmentDate = (date) => dayjs(date).format('DD/MM/YYYY');
+    useEffect(() => {
+      fetchUserRole();
+    }, [fetchUserRole]); // Now it's safely included
+    
+    useEffect(() => {
+      if (sessionStorage.getItem("forceRoleUpdate") === "true") {
+        fetchUserRole();
+        sessionStorage.removeItem("forceRoleUpdate");
+      }
+    }, [fetchUserRole]); // Now it's safely included
+    
+    const formatAppointmentDate = (date) => {
+      if (!date) return '-'; // ป้องกันค่าที่เป็น null หรือ undefined
+      return dayjs(date).isValid() ? dayjs(date).format('DD/MM/YYYY') : '-';
+    };
+    
+    
     const fetchAppointments = async () => {
         try {
           setLoading(true);
@@ -101,7 +126,15 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
         //console.error('Error handling button action:', error);
       }
     };
-    
+    const handleConfirmRelease = async () => {
+      try {
+        await onMoveToPending(selectedAppointmentId);
+        await fetchAppointments();
+      } catch (error) {
+        console.error('Error releasing appointment:', error);
+      }
+      setOpenConfirmDialog(false);
+    };
 
       return (
         <Box>
@@ -164,7 +197,7 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                     
                       return (
                         <TableRow key={appointment.appointment_id} >
-                          <TableCell>{formatAppointmentDate(appointment.appointment_date)}</TableCell>
+                          <TableCell>{formatAppointmentDate (appointment.start_date)} - {formatAppointmentDate (appointment.end_date)}</TableCell>
                           <TableCell>{appointment.appointment_id}</TableCell>
                           <TableCell>{appointment.num_day}</TableCell>
                           <TableCell>{appointment.pet_name}</TableCell>
@@ -191,13 +224,9 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                                 variant="contained"
                                 color="secondary"
                                 sx={{ mr: 1 }}
-                                onClick={async () => {
-                                  try {
-                                    await onMoveToPending(appointment.appointment_id);
-                                    await fetchAppointments();
-                                  } catch (error) {
-                                    // console.error('Error in onClick action:', error);
-                                  }
+                                onClick={() => {
+                                  setSelectedAppointmentId(appointment.appointment_id);
+                                  setOpenConfirmDialog(true);
                                 }}
                               >
                                 ปล่อยกลับ
@@ -225,6 +254,23 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
               </TableContainer>
             </Paper>
           )}
+
+          {/* Dialog ยืนยันก่อนปล่อยกลับ */}
+          <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
+            <DialogTitle>ยืนยันการปล่อยกลับ</DialogTitle>
+            <DialogContent>
+              <Typography>คุณแน่ใจหรือไม่ว่าต้องการปล่อยสัตว์เลี้ยงกลับ?</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenConfirmDialog(false)} color="error">
+                ยกเลิก
+              </Button>
+              <Button onClick={handleConfirmRelease} color="primary">
+                ยืนยัน
+              </Button>
+            </DialogActions>
+          </Dialog>
+            
           <PostponeHotel
             open={openAdmitDialog}
             handleClose={() => setOpenAdmitDialog(false)}

@@ -28,7 +28,7 @@ const Notification = () => {
 
      // ฟังการแจ้งเตือนจากเซิร์ฟเวอร์
      socket.on('notification', (msg) => {
-      console.log('Notification received:', msg); // ตรวจสอบข้อมูลที่ได้รับ
+       // ตรวจสอบข้อมูลที่ได้รับ
       if (msg && msg.message) {
         setMessage(msg.message);
         setOpen(true); // แสดง Snackbar

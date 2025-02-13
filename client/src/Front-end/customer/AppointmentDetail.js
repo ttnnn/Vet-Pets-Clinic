@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Container, Typography, Card, CardContent, Button, Box, AppBar, Toolbar, IconButton, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { Container, Typography, Card, CardContent, Button, Box, AppBar, Toolbar, IconButton, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle,CircularProgress } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -35,7 +35,7 @@ const AppointmentDetail = () => {
       if (response.data.success && response.data.data.queue_status !== 'ยกเลิกนัด') {
         setAppointment(response.data.data);
       } else {
-        console.error('ไม่พบข้อมูลการนัดหมาย หรือการนัดหมายถูกยกเลิก');
+        // console.error('ไม่พบข้อมูลการนัดหมาย หรือการนัดหมายถูกยกเลิก');
         setAppointment(null);
       }
     } catch (error) {
@@ -48,9 +48,14 @@ const AppointmentDetail = () => {
   }, [fetchAppointmentDetail]);
 
   // ถ้ายังไม่ได้ข้อมูลจาก API
-  if (appointment === null) {
-    return <Typography>กำลังโหลดข้อมูล...</Typography>;
+  if (!appointment) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
+    
 
   // ฟังก์ชันสำหรับยกเลิกนัด
   const handleCancelAppointment = async () => {

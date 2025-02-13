@@ -32,7 +32,7 @@ const ProtectedRouteLine = ({ element }) => {
   const lineToken = localStorage.getItem("lineToken");
 
   if (!lineToken) {
-    return <Navigate to="/customer/login" />;
+    return <Navigate to="/customer/line-login" />;
   }
 
   return element;

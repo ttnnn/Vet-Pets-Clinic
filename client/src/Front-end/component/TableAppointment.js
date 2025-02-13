@@ -149,7 +149,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       if (lineUserId) {
         await sendLineMessage(lineUserId, message);
       } else {
-        console.error(`LINE User ID not found for appointment_id: ${approveAppointmentId}`);
+       // console.error(`LINE User ID not found for appointment_id: ${approveAppointmentId}`);
       }
     })
     .catch((error) => {
@@ -183,11 +183,9 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         setSnackbarOpen(true);
       })
       .catch((error) => {
-        console.log("Deleting :", AppointmentID);
-        console.error('Error deleting appointment:', error);
+        //console.error('Error deleting appointment:', error);
         setSnackbarSeverity('error');
       });
-    console.log("Deleting appointment with ID:", AppointmentID);
   };
 
 
@@ -216,7 +214,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       ); // เพิ่ม timezone ด้วย +07:00
   
       if (!appointmentDateTime.isValid()) {
-        console.error(`Invalid date or time: ${appointmentDate}, ${appointmentTime}`);
         return false;
       }
   

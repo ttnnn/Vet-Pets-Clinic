@@ -317,15 +317,6 @@ const RecordMedical = ({
       rec_date: now.format('YYYY-MM-DD'),
     });}
 
-  // const updateAdmitrecord = () => {
-    // axios
-        // .get(`${API_BASE_URL}/admitrecord?appointment_id=${selectedAppointment?.appointment_id}`)
-        // .then((response) => {
-          // setUpdateRecords(response.data.data  || []); // อัปเดตข้อมูลใน state
-        // })
-        // .catch((error) => console.error('Error fetching updated records:', error));
-    // };
-      // 
 
   const handleSubmit = async () => {
   
@@ -363,7 +354,6 @@ const RecordMedical = ({
       record_medicine: formMedical.record_medicine,
       appointment_id: selectedAppointment?.appointment_id,
 }
-    console.log("data:",payload);
     try {
  
       await clinicAPI.post(`/admitrecord`, payload);

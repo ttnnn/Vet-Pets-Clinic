@@ -172,7 +172,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
       const fetchAppointmentDetails = async () => {
         try {
           const response = await clinicAPI.get(`/appointments/${appointmentId}`);
-          console.log('Response from API:', response.data); // ตรวจสอบข้อมูลที่ส่งกลับมา
+          // console.log('Response from API:', response.data); // ตรวจสอบข้อมูลที่ส่งกลับมา
           const appointmentDate = new Date(response.data.appointment_date);
           setInitialCheckInDate(appointmentDate);
           //console.log('Initial Check-in Date:', appointmentDate);
@@ -238,7 +238,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                   // แสดง TextField แบบ readOnly เมื่อเป็นการจองต่อ + admit
                   <TextField
                     label="Check-in Date"
-                    value={dayjs(checkInDate).format('MM/DD/YYYY')} // ฟอร์แมตวันที่
+                    value={dayjs(checkInDate).format('DD/MM/YYYY')} // ฟอร์แมตวันที่
                     fullWidth
                     InputProps={{
                       readOnly: true,
@@ -255,6 +255,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                     TextFieldComponent={(params) => <TextField {...params} fullWidth />}
                     disablePast
                     views={['year', 'month', 'day']}
+                    format="dd/MM/yyyy"
                     sx={{  flexGrow: 1 }}
                   />
                 </HolidayFilter>
@@ -268,6 +269,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
                     disablePast
                     minDate={checkInDate} //ไม่สามารถเลือก Check-out Date ที่น้อยกว่าหรือเท่ากับ Check-in Date ได้
                     views={['year', 'month', 'day']}
+                    format="dd/MM/yyyy"
                     sx={{ flexGrow: 1 }} // ขยายเต็มพื้นที่
                   />
                 </HolidayFilter>
@@ -293,6 +295,7 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
               }}
               TextFieldComponent={(params) => <TextField {...params} fullWidth />}
               disablePast
+              format="dd/MM/yyyy"
               views={['year', 'month', 'day']}
             />
           </HolidayFilter>

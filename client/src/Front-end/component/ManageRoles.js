@@ -53,6 +53,7 @@ const ManageRoles = () => {
   const [passwordError, setPasswordError] = useState('');
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  
 
   const handleOldPasswordToggle = () => {
     setShowOldPassword(!showOldPassword);
@@ -190,7 +191,7 @@ const ManageRoles = () => {
 
   const handleUpdateAdmin = async () => {
     try {
-      console.log('Updating admin:', newAdmin); // ดูค่าที่ถูกแก้ไข
+      // console.log('Updating admin:', newAdmin); // ดูค่าที่ถูกแก้ไข
       const response = await clinicAPI.put(`/personnel/${newAdmin.personnel_id}`, newAdmin);
       if (response.status === 200) {
         // รีเฟรชข้อมูลผู้ดูแลจากฐานข้อมูล
@@ -200,6 +201,7 @@ const ManageRoles = () => {
           )
         );
         setSnackbar({ open: true, message: 'แก้ไขผู้ดูแลสำเร็จ!', severity: 'success' });
+        sessionStorage.setItem('forceRoleUpdate', 'true'); 
         handleDialogClose();
       }
     } catch (error) {
@@ -415,6 +417,20 @@ const ManageRoles = () => {
             margin="normal"
             required
         />
+        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <TextField
+            label="รหัสผ่าน"
+            variant="outlined"
+            name="password_encrip"
+            value={newAdmin.password_encrip}
+            onChange={handleInputChange}
+            fullWidth
+            margin="normal"
+            required
+            type={'password'}
+            disabled={newAdmin.personnel_id} // ถ้ามี personnel_id หมายถึงโหมดแก้ไข
+        />
+        </Box>
 
         </DialogContent>
         <Dialog open={changePasswordDialogOpen} onClose={handleChangePasswordDialogClose} maxWidth="sm" fullWidth>

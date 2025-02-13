@@ -115,15 +115,10 @@ const RegisterPage = () => {
     };
   //ตอนเช็ควนลูปแก้ไขข้อมูลสัตว์เลี้ยงแต่ละตัว
     if (editIndex !== null) {
-      console.log("Updating pet at index:", editIndex, "with data:", petData);
       setPets((prevPets) => prevPets.map((pet, i) => (i === editIndex ? petData : pet)));
     } else {
-      console.log("Adding new pet:", petData);
       setPets((prevPets) => [...prevPets, petData]);
     }
-  
-    console.log("Updated pets list:", pets);
-  
     setOpen(false);
     clearPetForm();
     setEditIndex(null);
@@ -246,7 +241,6 @@ const RegisterPage = () => {
         owner: ownerData, // ข้อมูลเจ้าของ
         pets: [...pets], // รายการสัตว์เลี้ยง
       };
-      console.log('data:',combinedData)
 
       if (combinedData.pets.length > 0) {
         await clinicAPI.post(`/create-owner-pet`, combinedData);
@@ -580,7 +574,6 @@ const RegisterPage = () => {
               fullWidth
               required
               onChange={(e) => {
-                console.log(e.target.value); 
                 setPetSpecies(e.target.value);
               }}
               sx={{ mb: 2 }}

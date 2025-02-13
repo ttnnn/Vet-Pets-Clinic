@@ -113,6 +113,7 @@ const Register = () => {
           fullWidth
           margin="normal"
           value={phone_number}
+          inputProps={{ maxLength: 10 }}
           onChange={(e) => setPhone(e.target.value)}
         />
         <Button

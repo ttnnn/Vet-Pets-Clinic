@@ -46,7 +46,6 @@ const QueueAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
 
   const deleteAppointment = (AppointmentID) => {
-    console.log("Deleting appointment with ID:", AppointmentID);
     clinicAPI.delete(`/deleted/appointment/${AppointmentID}`)
       .then(() => {
         // Update the list of appointments after successful deletion

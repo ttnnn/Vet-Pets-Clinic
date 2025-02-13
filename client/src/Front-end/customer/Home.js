@@ -183,7 +183,7 @@ const Home = () => {
                <Box sx={{ textAlign: 'left', marginLeft: '16px' }}>
                 <Typography
                   sx={{
-                    fontSize: '1.1rem', 
+                    fontSize: { xs: '1rem', md: '1.2rem' }, 
                     fontWeight: 'bold',
                     marginBottom: '8px'
                   }}
@@ -192,7 +192,7 @@ const Home = () => {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '1rem', 
+                    fontSize: { xs: '0.9rem', md: '1rem' } , 
                     fontWeight: 'regular',
                   }}
                 >
@@ -255,14 +255,14 @@ const Home = () => {
                     </Grid>
                     <Grid item xs={7}>
                       <Typography variant="h6">{appt.pet_name}</Typography>
-                      <Typography color="textSecondary">ประเภท: {appt.type_service}</Typography>
-                      <Typography color="textSecondary">
+                      <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>ประเภท: {appt.type_service}</Typography>
+                      <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
                         วันที่นัดหมาย: {dayjs(appt.appointment_date).format('D MMMM YYYY')}
                       </Typography>
-                      <Typography color="textSecondary">
+                      <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
                         เวลา: {formattedTime(appt.appointment_time) || 'ไม่ระบุเวลา'}
                       </Typography>
-                      <Typography color="textSecondary">สถานะ: {appt.status}</Typography>
+                      <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>สถานะ: {appt.status}</Typography>
                     </Grid>
                   </Grid>
                   <Button

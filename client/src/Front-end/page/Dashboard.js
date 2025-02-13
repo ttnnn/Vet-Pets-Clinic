@@ -50,9 +50,14 @@ const Dashboard = () => {
       .get(`dashboard`, {
         params: { petType, timeFilter, year: timeFilter === 'year' ? year : undefined },
       })
-      .then((response) => setData(response.data))
-      .catch((error) => console.error(error));
+      .then((response) => {
+        console.log("API Response:", response.data); // Debug จุดนี้
+        setData(response.data);
+      })
+      .catch((error) => console.error("API Error:", error));
   }, [petType, timeFilter, year]);
+  
+  console.log("Revenue Data:", data.revenue);
 
   useEffect(() => {
     clinicAPI

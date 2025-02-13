@@ -85,9 +85,6 @@ router.post("/owner/check-owner", async (req, res) => {
   try {
    
     const userId = await verifyLineToken(token);
-     console.log('Verified User ID:', userId);
-
-
     const checkQuery = `
       SELECT * 
       FROM owner
@@ -145,7 +142,6 @@ router.post("/owner/check-owner", async (req, res) => {
 
 router.get('/appointments', async (req, res) => { 
   const { first_name, last_name, phone_number } = req.query;
-  console.log('/appointments', req.query);
 
   try {
     // ค้นหาข้อมูล Owner
@@ -163,8 +159,6 @@ router.get('/appointments', async (req, res) => {
     }
 
     const owner_id = owner.rows[0].owner_id;
-    console.log('Owner ID:', owner_id);  // ตรวจสอบ owner_id
-
     if (!owner_id) {
       return res.status(400).json({ message: 'Owner does not have a valid ID' });
     }
@@ -183,7 +177,6 @@ router.get('/appointments', async (req, res) => {
     );
     
 
-    console.log('Appointments:', appointments.rows);  // ตรวจสอบ appointments ที่ได้
     if (appointments.rows.length === 0) {
       return res.status(200).json({ owner_id, message: 'No upcoming appointments found' });
     }
@@ -242,7 +235,6 @@ router.get('/appointments/history', async (req, res) => {
 // เส้นทาง GET สำหรับดึงข้อมูลการนัดหมายโดยใช้ appointment_id
 router.get('/appointments/detail/:id', async (req, res) => {
   const { id } = req.params; // รับค่า id จาก URL
-  console.log('/appointments/:id', id);
 
   try {
     // คำสั่ง SQL สำหรับดึงรายละเอียดการนัดหมาย
@@ -277,7 +269,6 @@ router.get('/appointments/detail/:id', async (req, res) => {
 
 router.get('/pets', async (req, res) => { 
   const { first_name, last_name, phone_number } = req.query;
-  console.log('/pets', req.query);
 
   try {
     // ค้นหาข้อมูล Owner
@@ -295,7 +286,6 @@ router.get('/pets', async (req, res) => {
     }
 
     const owner_id = owner.rows[0].owner_id;
-    console.log('Owner ID:', owner_id); 
 
     if (!owner_id) {
       return res.status(400).json({ message: 'Owner does not have a valid ID' });
@@ -309,8 +299,6 @@ router.get('/pets', async (req, res) => {
       [owner_id]
     );
     
-    console.log('pets:', pets.rows);  
-
     return res.status(200).json({ pets: pets.rows });
   } catch (error) {
     console.error('Database error:', error);
@@ -319,7 +307,6 @@ router.get('/pets', async (req, res) => {
 });
 
 router.get('/pets/:id', async (req, res) => {
-  console.log('/pets/:id', req.params);
   const { id } = req.params;
   try {
     const result = await pool.query('SELECT * FROM pets WHERE pet_id = $1', [id]);
@@ -331,7 +318,6 @@ router.get('/pets/:id', async (req, res) => {
 });
 
 router.get('/history/vaccien/:pet_id', async (req, res) => {
-  console.log('/history/vaccien/', req.params);
   const { pet_id } = req.params;
   try {
     // Query ดึงข้อมูลจากฐานข้อมูล
@@ -358,7 +344,6 @@ router.get('/history/vaccien/:pet_id', async (req, res) => {
 // API สำหรับยกเลิกนัดหมาย
 router.put('/appointment/cancel', async (req, res) => {
   const { appointmentId } = req.body; // รับ appointmentId จาก request body
-  console.log('cancle appointmentid',req.body)
   try {
     // อัพเดตสถานะการนัดหมายในฐานข้อมูล
     const query = 'UPDATE appointment SET queue_status = $1, status = $2 , massage_status = $3 WHERE appointment_id = $4';

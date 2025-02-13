@@ -52,7 +52,7 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   const formatDate = (date) => {
     const validDate = new Date(date);
     if (isNaN(validDate.getTime())) {
-      console.error('Invalid date:', date);
+      // console.error('Invalid date:', date);
       return ''; // คืนค่าเป็นสตริงว่างในกรณีที่ date ไม่ถูกต้อง
     }
 

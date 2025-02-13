@@ -8,7 +8,6 @@ const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 const bcrypt = require('bcrypt'); 
-const saltRounds = 10; // ระดับของการเข้ารหัส
 const crypto = require('crypto');
 const sendLineMessage = require('../models/sendLineApprove.js');
 const pool = require('../db.js');
@@ -186,8 +185,7 @@ router.get('/owners', async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-router.get('/owners/:owner_id', async (req, res) => {
-  console.log('GET /owners/:owner_id', req.params); // Log incoming request params
+router.get('/owners/:owner_id', async (req, res) => { // Log incoming request params
   const { owner_id } = req.params;
 
   // Validate owner_id
@@ -212,13 +210,12 @@ router.get('/owners/:owner_id', async (req, res) => {
   }
 });
 router.get('/medical/form/:appointmentId', async (req, res) => {
-  console.log('/medical/form/:appointmentId', req.params); // Log incoming request params
+ // Log incoming request params
   const { appointmentId } = req.params;
 
   if (!appointmentId) {
     return res.status(400).json({ error: 'Invalid appointmentId.' });
   }
-
   // JOIN query
   const query = `
     SELECT 
@@ -251,8 +248,6 @@ router.get('/medical/form/:appointmentId', async (req, res) => {
 
 //servicecategory
 router.get('/servicecategory', async (req, res) => {
-  console.log("/servicecategory", req.body);
-
   const query = `
     SELECT * FROM servicecategory where active = 'true'
   `;
@@ -269,8 +264,6 @@ router.get('/servicecategory', async (req, res) => {
   }
 });
 router.get('/vaccines', async (req, res) => {
-  console.log("/vaccines", req.body);
-
   const query = `
     SELECT * FROM servicecategory WHERE category_type = 'รายการยา' and  active = 'true'
   `;
@@ -309,7 +302,6 @@ router.post('/appointment/vaccien', async (req, res) => {
 
 
 router.post('/appointments/:appointmentId/vaccines', async (req, res) => {
-  console.log('/appointments/:appointmentId/vaccines' , req.body )
   const { appointmentId } = req.params;
   const { pet_id, vaccine_id, notes } = req.body;
 
@@ -358,10 +350,6 @@ router.post('/appointments/:appointmentId/vaccines', async (req, res) => {
 // API Endpoint สำหรับสร้าง Service ID
 router.post('/servicecategory', async (req, res) => {
   const { category_type, category_name, price_service } = req.body;
-
-  console.log("data", req.body)
-
-
   if (!category_type || !category_name || !price_service) {
     return res.status(400).json({ error: 'All fields are required' });
   }
@@ -397,9 +385,7 @@ router.post('/servicecategory', async (req, res) => {
 
 // DELETE /servicecategory/:id
 router.delete('/servicecategory/:id', async (req, res) => {
-  console.log('id', req.params)
   const { id } = req.params;
-
   try {
     const result = await pool.query('UPDATE servicecategory SET active = FALSE WHERE category_id = $1', [id]);
     if (result.rowCount > 0) {
@@ -439,7 +425,6 @@ router.put('/servicecategory/:id', async (req, res) => {
 
 // Fetch booked time slots for a specific date and service type
 router.get('/appointments/booked-times', async (req, res) => {
-  console.log("/appointments/booked-times", req.body);
   const { date, type_service } = req.query;
 
   if (!date || !type_service) {
@@ -465,7 +450,6 @@ router.get('/appointments/booked-times', async (req, res) => {
 });
 
 router.post('/create-owner-pet', async (req, res) => {
-  console.log("/create-owner-pet", req.body);
   const {
     owner: {
       first_name, 
@@ -554,8 +538,6 @@ router.post('/create-owner-pet', async (req, res) => {
 
 
 router.post('/pets', async (req, res) => {
-  console.log("/pets", req.body); // Log request body
-
   const { 
     owner_id, 
     pet_name,
@@ -596,7 +578,6 @@ router.post('/pets', async (req, res) => {
 });
 
 router.put('/postpone/hotels/:id', async (req, res) => {
-  console.log('/postpone/hotels/:id', req.params);
   const { id } = req.params;
   const { start_date, end_date, pet_cage_id, num_day, personnel_id ,pet_id , status} = req.body;
 
@@ -833,9 +814,6 @@ router.put('/appointment/:id', async (req, res) => {
   const { id } = req.params;
   const { status, queue_status, reason } = req.body;
 
-  console.log('Updating appointment with ID:', id);
-  console.log('Received status:', status, 'queue_status:', queue_status);
-
   const client = await pool.connect();
 
   try {
@@ -911,10 +889,6 @@ router.put('/appointment/:id', async (req, res) => {
 router.put('/postpone/appointment/:id', async (req, res) => {  
   const { id } = req.params;
   const { appointment_date, appointment_time } = req.body;
-  console.log(`Updating appointment with ID: ${id}, date: ${appointment_date}, time: ${appointment_time}`);
-  
-  console.log('Updating appointment with ID:', id);
-  console.log('Updating appointment date and time:', appointment_date, appointment_time);
   
   if (!appointment_date || !appointment_time) {
     return res.status(400).send({ message: 'appointment_date and appointment_time are required' });
@@ -1037,7 +1011,6 @@ router.get('/appointment/hotel', async (req, res) => {
 
 
 router.post('/create-appointment', async (req, res) => {
-  console.log(req.body)
   const {
     pet_id,
     type_service,
@@ -1053,9 +1026,6 @@ router.post('/create-appointment', async (req, res) => {
 
     // Generate appointment ID
     const newAppointmentID = await generateAppointmentID(pool, type_service);
-    console.log('newAppointmentID', newAppointmentID);
-
-
     // Create the appointment
     await createAppointment(client, newAppointmentID, req.body);
 
@@ -1147,10 +1117,7 @@ router.get('/available-cages', async (req, res) => {
 });
 
 router.post('/medical/symptom', async (req, res) => {
-  console.log('/medical/symptom', req.body);
   const { appointment_id, diag_cc, rec_weight, pet_id, type_service, ribs, subcutaneous_fat, abdomen, waist,result_bcs } = req.body;
-  console.log("Result BCS:", result_bcs);
-  
   const client = await pool.connect(); // ใช้ client สำหรับ transaction
   try {
     await client.query('BEGIN'); // เริ่ม transaction
@@ -1180,7 +1147,6 @@ router.post('/medical/symptom', async (req, res) => {
       }
     }
     const rec_time = dayjs().format('YYYY-MM-DD HH:mm:ss'); 
-    console.log('Rec time:', rec_time);
     // 2. บันทึกหรืออัปเดตข้อมูลในตาราง `medicalrecord`
     await client.query(
       `INSERT INTO medicalrecord (appointment_id, pet_id, rec_weight, diagnosis_id,rec_time) 
@@ -1218,7 +1184,6 @@ router.post('/medical/symptom', async (req, res) => {
 });
 
 router.get('/dayoff', async (req, res) => {
-  console.log("/dayoff", req.body);
 
   const query = 'SELECT * FROM dayoff'; // Query to get all dayoff records
   try {
@@ -1235,10 +1200,7 @@ router.get('/dayoff', async (req, res) => {
 // Add New Day Off Record                                                                                                                                                                                                                                   
 
 router.post('/dayoff', async (req, res) => {
-  // console.log('/dayoff', req.body);
-  const { date_start,date_end, dayoff_note, dayoff_type, recurring_days} = req.body;
-
-  // Check for missing fields
+  const { date_start,date_end, dayoff_note, dayoff_type, recurring_days} = req.body
   if (!date_start || !date_end || !dayoff_note || !dayoff_type || !recurring_days) {
     return res.status(400).json({ error: 'Dayoff date and note are required' });
   }
@@ -1266,7 +1228,6 @@ router.post('/dayoff', async (req, res) => {
 
 // Update Day Off Record
 router.put('/dayoff/:id', async (req, res) => {
-  console.log('/dayoff/:id', req.body);
   const { id } = req.params;
   const { date_start, date_end, dayoff_note, dayoff_type, recurring_days } = req.body;
 
@@ -1314,7 +1275,6 @@ router.post('/admitrecord', async (req, res) => {
     record_medicine,
     appointment_id,
   } = req.body;
-  console.log('/admitrecord' , req.body )
   // ตรวจสอบข้อมูลก่อนเพิ่ม
   if (!admit_temp || !record_medical || !appointment_id) {
     return res.status(400).json({ error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
@@ -1377,8 +1337,6 @@ router.get("/admitrecord", (req, res) => {
 });
 
 router.get('/admitrecord/update', async (req, res) => { 
-  console.log("/admitrecord/update", req.body);
-
   const query = 
     'SELECT * FROM admitrecord'
   ;
@@ -1477,6 +1435,20 @@ router.get('/personnel', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+router.get('/personnel/:username', async (req, res) => {
+  const { username } = req.params;
+  const query = `SELECT * FROM personnel WHERE user_name = $1 AND active = true`;
+
+  try {
+    const results = await pool.query(query, [username]);
+    res.json(results.rows); // ส่งผลลัพธ์กลับไปยัง Frontend
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 
 router.delete('/personnel/:id', async (req, res) => {
   const { id } = req.params;
@@ -1578,7 +1550,6 @@ router.post('/create-invoice', async (req, res) => {
     totalAmount,
   } = req.body;
 
-  console.log('/create-invoice',req.body)
   const client = await pool.connect(); // Connect to database
 
   try {
@@ -1652,7 +1623,6 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
 
 router.delete('/delete/item/:category_id/:invoice_id', async (req, res) => {
   const { category_id, invoice_id } = req.params;
-  console.log('req.params',req.params)
   const client = await pool.connect(); // เชื่อมต่อ Client เพื่อใช้ Transaction
 
   try {
@@ -1695,7 +1665,6 @@ router.post('/create-invoice/payment', async (req, res) => {
     totalAmount,
   } = req.body;
 
-  console.log('/create-invoice', req.body);
   const client = await pool.connect(); // Connect to database
 
   try {
@@ -1980,17 +1949,20 @@ router.get('/dashboard', async (req, res) => {
     // ดึงรายได้ต่อเดือน/ปี
     const resultRevenue = await pool.query(`
       SELECT 
-        TO_CHAR(payment_date, 'Month') AS period,  
-        SUM(total_payment) AS amount
-      FROM payment pay
-      INNER JOIN invoice ON pay.payment_id = invoice.payment_id
-      INNER JOIN appointment a ON invoice.appointment_id = a.appointment_id
-      INNER JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE EXTRACT(YEAR FROM payment_date) = ${year} 
-        AND pay.status_pay = 'Paid' 
-        ${petTypeCondition} ${statusCondition}
-      GROUP BY period
-      ORDER BY MIN(payment_date) 
+         ${timeFilter === 'month' 
+          ? 'EXTRACT(DAY FROM payment_date)'  
+          : "TO_CHAR(payment_date, 'Month')"} AS period,  
+        FROM appointment a
+      inner JOIN invoice ON a.appointment_id = invoice.appointment_id
+      inner JOIN payment pay ON pay.payment_id = invoice.payment_id
+      inner JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
+      GROUP BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM payment_date)'  
+        : "TO_CHAR(payment_date, 'Month')"} 
+      ORDER BY ${timeFilter === 'month' 
+        ? 'EXTRACT(DAY FROM payment_date)'  
+        : "TO_CHAR(payment_date, 'Month')"} 
     `);
     
     const revenue = resultRevenue.rows;

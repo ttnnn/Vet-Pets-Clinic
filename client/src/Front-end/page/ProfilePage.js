@@ -88,7 +88,7 @@ const PetProfilePage = () => {
     if (petId && ownerId) {
       fetchPetAndOwnerDetails(petId, ownerId);
     } else {
-      console.error('petId or ownerId is missing in location state:', location.state);
+      console.error('petId or ownerId is missing in location state:');
     }
   }, [location.state]);
   
@@ -213,7 +213,6 @@ const PetProfilePage = () => {
 
 // Update handler
 const handleUpdate = async (updatedData, type) => {
-  console.log(updatedData) 
   const endpoint = type === 'pet' ? `/pets/${pet.pet_id}` : `/owners/${owner.owner_id}`;
 
   try {
@@ -232,7 +231,7 @@ const handleUpdate = async (updatedData, type) => {
         setOwner(updatedResponse.data); // Update owner state with new data
       }
     } else {
-      console.error('Failed to update data', response.data);
+      console.error('Failed to update data');
     }
   } catch (error) {
     console.error('Error:', error.response ? error.response.data : error.message);
@@ -241,7 +240,6 @@ const handleUpdate = async (updatedData, type) => {
 const handleEditClick = (id) => {
   setId(id);   // กำหนด appointmentId ที่จะส่งไปยังคอมโพเนนต์
   setActiveTab(0);        // เปลี่ยน activeTab ไปที่แท็บ 0 (หรือแท็บที่คุณต้องการ)
-  console.log('Appointment ID:', id);
 
 };
 
@@ -297,7 +295,7 @@ const handleEditClick = (id) => {
             }}
           >
             <Avatar
-              alt={pet.pet_name}
+              // alt={pet.pet_name}
               src={
                 pet.image_url
                   ? pet.image_url // ใช้ URL จากฐานข้อมูล

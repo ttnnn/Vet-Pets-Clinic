@@ -82,7 +82,6 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const [details, setDetails] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
-  // console.log('appointments',appointments)
   const handleEdit = (id) => {
     onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
   };
