@@ -598,7 +598,10 @@ const RegisterPage = () => {
                 value={otherPetSpecies}
                 fullWidth
                 required
-                onChange={(e) => setOtherPetSpecies(e.target.value)}
+                onChange={(e) => {
+                  setOtherPetSpecies(e.target.value);
+                  setPetBreed(e.target.value); // อัปเดต petBreed ด้วย
+                }}
                 sx={{ mb: 2 }}
               />
             ) : (
