@@ -1901,12 +1901,15 @@ router.get('/dashboard', async (req, res) => {
 
     // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว์
     const petTypeCondition = petType
-      ? petType === 'other'
-        ? "AND p.pet_species NOT IN ('สุนัข', 'แมว')" // เงื่อนไขสำหรับประเภทอื่นๆ
-        : petType === 'all'
-        ? '' // ไม่มีเงื่อนไขเพิ่มเติม
-        : `AND p.pet_species = '${petType}'` // เงื่อนไขสำหรับหมาหรือแมว
-      : '';
+  ? petType === 'other'
+    ? "AND p.pet_species NOT IN ($1, $2)" // ใช้พารามิเตอร์เพื่อหลีกเลี่ยงการแทรกโดยตรง
+    : petType === 'all'
+    ? '' 
+    : "AND p.pet_species = $1" 
+  : '';
+
+  const queryParams = petType === 'other' ? ['สุนัข', 'แมว'] : [petType];
+
 
     // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
     const timeCondition = timeFilter === 'month'
@@ -1926,7 +1929,8 @@ router.get('/dashboard', async (req, res) => {
       LEFT JOIN pets p ON a.pet_id = p.pet_id  
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY type_service
-    `);
+    `, queryParams);
+
     const services = resultServices.rows; 
 
     const resultPetsPerPeriod = await pool.query(`
@@ -1944,7 +1948,7 @@ router.get('/dashboard', async (req, res) => {
       ORDER BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM appointment_date)'  
         : "TO_CHAR(appointment_date, 'FMMonth')"} 
-    `);
+    `, queryParams);
     const petsPerPeriod = resultPetsPerPeriod.rows; 
     
     // ดึงรายได้ต่อเดือน/ปี
@@ -1960,7 +1964,7 @@ router.get('/dashboard', async (req, res) => {
       GROUP BY TO_CHAR(payment_date, 'FMMonth'), EXTRACT(MONTH FROM payment_date)
       ORDER BY EXTRACT(MONTH FROM payment_date)
 
-    `);
+    `, queryParams);
     
     const revenue = resultRevenue.rows;
     
