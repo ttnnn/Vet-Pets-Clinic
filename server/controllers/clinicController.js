@@ -1910,13 +1910,14 @@ router.get('/dashboard', async (req, res) => {
 
     // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
     const timeCondition = timeFilter === 'month'
-      ? `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM appointment_date) = EXTRACT(YEAR FROM CURRENT_DATE)`
+      ? `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
+      AND EXTRACT(YEAR FROM appointment_date) = ${year}`
       : year
       ? `EXTRACT(YEAR FROM payment_date) = ${year}`
       : '1=1'; 
 
     // WHERE เงื่อนไขสำหรับสถานะ
-    const statusCondition = "AND a.status = 'อนุมัติ' AND a.queue_status = 'เสร็จสิ้น'";
+    const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
     // ดึงจำนวนบริการแยกตามประเภท
     const resultServices = await pool.query(`
@@ -1949,21 +1950,16 @@ router.get('/dashboard', async (req, res) => {
     // ดึงรายได้ต่อเดือน/ปี
     const resultRevenue = await pool.query(`
       SELECT 
-        ${timeFilter === 'month' 
-          ? 'EXTRACT(DAY FROM payment_date)'  
-          : "TO_CHAR(payment_date, 'Month')"} AS period,  
+        TO_CHAR(payment_date, 'FMMonth') AS period,
         SUM(pay.total_payment) AS amount
-      FROM appointment a
+         FROM appointment a
       INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
       INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
       INNER JOIN pets p ON a.pet_id = p.pet_id 
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
-      GROUP BY ${timeFilter === 'month' 
-        ? 'EXTRACT(DAY FROM payment_date)'  
-        : "TO_CHAR(payment_date, 'Month')"} 
-      ORDER BY ${timeFilter === 'month' 
-        ? 'EXTRACT(DAY FROM payment_date)'  
-        : "TO_CHAR(payment_date, 'Month')"} 
+      GROUP BY TO_CHAR(payment_date, 'FMMonth'), EXTRACT(MONTH FROM payment_date)
+      ORDER BY EXTRACT(MONTH FROM payment_date)
+
     `);
     
     const revenue = resultRevenue.rows;

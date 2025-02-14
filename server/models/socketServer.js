@@ -52,12 +52,10 @@ const setupSocketServer = (server) => {
     // ส่งข้อความแจ้งเตือนไปยังคลินิก
     socket.on('send-to-clinic', (data) => {
       io.to('clinic').emit('notification', data); // ส่งไปยังห้อง clinic
-      console.log('Notification sent to clinic:', data);
     });
 
     socket.on('broadcast-message', (data) => {
       io.emit('notification', data); // ส่งไปยังทุกคน
-      console.log('Broadcast message sent:', data);
     });
 
     socket.on('disconnect', () => {

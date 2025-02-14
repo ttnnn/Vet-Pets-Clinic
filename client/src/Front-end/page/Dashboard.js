@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import {
   Grid,
   Card,
@@ -44,6 +44,7 @@ const Dashboard = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState([]);
   const serviceTypes = ['อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน', 'ฝากเลี้ยง'];
+  const fetchedYearsRef = useRef(false);
 
   useEffect(() => {
     clinicAPI
@@ -60,34 +61,27 @@ const Dashboard = () => {
   console.log("Revenue Data:", data.revenue);
 
   useEffect(() => {
-    clinicAPI
-      .get(`/available-years`)
-      .then((response) => {
-        const fetchedYears = response.data.years;
-        setAvailableYears(fetchedYears);
-        if (!fetchedYears.includes(year)) {
-          setYear(fetchedYears[0]);
-        }
-      })
-      .catch((error) => console.error(error));
-  }, [year]);
-
-  if (!data) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-  
-  console.log("Revenue Data:", data.revenue);
+    if (!fetchedYearsRef.current) { 
+      fetchedYearsRef.current = true; // ป้องกันการ re-fetch
+      clinicAPI
+        .get(`/available-years`)
+        .then((response) => {
+          const fetchedYears = response.data.years;
+          setAvailableYears(fetchedYears);
+          if (!fetchedYears.includes(year)) {
+            setYear(fetchedYears[0]);
+          }
+        })
+        .catch((error) => console.error(error));
+    }
+  }, [year]); // เพิ่ม year เพื่อให้ React ไม่แจ้ง warning
 
   const petsPerPeriodChartData = {
-    labels: data.petsPerPeriod.map((item) => item.period),
+    labels: data?.petsPerPeriod?.map((item) => item.period) || [],
     datasets: [
       {
         label: 'จำนวนสัตว์เลี้ยง',
-        data: data.petsPerPeriod.map((item) => item.count),
+        data: data?.petsPerPeriod?.map((item) => item.count) || [],
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
@@ -95,18 +89,28 @@ const Dashboard = () => {
     ],
   };
   
-
   const revenueChartData = {
-    labels: data.revenue.map((item) => item.period),
+    labels: data?.revenue?.map((item) => item.period) || [],
     datasets: [
       {
         label: 'รายได้ (฿)',
-        data: data.revenue.map((item) => item.amount),
+        data: data?.revenue?.map((item) => item.amount) || [],
         borderColor: 'rgba(75, 192, 192, 0.6)',
         fill: false,
       },
     ],
   };
+
+  if (!data || !data.services || !data.petsPerPeriod || !data.revenue) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  
+  
 
   return (
     <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >

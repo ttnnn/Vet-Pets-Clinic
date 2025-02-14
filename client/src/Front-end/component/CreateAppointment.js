@@ -389,7 +389,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
               id="appointment-type"
               value={TypeService}
               onChange={(e) => {
-                console.log(e.target.value); // Debug to check if the value is correct
+                 // Debug to check if the value is correct
                 setTypeService(e.target.value);
                 setIsNoTime(false);
               }}

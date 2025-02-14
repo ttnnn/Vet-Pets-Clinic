@@ -24,7 +24,6 @@ const sendLineNotification = async (lineUserId, message, appointmentId , isRemin
       }
     });
 
-    console.log('Message sent: ', response.data);
 
     // อัปเดตสถานะในตาราง appointment เป็น 'success
     if (isReminder) {
@@ -34,7 +33,6 @@ const sendLineNotification = async (lineUserId, message, appointmentId , isRemin
         WHERE appointment_id = $1
       `;
       await pool.query(updateQuery, [appointmentId]);
-      console.log(`Appointment status updated to "success" for appointment_id: ${appointmentId}`);
     }
 
 
