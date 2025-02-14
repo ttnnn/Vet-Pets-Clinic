@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Grid,
   Card,
@@ -8,7 +8,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Box,CircularProgress
+  Box,
+  CircularProgress
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Bar } from 'react-chartjs-2';
@@ -26,6 +27,7 @@ import {
   LineElement,
 } from 'chart.js';
 import { clinicAPI } from "../../utils/api";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -48,7 +50,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     clinicAPI
-      .get(`dashboard`, {
+      .get('dashboard', {
         params: { petType, timeFilter, year: timeFilter === 'year' ? year : undefined },
       })
       .then((response) => {
@@ -57,14 +59,13 @@ const Dashboard = () => {
       })
       .catch((error) => console.error("API Error:", error));
   }, [petType, timeFilter, year]);
-  
-  console.log("Revenue Data:", data.revenue);
 
+  // เพิ่มการตรวจสอบก่อนการเข้าถึง data.revenue
   useEffect(() => {
-    if (!fetchedYearsRef.current) { 
-      fetchedYearsRef.current = true; // ป้องกันการ re-fetch
+    if (!fetchedYearsRef.current) {
+      fetchedYearsRef.current = true;
       clinicAPI
-        .get(`/available-years`)
+        .get('/available-years')
         .then((response) => {
           const fetchedYears = response.data.years;
           setAvailableYears(fetchedYears);
@@ -74,8 +75,18 @@ const Dashboard = () => {
         })
         .catch((error) => console.error(error));
     }
-  }, [year]); // เพิ่ม year เพื่อให้ React ไม่แจ้ง warning
+  }, [year]);
 
+  // ตรวจสอบให้ data มีค่าก่อนการสร้างกราฟ
+  if (!data || !data.services || !data.petsPerPeriod || !data.revenue) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // กราฟจำนวนสัตว์เลี้ยง
   const petsPerPeriodChartData = {
     labels: data?.petsPerPeriod?.map((item) => item.period) || [],
     datasets: [
@@ -88,7 +99,8 @@ const Dashboard = () => {
       },
     ],
   };
-  
+
+  // กราฟรายได้
   const revenueChartData = {
     labels: data?.revenue?.map((item) => item.period) || [],
     datasets: [
@@ -101,19 +113,8 @@ const Dashboard = () => {
     ],
   };
 
-  if (!data || !data.services || !data.petsPerPeriod || !data.revenue) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-  
-  
-  
-
   return (
-    <Box display="flex"  sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}} >
+    <Box display="flex" sx={{ height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0' }}>
       <Sidebar />
 
       <Box
@@ -195,7 +196,7 @@ const Dashboard = () => {
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-             <Card sx={{ height: '400px' }}>
+              <Card sx={{ height: '400px' }}>
                 <CardContent>
                   <Typography variant="h6">จำนวนสัตว์เลี้ยงที่มาเข้าใช้บริการต่อเดือน</Typography>
                   <Bar data={petsPerPeriodChartData} options={{ responsive: true }} />
