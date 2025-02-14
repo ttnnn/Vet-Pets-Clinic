@@ -95,36 +95,26 @@ const setupCronJobs = (io) => {
     WHERE 
         a.status = 'อนุมัติ'
         AND a.queue_status = 'รอรับบริการ'
-        AND DATE(a.appointment_date) = DATE(CONVERT_TZ(NOW(), 'UTC', 'Asia/Bangkok') + INTERVAL 1 DAY);
+        AND a.appointment_date::DATE  = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok' + INTERVAL '1 day')::DATE;
+
     `;
- 
+  
     try {
       const { rows } = await pool.query(query);
       rows.forEach(appointment => {
-        // ตรวจสอบว่า appointment_time เป็นเวลาหรือไม่
-        const formattedTime = appointment.appointment_time 
-          ? appointment.appointment_time.split('+')[0] 
-          : 'ไม่ระบุเวลา';
- 
-        // ใช้ dayjs แปลงวันที่เป็นไทย
-        const formatDate = dayjs(appointment.appointment_date)
-          .tz("Asia/Bangkok")
-          .locale('th')
-          .format('D MMMM YYYY');
-          
-        console.log('formattedTime',formattedTime)
-        console.log('formatDate',formatDate)
- 
+        // แปลง appointment_time ให้อยู่ในรูปแบบ '10:00'  
+        const formattedTime = appointment.appointment_time.split('+')[0];
+        const formatDate = dayjs(appointment.appointment_date).locale('th').format('D MMMM YYYY');  // ใช้ dayjs แปลงเป็นวันที่ไทย
+  
         const message = `แจ้งเตือนนัดหมาย:\n${appointment.pet_name} มีนัดหมายในวันพรุ่งนี้ วันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
+
         
-        LineNotification.sendLineNotification(appointment.line_id, message, appointment.appointment_id, true);
+        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id,true);
       });
     } catch (error) {
       console.error('Error fetching appointments:', error);
     }
- };
- 
-
+  };
   
 
   const sendAlert = async () => {
@@ -163,7 +153,7 @@ const setupCronJobs = (io) => {
   };
 
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
-  cron.schedule('0 9 * * *', sendAppointmentReminders);
+  cron.schedule('45 15 * * *', sendAppointmentReminders);
   cron.schedule('*/5 9-21 * * *', ApproveAppointmentReminders);
   cron.schedule('0 9 * * *', sendAlert);
 

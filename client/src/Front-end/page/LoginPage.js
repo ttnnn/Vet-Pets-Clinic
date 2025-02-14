@@ -48,7 +48,7 @@ const LoginPage = ({ onLogin }) => {
         setSnackbarOpen(true);
       }
     } catch (error) {
-      console.error('Login failed:', error);
+      //console.error('Login failed:', error);
       setSnackbarMessage('username หรือ password ไม่ถูกต้อง');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);

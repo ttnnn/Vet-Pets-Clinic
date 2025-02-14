@@ -60,7 +60,7 @@ const RegisterPage = () => {
   const [petName , setPetName] = useState('')
   const [petColor , setPetColor] = useState('')
   const [petSpecies ,setPetSpecies] = useState('')
-  const [petBreed , setPetBreed] = useState('')
+  const [petBreed , setPetBreed] = useState(null)
   const [petSpayed ,setPetSpayed] = useState(false)
   const [petMicrochip , setMicrochip] = useState('')
   const [pets, setPets] = useState([]);
@@ -97,8 +97,17 @@ const RegisterPage = () => {
   
     
   const handleSavePet = () => {
+    console.log('petSpecies',petSpecies)
+    console.log('otherPetSpecies',otherPetSpecies)
+    console.log('petName',petName)
+    console.log('petColor',petColor)
+    console.log('petBreed',petBreed)
+    console.log('gender',gender)
+    console.log('birthDate',birthDate)
     
-    if (!petName || !petColor || !petBreed || !gender || !birthDate || !petSpecies) {
+    const finalPetBreed = petSpecies === "อื่นๆ" ? otherPetSpecies : petBreed;
+
+    if (!petName || !petColor || !petBreed || !gender || !birthDate ) {
       handleSnackbarOpen('กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึก!', 'error');
       return;
     }
@@ -106,7 +115,7 @@ const RegisterPage = () => {
     const petData = {
       pet_name: petName,
       pet_color: petColor,
-      pet_breed: petBreed || '',
+      pet_breed: finalPetBreed,
       pet_gender: gender,
       pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : '',
       spayed_neutered: petSpayed ,
@@ -597,7 +606,12 @@ const RegisterPage = () => {
                 options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
                 value={petBreed}
                 onChange={(event, newValue) => {
+                  console.log("เลือกพันธุ์:", newValue); // Debugging
                   setPetBreed(newValue);
+                }}
+                onInputChange={(event, newInputValue) => {
+                  console.log("พิมพ์พันธุ์เอง:", newInputValue);
+                  setPetBreed(newInputValue);
                 }}
                 renderInput={(params) => (
                   <TextField 
