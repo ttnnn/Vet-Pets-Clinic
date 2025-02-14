@@ -1954,16 +1954,15 @@ router.get('/dashboard', async (req, res) => {
     // ดึงรายได้ต่อเดือน/ปี
     const resultRevenue = await pool.query(`
       SELECT 
-        TO_CHAR(payment_date, 'FMMonth') AS period,
+        TO_CHAR(pay.payment_date, 'FMMonth') AS period,
         SUM(pay.total_payment) AS amount
          FROM appointment a
       INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
       INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
       INNER JOIN pets p ON a.pet_id = p.pet_id 
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
-      GROUP BY TO_CHAR(payment_date, 'FMMonth'), EXTRACT(MONTH FROM payment_date)
-      ORDER BY EXTRACT(MONTH FROM payment_date)
-
+      GROUP BY TO_CHAR(pay.payment_date, 'FMMonth'), EXTRACT(MONTH FROM pay.payment_date)
+      ORDER BY EXTRACT(MONTH FROM pay.payment_date)
     `, queryParams);
     
     const revenue = resultRevenue.rows;
