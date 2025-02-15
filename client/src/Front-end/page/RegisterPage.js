@@ -97,13 +97,6 @@ const RegisterPage = () => {
   
     
   const handleSavePet = () => {
-    console.log('petSpecies',petSpecies)
-    console.log('otherPetSpecies',otherPetSpecies)
-    console.log('petName',petName)
-    console.log('petColor',petColor)
-    console.log('petBreed',petBreed)
-    console.log('gender',gender)
-    console.log('birthDate',birthDate)
     
     const finalPetBreed = petSpecies === "อื่นๆ" ? otherPetSpecies : petBreed;
 

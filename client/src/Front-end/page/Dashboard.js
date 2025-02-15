@@ -39,6 +39,11 @@ ChartJS.register(
   LineElement
 );
 
+const monthNames = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [petType, setPetType] = useState('all');
@@ -86,9 +91,9 @@ const Dashboard = () => {
     );
   }
 
-  // กราฟจำนวนสัตว์เลี้ยง
+
   const petsPerPeriodChartData = {
-    labels: data?.petsPerPeriod?.map((item) => item.period) || [],
+    labels: data?.petsPerPeriod?.map((item) => monthNames[parseInt(item.period) - 1]) || [], // Convert numeric period to month name
     datasets: [
       {
         label: 'จำนวนสัตว์เลี้ยง',
@@ -99,10 +104,10 @@ const Dashboard = () => {
       },
     ],
   };
-
+  
   // กราฟรายได้
   const revenueChartData = {
-    labels: data?.revenue?.map((item) => item.period) || [],
+    labels: data?.revenue?.map((item) => monthNames[parseInt(item.period) - 1]) || [], // Convert numeric period to month name
     datasets: [
       {
         label: 'รายได้ (฿)',
@@ -112,6 +117,7 @@ const Dashboard = () => {
       },
     ],
   };
+
 
   return (
     <Box display="flex" sx={{ height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0' }}>

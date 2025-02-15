@@ -1902,8 +1902,6 @@ router.get('/dashboard', async (req, res) => {
       year = new Date().getFullYear().toString();
     }
     
-    console.log('req.query:', req.query);
-
     let petTypeCondition = '';
     let queryParams = [];
     
@@ -1931,9 +1929,9 @@ router.get('/dashboard', async (req, res) => {
 
     const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
-    console.log('Query Params Before Query:', queryParams);
+    //console.log('Query Params Before Query:', queryParams);
 
-    // 📌 1. ดึงข้อมูลประเภทบริการ
+    // ดึงข้อมูลประเภทบริการ
     const resultServices = await pool.query(`
       SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
@@ -1944,7 +1942,7 @@ router.get('/dashboard', async (req, res) => {
 
     const services = resultServices.rows;
 
-    // 📌 2. ดึงจำนวนสัตว์เข้าใช้บริการในแต่ละเดือน/วัน
+    //  ดึงจำนวนสัตว์เข้าใช้บริการในแต่ละเดือน/วัน
     const resultPetsPerPeriod = await pool.query(`
       SELECT 
         ${timeFilter === 'month' 
@@ -1960,7 +1958,7 @@ router.get('/dashboard', async (req, res) => {
     
     const petsPerPeriod = resultPetsPerPeriod.rows; 
 
-    // 📌 3. ดึงรายได้ตามช่วงเวลา
+    // ดึงรายได้ตามช่วงเวลา
     let revenueTimeCondition = timeCondition; 
     let revenueQueryParams = [...queryParams];
 
@@ -1986,8 +1984,6 @@ router.get('/dashboard', async (req, res) => {
     res.status(500).send('Error retrieving dashboard data');
   }
 });  
-
-
 
 router.get('/available-years', async (req, res) => {
   try {

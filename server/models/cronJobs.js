@@ -30,7 +30,6 @@ const setupCronJobs = (io) => {
           queues: rows,
           playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
         });
-        console.log("Queue alert emitted:", rows);
       }
 
       // อัปเดตสถานะคิวหลังเวลา 20:00 น.
@@ -74,7 +73,7 @@ const setupCronJobs = (io) => {
       queues: rows,
       playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
     });
-    console.log("Queue alert emitted:", rows);
+
   }
   }
   // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
@@ -96,9 +95,7 @@ const setupCronJobs = (io) => {
         a.status = 'อนุมัติ'
         AND a.queue_status = 'รอรับบริการ'
         AND a.appointment_date::DATE  = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok' + INTERVAL '1 day')::DATE;
-
     `;
-  
     try {
       const { rows } = await pool.query(query);
       rows.forEach(appointment => {
@@ -136,7 +133,6 @@ const setupCronJobs = (io) => {
         h.end_date < CURRENT_DATE
         AND a.queue_status IN ('กำลังให้บริการ','admit')
         AND h.status = 'checkin' 
-
     `;
   
     try {
