@@ -1894,38 +1894,40 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
   }
 });
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', async (req, res) => {  
   try {
     const { petType, timeFilter, year } = req.query;
     console.log('req.query', req.query);
 
-    const parsedYear = year ? parseInt(year, 10) : null;
-
+    // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว์
     let petTypeCondition = '';
     let queryParams = [];
 
-    if (petType) {
+    if (petType && petType !== 'all') {
       if (petType === 'other') {
-        petTypeCondition = "AND p.pet_species NOT IN ($1::TEXT, $2::TEXT)";
+        petTypeCondition = `AND p.pet_species NOT IN ($1, $2)`;
         queryParams.push('สุนัข', 'แมว');
-      } else if (petType !== 'all') {
-        petTypeCondition = "AND p.pet_species = $1::TEXT";
+      } else {
+        petTypeCondition = `AND p.pet_species = $${queryParams.length + 1}`;
         queryParams.push(petType);
       }
     }
 
+    // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
     let timeCondition = '1=1';
     if (timeFilter === 'month') {
       timeCondition = `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
                        AND EXTRACT(YEAR FROM appointment_date) = $${queryParams.length + 1}`;
-      queryParams.push(parsedYear);
-    } else if (parsedYear) {
+      queryParams.push(parseInt(year, 10));
+    } else if (year) {
       timeCondition = `EXTRACT(YEAR FROM appointment_date) = $${queryParams.length + 1}`;
-      queryParams.push(parsedYear);
+      queryParams.push(parseInt(year, 10));
     }
 
+    // WHERE เงื่อนไขสำหรับสถานะ
     const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
+    // ดึงจำนวนบริการแยกตามประเภท
     const resultServices = await pool.query(`
       SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
@@ -1936,11 +1938,12 @@ router.get('/dashboard', async (req, res) => {
 
     const services = resultServices.rows; 
 
+    // ดึงจำนวนสัตว์ที่เข้ารับบริการแต่ละช่วงเวลา
     const resultPetsPerPeriod = await pool.query(`
       SELECT 
         ${timeFilter === 'month' 
           ? 'EXTRACT(DAY FROM appointment_date)' 
-          : "TO_CHAR(appointment_date, 'FMMonth')" } AS period,  
+          : "TO_CHAR(appointment_date, 'FMMonth')"} AS period,  
         COUNT(a.pet_id) AS count
       FROM appointment a
       LEFT JOIN pets p ON a.pet_id = p.pet_id 
@@ -1950,23 +1953,25 @@ router.get('/dashboard', async (req, res) => {
         : "TO_CHAR(appointment_date, 'FMMonth')"} 
       ORDER BY ${timeFilter === 'month' 
         ? 'EXTRACT(DAY FROM appointment_date)'  
-        : "TO_CHAR(appointment_date, 'FMMonth')"} 
+        : "TO_CHAR(appointment_date, 'FMMonth')"}
     `, queryParams);
     
     const petsPerPeriod = resultPetsPerPeriod.rows; 
     
+    // เงื่อนไขสำหรับการดึงรายได้ (ต้องใช้ pay.payment_date)
     let revenueTimeCondition = '1=1';
     let revenueQueryParams = [...queryParams];
 
     if (timeFilter === 'month') {
       revenueTimeCondition = `EXTRACT(MONTH FROM pay.payment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
                               AND EXTRACT(YEAR FROM pay.payment_date) = $${queryParams.length + 1}`;
-      revenueQueryParams.push(parsedYear);
-    } else if (parsedYear) {
+      revenueQueryParams.push(parseInt(year, 10));
+    } else if (year) {
       revenueTimeCondition = `EXTRACT(YEAR FROM pay.payment_date) = $${queryParams.length + 1}`;
-      revenueQueryParams.push(parsedYear);
+      revenueQueryParams.push(parseInt(year, 10));
     }
 
+    // ดึงรายได้ต่อเดือน/ปี
     const resultRevenue = await pool.query(`
       SELECT 
         TO_CHAR(pay.payment_date, 'FMMonth') AS period,
@@ -1982,6 +1987,11 @@ router.get('/dashboard', async (req, res) => {
     
     const revenue = resultRevenue.rows;
     
+    // Debugging console logs
+    console.log('Final Query Params:', queryParams);
+    console.log('Revenue Query Params:', revenueQueryParams);
+    
+    // ส่งผลลัพธ์กลับ
     res.json({ services, petsPerPeriod, revenue });
 
   } catch (error) {
@@ -1989,6 +1999,7 @@ router.get('/dashboard', async (req, res) => {
     res.status(500).send('Error retrieving dashboard data');
   }
 });
+
 
 
 router.get('/available-years', async (req, res) => {
