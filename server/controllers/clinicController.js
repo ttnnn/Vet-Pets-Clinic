@@ -1896,16 +1896,20 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
 
 router.get('/dashboard', async (req, res) => {  
   try {
-    const { petType, timeFilter, year } = req.query;
-    console.log('req.query', req.query);
+    let { petType = 'all', timeFilter = 'year', year } = req.query; // ค่าเริ่มต้นเป็น 'all' และ 'year'
+    
+    if (!year) {
+      year = new Date().getFullYear().toString(); // ใช้ปีปัจจุบันหากไม่มีค่า
+    }
+    
+    console.log('req.query:', req.query);
 
-    // WHERE เงื่อนไขสำหรับฟิลเตอร์ประเภทสัตว์
     let petTypeCondition = '';
     let queryParams = [];
-
-    if (petType && petType !== 'all') {
+    
+    if (petType !== 'all') {
       if (petType === 'other') {
-        petTypeCondition = `AND p.pet_species NOT IN ($1, $2)`;
+        petTypeCondition = `AND p.pet_species NOT IN ($${queryParams.length + 1}, $${queryParams.length + 2})`;
         queryParams.push('สุนัข', 'แมว');
       } else {
         petTypeCondition = `AND p.pet_species = $${queryParams.length + 1}`;
@@ -1913,21 +1917,25 @@ router.get('/dashboard', async (req, res) => {
       }
     }
 
-    // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
     let timeCondition = '1=1';
+    
+    
+    const parsedYear = parseInt(year, 10);
+    
     if (timeFilter === 'month') {
       timeCondition = `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
                        AND EXTRACT(YEAR FROM appointment_date) = $${queryParams.length + 1}`;
-      queryParams.push(parseInt(year, 10));
-    } else if (year) {
+      queryParams.push(parsedYear);
+    } else {
       timeCondition = `EXTRACT(YEAR FROM appointment_date) = $${queryParams.length + 1}`;
-      queryParams.push(parseInt(year, 10));
+      queryParams.push(parsedYear);
     }
 
-    // WHERE เงื่อนไขสำหรับสถานะ
     const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
-    // ดึงจำนวนบริการแยกตามประเภท
+  
+    console.log('Query Params Before Query:', queryParams);
+
     const resultServices = await pool.query(`
       SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
@@ -1936,70 +1944,15 @@ router.get('/dashboard', async (req, res) => {
       GROUP BY type_service
     `, queryParams);
 
-    const services = resultServices.rows; 
+    const services = resultServices.rows;
 
-    // ดึงจำนวนสัตว์ที่เข้ารับบริการแต่ละช่วงเวลา
-    const resultPetsPerPeriod = await pool.query(`
-      SELECT 
-        ${timeFilter === 'month' 
-          ? 'EXTRACT(DAY FROM appointment_date)' 
-          : "TO_CHAR(appointment_date, 'FMMonth')"} AS period,  
-        COUNT(a.pet_id) AS count
-      FROM appointment a
-      LEFT JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
-      GROUP BY ${timeFilter === 'month' 
-        ? 'EXTRACT(DAY FROM appointment_date)' 
-        : "TO_CHAR(appointment_date, 'FMMonth')"} 
-      ORDER BY ${timeFilter === 'month' 
-        ? 'EXTRACT(DAY FROM appointment_date)'  
-        : "TO_CHAR(appointment_date, 'FMMonth')"}
-    `, queryParams);
-    
-    const petsPerPeriod = resultPetsPerPeriod.rows; 
-    
-    // เงื่อนไขสำหรับการดึงรายได้ (ต้องใช้ pay.payment_date)
-    let revenueTimeCondition = '1=1';
-    let revenueQueryParams = [...queryParams];
-
-    if (timeFilter === 'month') {
-      revenueTimeCondition = `EXTRACT(MONTH FROM pay.payment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
-                              AND EXTRACT(YEAR FROM pay.payment_date) = $${queryParams.length + 1}`;
-      revenueQueryParams.push(parseInt(year, 10));
-    } else if (year) {
-      revenueTimeCondition = `EXTRACT(YEAR FROM pay.payment_date) = $${queryParams.length + 1}`;
-      revenueQueryParams.push(parseInt(year, 10));
-    }
-
-    // ดึงรายได้ต่อเดือน/ปี
-    const resultRevenue = await pool.query(`
-      SELECT 
-        TO_CHAR(pay.payment_date, 'FMMonth') AS period,
-        SUM(pay.total_payment) AS amount
-      FROM appointment a
-      INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
-      INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
-      INNER JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE ${revenueTimeCondition} ${petTypeCondition} ${statusCondition}
-      GROUP BY TO_CHAR(pay.payment_date, 'FMMonth'), EXTRACT(MONTH FROM pay.payment_date)
-      ORDER BY EXTRACT(MONTH FROM pay.payment_date)
-    `, revenueQueryParams);
-    
-    const revenue = resultRevenue.rows;
-    
-    // Debugging console logs
-    console.log('Final Query Params:', queryParams);
-    console.log('Revenue Query Params:', revenueQueryParams);
-    
-    // ส่งผลลัพธ์กลับ
-    res.json({ services, petsPerPeriod, revenue });
+    res.json({ services });
 
   } catch (error) {
     console.error(error);
     res.status(500).send('Error retrieving dashboard data');
   }
 });
-
 
 
 router.get('/available-years', async (req, res) => {
