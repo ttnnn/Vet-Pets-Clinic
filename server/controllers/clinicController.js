@@ -1896,10 +1896,10 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
 
 router.get('/dashboard', async (req, res) => {  
   try {
-    let { petType = 'all', timeFilter = 'year', year } = req.query; // ค่าเริ่มต้นเป็น 'all' และ 'year'
-    
+    let { petType = 'all', timeFilter = 'year', year } = req.query; 
+
     if (!year) {
-      year = new Date().getFullYear().toString(); // ใช้ปีปัจจุบันหากไม่มีค่า
+      year = new Date().getFullYear().toString();
     }
     
     console.log('req.query:', req.query);
@@ -1918,8 +1918,6 @@ router.get('/dashboard', async (req, res) => {
     }
 
     let timeCondition = '1=1';
-    
-    
     const parsedYear = parseInt(year, 10);
     
     if (timeFilter === 'month') {
@@ -1933,9 +1931,9 @@ router.get('/dashboard', async (req, res) => {
 
     const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
-  
     console.log('Query Params Before Query:', queryParams);
 
+    // 📌 1. ดึงข้อมูลประเภทบริการ
     const resultServices = await pool.query(`
       SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
@@ -1946,13 +1944,49 @@ router.get('/dashboard', async (req, res) => {
 
     const services = resultServices.rows;
 
-    res.json({ services });
+    // 📌 2. ดึงจำนวนสัตว์เข้าใช้บริการในแต่ละเดือน/วัน
+    const resultPetsPerPeriod = await pool.query(`
+      SELECT 
+        ${timeFilter === 'month' 
+          ? 'EXTRACT(DAY FROM appointment_date) AS period' 
+          : 'EXTRACT(MONTH FROM appointment_date) AS period'},
+        COUNT(a.pet_id) AS count
+      FROM appointment a
+      LEFT JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
+      GROUP BY period
+      ORDER BY period
+    `, queryParams);
+    
+    const petsPerPeriod = resultPetsPerPeriod.rows; 
+
+    // 📌 3. ดึงรายได้ตามช่วงเวลา
+    let revenueTimeCondition = timeCondition; 
+    let revenueQueryParams = [...queryParams];
+
+    const resultRevenue = await pool.query(`
+      SELECT 
+        EXTRACT(MONTH FROM pay.payment_date) AS period,
+        SUM(pay.total_payment) AS amount
+      FROM appointment a
+      INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
+      INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
+      INNER JOIN pets p ON a.pet_id = p.pet_id 
+      WHERE ${revenueTimeCondition} ${petTypeCondition} ${statusCondition}
+      GROUP BY period
+      ORDER BY period
+    `, revenueQueryParams);
+    
+    const revenue = resultRevenue.rows;
+    
+    res.json({ services, petsPerPeriod, revenue });
 
   } catch (error) {
     console.error(error);
     res.status(500).send('Error retrieving dashboard data');
   }
-});
+});  
+
 
 
 router.get('/available-years', async (req, res) => {
