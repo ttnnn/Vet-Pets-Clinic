@@ -1908,7 +1908,13 @@ router.get('/dashboard', async (req, res) => {
     : "AND p.pet_species = $1" 
   : '';
 
-  const queryParams = petType === 'other' ? ['สุนัข', 'แมว'] : [petType];
+  const queryParams = petType
+  ? petType === 'other'
+    ? ['สุนัข', 'แมว']
+    : petType === 'all'
+    ? []  // ถ้าเลือกทั้งหมด ไม่ต้องมีพารามิเตอร์
+    : [petType]
+  : [];
 
 
     // WHERE เงื่อนไขสำหรับฟิลเตอร์ช่วงเวลา
@@ -1963,6 +1969,7 @@ router.get('/dashboard', async (req, res) => {
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY TO_CHAR(pay.payment_date, 'FMMonth'), EXTRACT(MONTH FROM pay.payment_date)
       ORDER BY EXTRACT(MONTH FROM pay.payment_date)
+
     `, queryParams);
     
     const revenue = resultRevenue.rows;

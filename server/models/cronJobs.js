@@ -153,9 +153,11 @@ const setupCronJobs = (io) => {
   };
 
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
-  cron.schedule('45 15 * * *', sendAppointmentReminders);
-  cron.schedule('*/5 9-21 * * *', ApproveAppointmentReminders);
-  cron.schedule('0 9 * * *', sendAlert);
+
+    cron.schedule('0 9 * * *', sendAppointmentReminders, { timezone: "Asia/Bangkok" });
+    cron.schedule('*/5 9-21 * * *', ApproveAppointmentReminders, { timezone: "Asia/Bangkok" });
+    cron.schedule('0 9 * * *', sendAlert, { timezone: "Asia/Bangkok" });
+    
 
 };
 
