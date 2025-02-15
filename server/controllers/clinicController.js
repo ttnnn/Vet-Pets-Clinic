@@ -1922,7 +1922,7 @@ router.get('/dashboard', async (req, res) => {
       ? `EXTRACT(MONTH FROM appointment_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
       AND EXTRACT(YEAR FROM appointment_date) = ${year}`
       : year
-      ? `EXTRACT(YEAR FROM payment_date) = ${year}`
+      ? `EXTRACT(YEAR FROM pay.payment_date) = ${year}`
       : '1=1'; 
 
     // WHERE เงื่อนไขสำหรับสถานะ
