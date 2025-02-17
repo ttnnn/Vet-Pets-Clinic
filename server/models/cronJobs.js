@@ -94,7 +94,7 @@ const setupCronJobs = (io) => {
     WHERE 
         a.status = 'อนุมัติ'
         AND a.queue_status = 'รอรับบริการ'
-        AND a.appointment_date::DATE  = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok' + INTERVAL '1 day')::DATE;
+       AND a.appointment_date::DATE = ((CURRENT_DATE AT TIME ZONE 'Asia/Bangkok') + INTERVAL '1 day')::DATE;
     `;
     try {
       const { rows } = await pool.query(query);

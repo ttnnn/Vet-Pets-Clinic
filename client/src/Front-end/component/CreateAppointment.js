@@ -428,6 +428,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                       onChange={(newDate) => handleDateChange('checkIn', newDate)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
+                      format="dd/MM/yyyy"
                       views={['year', 'month', 'day']}
                     />
                   </HolidayFilter>
@@ -438,6 +439,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
                       onChange={(newDate) => handleDateChange('checkOut', newDate)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       disablePast
+                      format="dd/MM/yyyy"
                       views={['year', 'month', 'day']}
                     />
                   </HolidayFilter>

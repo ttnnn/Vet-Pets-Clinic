@@ -90,7 +90,6 @@ const ManageHolidays = () => {
         };
       });
       setHolidays(data);
-      console.log('data',data)
     } catch (error) {
       console.error('Error fetching holidays:', error);
       setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการโหลดข้อมูลวันหยุด', severity: 'error' });

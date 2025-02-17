@@ -1959,9 +1959,7 @@ router.get('/dashboard', async (req, res) => {
     const petsPerPeriod = resultPetsPerPeriod.rows; 
 
     // ดึงรายได้ตามช่วงเวลา
-    let revenueTimeCondition = timeCondition; 
-    let revenueQueryParams = [...queryParams];
-
+    
     const resultRevenue = await pool.query(`
       SELECT 
         EXTRACT(MONTH FROM pay.payment_date) AS period,
@@ -1970,10 +1968,11 @@ router.get('/dashboard', async (req, res) => {
       INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
       INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
       INNER JOIN pets p ON a.pet_id = p.pet_id 
-      WHERE ${revenueTimeCondition} ${petTypeCondition} ${statusCondition}
+      WHERE EXTRACT(YEAR FROM pay.payment_date) = $1 
+      ${petTypeCondition} ${statusCondition}
       GROUP BY period
       ORDER BY period
-    `, revenueQueryParams);
+    `, [parsedYear]);
     
     const revenue = resultRevenue.rows;
     
