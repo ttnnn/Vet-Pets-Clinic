@@ -71,11 +71,12 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
 
         try {
           const response = await clinicAPI.get(`/appointments/booked-times?date=${formattedDate}&type_service=${TypeService}`);
-          // console.log('API Response:', response.data);
+          console.log('API Response:', response.data);
 
           const cleanedBookedSlots = Array.isArray(response.data)
-            ? response.data.map(slot => (typeof slot === 'string' ? slot.replace('+07', '') : slot))
+            ? response.data.map(slot => (typeof slot === 'string' ? slot.replace(/(\+07| \+07:00)/g, '') : slot))
             : [];
+
           setBookedSlots(cleanedBookedSlots);
         } catch (error) {
           console.error('Error fetching booked time slots:', error);
@@ -118,10 +119,14 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   };
 
   const isBooked = (time) => {
-    const startTime = time.split(' - ')[0];
-    const formattedStartTime = startTime + ':00';
-    return bookedSlots.includes(formattedStartTime);
+    const startTime = time.split(' - ')[0]; // ดึงเฉพาะเวลาเริ่มต้น
+    return bookedSlots.some(slot => slot.startsWith(startTime)); // เปรียบเทียบเฉพาะ "HH:MM"
   };
+  useEffect(() => {
+    console.log('Updated bookedSlots:', bookedSlots);
+  }, [bookedSlots]);
+  
+  
 
   return (
     <div>
