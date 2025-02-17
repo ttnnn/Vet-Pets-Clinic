@@ -18,10 +18,7 @@ const ServiceAppointment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { owner_id } = location.state || {};
-  
-  // console.log('location.state',location.state )
-  // console.log('owner_id', owner_id);
-  // console.log('user',user)
+
   const handleBackToHome = () => {
     navigate('/customer/home');
   };

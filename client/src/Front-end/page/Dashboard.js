@@ -9,7 +9,6 @@ import {
   FormControl,
   InputLabel,
   Box,
-  CircularProgress,
   Skeleton
 } from '@mui/material';
 import { Line, Bar } from 'react-chartjs-2';
@@ -85,7 +84,7 @@ const Dashboard = () => {
 
   return (
     <Box display="flex" sx={{ height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0' }}>
-      {/* ✅ Sidebar จะแสดงขึ้นก่อน */}
+      {/* Sidebar จะแสดงขึ้นก่อน */}
       <Sidebar />
 
       <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', bgcolor: '#f0f0f0' }}>
@@ -130,7 +129,7 @@ const Dashboard = () => {
             )}
           </Grid>
 
-          {/* ✅ แสดง UI หลักก่อน โหลดข้อมูลทีหลัง */}
+          {/*แสดง UI หลักก่อน โหลดข้อมูลทีหลัง */}
           <Grid container spacing={3} marginBottom={3}>
             {serviceTypes.map((type) => {
               const service = data?.services?.find((service) => service.type === type);

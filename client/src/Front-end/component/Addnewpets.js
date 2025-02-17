@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, TextField, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions,  ToggleButtonGroup, ToggleButton, MenuItem
-    , Autocomplete,Checkbox,FormControlLabel
+    , Autocomplete,Checkbox,FormControlLabel,CircularProgress
    } from '@mui/material';
 import { DogBreed, CatBreed } from './Breeds';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -25,6 +25,8 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
+  const [loading, setLoading] = useState(false);
+
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
 
@@ -81,7 +83,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         microchip_number: petMicrochip,
         pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
     };
-
+    setLoading(true);
     try {
         const response = await clinicAPI.post(`/pets`, petData, {
             headers: { "Content-Type": "application/json" },
@@ -110,6 +112,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
         setTimeout(() => setAlertMessage(""), 2000);
     }
+    setLoading(false);
 };
 
 
@@ -286,12 +289,26 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     }}>
       ยกเลิก
     </Button>
-    <Button variant="contained" onClick={() => {
-        handleSavePet(); // ฟังก์ชันบันทึกข้อมูล
-        onClose();  // ฟังก์ชันปิด Dialog
-        clearPetForm()
-      }}  className="submit-button"
-    >บันทึก</Button>
+    <Button
+      variant="contained"
+      onClick={async () => {
+        setLoading(true);  // Set loading to true when the button is clicked
+        try {
+          await handleSavePet(); // ฟังก์ชันบันทึกข้อมูล
+          onClose();  // ฟังก์ชันปิด Dialog
+          clearPetForm(); // Clear form data
+        } catch (error) {
+          console.error('Error saving pet:', error);
+        } finally {
+          setLoading(false);  // Set loading to false once the process is complete
+        }
+      }}
+      className="submit-button"
+      disabled={loading}  // Disable the button while loading
+    >
+      {loading ? <CircularProgress size={24} /> : 'บันทึก'}
+    </Button>
+
       </DialogActions>
     </Dialog>
     </LocalizationProvider>

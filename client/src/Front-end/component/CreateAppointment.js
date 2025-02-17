@@ -66,10 +66,13 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [isNoTime, setIsNoTime] = useState(false); // Checkbox state
   const [timePickerKey, setTimePickerKey] = useState(0);
   const [openDialog , setOpenDialog] = useState(false)
+  const [loading, setLoading] = useState(false);
+
   const location = useLocation();
   const { locationOwnerID ,locationPetID } = location.state || {};
   const navigate = useNavigate();
   const user = JSON.parse(sessionStorage.getItem('user')); 
+
 
   useEffect(() => {
     if (locationOwnerID !== undefined && locationOwnerID !== selectedOwnerId) {
@@ -86,7 +89,6 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     fetchOwners();
   }, [locationOwnerID, selectedOwnerId]);
   
-
   useEffect(() => {
     const fetchPersonnel = async () => {
       try {
@@ -206,6 +208,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   
     
   const createAppointment = async () => {
+    setLoading(true);
     try {
       if(TypeService !== 'ฝากเลี้ยง'){
         if (!appointmentDate || (!appointmentTime && !isNoTime)) {
@@ -280,6 +283,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
       setTimeout(() => setAlertMessage(''), 2000);
     }
     setOpenDialog(false);
+    setLoading(false);
   };
   
   // Helper function สำหรับการจัดรูปแบบเวลา
@@ -585,7 +589,13 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     </DialogContent>
     <DialogActions>
       <Button onClick={handleDialogClose} color="error">ยกเลิก</Button>
-      <Button onClick={createAppointment} color="primary">ยืนยัน</Button>
+      <Button
+        onClick={createAppointment}
+        color="primary"
+        disabled={loading}  // Disable button while loading
+      >
+        {loading ? <CircularProgress size={24} /> : 'ยืนยัน'}
+    </Button>
     </DialogActions>
   </Dialog>
     </LocalizationProvider>

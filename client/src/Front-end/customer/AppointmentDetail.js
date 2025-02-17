@@ -107,11 +107,6 @@ const AppointmentDetail = () => {
     setSelectedPetId(petId);
     setOpenPostponeDialog(true);
   
-    // console.log('appointment:', appointmentId);
-    // console.log('typeService:', typeService);
-    // console.log('petId:', petId);
-    // console.log('appointmentDate:', appointmentDate);
-    // console.log('appointmentTime:', appointmentTime);
   };
   
 

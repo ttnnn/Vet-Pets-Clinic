@@ -91,10 +91,6 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
       
     const handleToAdmit = debounce( async (appointment) =>  {
       
-      // console.log('appointmentId', appointment.appointment_id);
-      // console.log('petId', appointment.pet_id);
-      // console.log('openAdmitDialog', openAdmitDialog);
-      // 
       setSelectedAppointmentId(appointment.appointment_id);
       setSelectedPetId(appointment.pet_id);
       setOpenAdmitDialog(true);
@@ -105,8 +101,6 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
         return appointment.queue_status === 'admit' && appointment.status === 'อนุมัติ';
       });
 
-      // console.log('filteredAppointments',filteredAppointments)
-      // console.log('appointmentHotel:', appointmentHotel);
 
     const handleButtonAction = async (appointment) => {
       try {

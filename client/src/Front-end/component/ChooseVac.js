@@ -37,6 +37,7 @@ const ChooseVac = ({
   const [petDetails, setPetDetails] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [note, setNote] = useState("");
+  
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -92,7 +93,7 @@ const ChooseVac = ({
       setAlertMessage("กรุณาเลือกวัคซีนก่อนบันทึก");
       return;
     }
-
+    setLoading(true); 
     try {
       const response = await clinicAPI.post(
         `/appointments/${appointmentId}/vaccines`,
@@ -112,7 +113,8 @@ const ChooseVac = ({
     } catch (error) {
       console.error("Error saving vaccine:", error);
       setAlertMessage("การบันทึกมีข้อผิดพลาด โปรดลองอีกครั้ง");
-    }
+    }finally {
+      setLoading(false); }
   };
 
   const handleConfirmSave = () => {
@@ -235,9 +237,14 @@ const ChooseVac = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose}>ยกเลิก</Button>
-          <Button onClick={saveVaccineSelection} color="primary">
-            บันทึก
+          <Button
+            onClick={saveVaccineSelection}
+            color="primary"
+            disabled={loading}  // Disable the button while loading
+          >
+            {loading ? <CircularProgress size={24} /> : 'บันทึก'}
           </Button>
+
         </DialogActions>
       </Dialog>
 

@@ -41,13 +41,9 @@ const LineAuth = () => {
                 const profile = await liff.getProfile();
                 const { pictureUrl } = profile;
 
-                // console.log("User Profile:", profile);
-                // console.log("ID Token:", idToken);
-
                 navigate("/customer/login", { state: { idToken, pictureUrl } });
             }
         } catch (err) {
-            //console.error("Error during login:", err);
             setError("Failed to log in with LINE.");
         } finally {
             setLoading(false);
@@ -56,7 +52,6 @@ const LineAuth = () => {
 
     useEffect(() => {
         if (!lineliff) {
-           // console.error("LIFF ID is not set. Please check your .env configuration.");
             setError("LIFF ID is missing.");
             setLoading(false);
             return;
@@ -64,11 +59,9 @@ const LineAuth = () => {
 
         liff.init({ liffId: lineliff })
             .then(() => {
-              //  console.log("LIFF initialized");
                 handleLogin();
             })
             .catch((err) => {
-                //console.error("LIFF initialization failed. Check if the LIFF ID is correct:", err);
                 setError("Failed to initialize LIFF. Please try again later.");
                 setLoading(false);
             });
