@@ -524,8 +524,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
             labelId="appointment-type-label"
             id="appointment-subtype"
             value={detailservice}
-            onChange={(e) => {
-              console.log(e.target.value); // Debug to check if the value is correct
+            onChange={(e) => { // Debug to check if the value is correct
               setDetailService(e.target.value);
             }}
             label="นัดมา"
