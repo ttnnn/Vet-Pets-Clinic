@@ -8,18 +8,19 @@ require('dayjs/locale/th');
 
 const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่ง
-  cron.schedule("*/10 9-21 * * *", async () => {
+  cron.schedule("*/10 9-20 * * *", async () => {
     const job = setTimeout(() => {
       console.log("Job timed out");
     }, 1000 * 60 * 5); // ตัดงานถ้าเกิน 5 นาที
   
     try {
       const query = `
-        SELECT * FROM appointment
-        WHERE appointment_date = CURRENT_DATE
-        AND queue_status NOT IN ('เสร็จสิ้น', 'admit' ,'ยกเลิกนัด')
-        AND appointment_time < CURRENT_TIME
-        AND status NOT IN ('รออนุมัติ','ยกเลิกนัด');
+      SELECT * FROM appointment
+      WHERE appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
+      AND queue_status NOT IN ('เสร็จสิ้น', 'admit' ,'ยกเลิกนัด')
+      AND appointment_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::TIME
+      AND status NOT IN ('รออนุมัติ','ยกเลิกนัด');
+
       `;
       const { rows } = await pool.query(query);
 
@@ -33,15 +34,18 @@ const setupCronJobs = (io) => {
       }
 
       // อัปเดตสถานะคิวหลังเวลา 20:00 น.
-      const currentTime = new Date();
-      const currentHour = currentTime.getHours();
+      const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+      const bangkokHour = new Date(bangkokTime).getHours();
+
+      const currentHour = bangkokHour;
+
       if (currentHour >= 20) {
         const updateQuery = `
-          UPDATE appointment
-          SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด' ,  massage_status = 'cancle'
+        UPDATE appointment
+          SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด', massage_status = 'cancle'
           WHERE queue_status IN ('รอรับบริการ')
-            AND appointment_date = CURRENT_DATE
-            AND CURRENT_TIME > appointment_time;
+          AND appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
+          AND appointment_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::TIME
         `;
         await pool.query(updateQuery);
         console.log('Appointment status updated to "ยกเลิกนัด" after 20:00');
