@@ -39,7 +39,7 @@ const setupCronJobs = (io) => {
 
       const currentHour = bangkokHour;
 
-      if (currentHour = 20) {
+      if (currentHour === 20) {
         const updateQuery = `
         UPDATE appointment
           SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด', massage_status = 'cancle'
@@ -82,11 +82,13 @@ const setupCronJobs = (io) => {
   }
   }
   // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
+
   const sendAppointmentReminders = async () => {
     const query = `
     SELECT 
     a.appointment_date, 
     a.appointment_time, 
+    a.type_service,
     p.pet_name, 
     o.line_id, 
     a.appointment_id
@@ -99,19 +101,25 @@ const setupCronJobs = (io) => {
     WHERE 
         a.status = 'อนุมัติ'
         AND a.queue_status = 'รอรับบริการ'
-       AND a.appointment_date::DATE = ((CURRENT_DATE AT TIME ZONE 'Asia/Bangkok') + INTERVAL '1 day')::DATE;
+        AND a.appointment_date::DATE = ((CURRENT_DATE AT TIME ZONE 'Asia/Bangkok') + INTERVAL '1 day')::DATE;
     `;
+  
     try {
       const { rows } = await pool.query(query);
       rows.forEach(appointment => {
-        // แปลง appointment_time ให้อยู่ในรูปแบบ '10:00'  
-        const formattedTime = appointment.appointment_time.split('+')[0];
-        const formatDate = dayjs(appointment.appointment_date).locale('th').format('D MMMM YYYY');  // ใช้ dayjs แปลงเป็นวันที่ไทย
+        const formatDate = dayjs(appointment.appointment_date).locale('th').format('D MMMM YYYY');
   
-        const message = `แจ้งเตือนนัดหมาย:\n${appointment.pet_name} มีนัดหมายในวันพรุ่งนี้ วันที่ ${formatDate}\nเวลา ${formattedTime} นาที.`;
-
-        
-        LineNotification.sendLineNotification(appointment.line_id, message,appointment.appointment_id,true);
+        let message = `แจ้งเตือนนัดหมาย:\n${appointment.pet_name} มีนัดหมายในวันพรุ่งนี้`;
+  
+        // เช็คประเภทบริการ ถ้าเป็น "ฝากเลี้ยง" ไม่ต้องแสดงเวลา
+        if (appointment.type_service === 'ฝากเลี้ยง') {
+          message += `\nวันที่ ${formatDate}`;
+        } else {
+          const formattedTime = appointment.appointment_time.split('+')[0];
+          message += `\nวันที่ ${formatDate} เวลา ${formattedTime} น.`;
+        }
+  
+        LineNotification.sendLineNotification(appointment.line_id, message, appointment.appointment_id, true);
       });
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -154,22 +162,22 @@ const setupCronJobs = (io) => {
   };
   const sendLateArrivalNotification = async () => {
     const query = `
-        SELECT  
-            a.appointment_id,
-            a.appointment_time,
-            p.pet_name, 
-            o.line_id
-        FROM 
-            appointment a
-        LEFT JOIN 
-            owner o ON a.owner_id = o.owner_id
-        LEFT JOIN 
-            pets p ON a.pet_id = p.pet_id
-        WHERE 
-            a.queue_status = 'รอรับบริการ'
-            AND a.status = 'อนุมัติ'
-            AND a.appointment_date = (CURRENT_DATE AT TIME ZONE 'Asia/Bangkok')
-            AND a.appointment_time <= (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes');
+       SELECT  
+     a.appointment_id,
+     a.appointment_time,
+     p.pet_name, 
+     o.line_id
+ FROM 
+     appointment a
+ LEFT JOIN 
+     owner o ON a.owner_id = o.owner_id
+ LEFT JOIN 
+     pets p ON a.pet_id = p.pet_id
+ WHERE 
+     a.queue_status = 'รอรับบริการ'
+     AND a.status = 'อนุมัติ'
+     AND a.appointment_date = (CURRENT_DATE AT TIME ZONE 'Asia/Bangkok')::DATE
+     AND a.appointment_time = (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes')::TIME;
     `;
 
     try {
@@ -188,7 +196,7 @@ const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
 
     cron.schedule('0 9 * * *', sendAppointmentReminders, { timezone: "Asia/Bangkok" });
-    cron.schedule('*/5 9-20 * * *', ApproveAppointmentReminders, { timezone: "Asia/Bangkok" });
+    cron.schedule('*/1 9-20 * * *', ApproveAppointmentReminders, { timezone: "Asia/Bangkok" });
     cron.schedule('0 9 * * *', sendAlert, { timezone: "Asia/Bangkok" });
     cron.schedule('*/5 9-20 * * *', sendLateArrivalNotification, { timezone: "Asia/Bangkok" });
 

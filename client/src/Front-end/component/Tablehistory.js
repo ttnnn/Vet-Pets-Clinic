@@ -259,7 +259,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
     <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
       <DialogTitle>รายละเอียดการรักษา</DialogTitle>
-      <DialogContent>
+      <DialogContent id="pdf-content">
       {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress size={40} />

@@ -356,7 +356,7 @@ router.put('/appointment/cancel', async (req, res) => {
 
       if (appointmentResult.rowCount > 0) {
         // อัปเดตสถานะการฝากเลี้ยงในตาราง pethotel ด้วย
-        const hotelQuery = 'UPDATE pethotel SET status = $1 WHERE appointment_id = $2';
+        const hotelQuery = 'UPDATE petshotel SET status = $1 WHERE appointment_id = $2';
         const hotelValues = ['cancle', appointmentId];
         await client.query(hotelQuery, hotelValues);
 

@@ -1528,7 +1528,7 @@ router.get('/appointment/hotel/:appointment_id', async (req, res) => {
         ELSE 0
       END AS days_overdue
     FROM appointment
-    JOIN personnel ON appointment.personnel_id = personnel.personnel_id
+    LEFT JOIN personnel ON appointment.personnel_id = personnel.personnel_id
     LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
     LEFT JOIN admitrecord ON appointment.appointment_id = admitrecord.appointment_id
     WHERE appointment.appointment_id = $1

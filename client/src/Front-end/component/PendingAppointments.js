@@ -18,7 +18,7 @@ import {
   MenuItem,
   Select,
   TablePagination,
-  TextField, Alert,Snackbar ,DialogTitle,IconButton
+  TextField, Alert,Snackbar ,DialogTitle,IconButton,CircularProgress
 } from '@mui/material';
 import { styled } from '@mui/system';
 import { clinicAPI } from "../../utils/api";
@@ -63,7 +63,7 @@ const PendingAppointments = ({ appointments ,update}) => {
   const [receiptData, setReceiptData] = useState(null); // สถานะสำหรับข้อมูลใบเสร็จ
   const [showReceipt, setShowReceipt] = useState(false); // สถานะควบคุมการแสดงใบเสร็จ
   const [isReceiptDialogOpen, setReceiptDialogOpen] = useState(false);
-
+  const [loadingPay, setLoadingPay] = useState(false); // เพิ่ม state
 
 
   const resetPage = () => setPage(0);
@@ -175,7 +175,6 @@ const PendingAppointments = ({ appointments ,update}) => {
       switch (appointment.type_service) {
         case 'วัคซีน':
           selectedItems = await fetchData(`/history/vaccine/${appointment.appointment_id}`);
-          console.log('Fetched vaccine items:', selectedItems); 
           if (selectedItems && selectedItems.length > 0) {
             selectedItems = selectedItems.map((item) => ({
               ...item,
@@ -210,10 +209,6 @@ const PendingAppointments = ({ appointments ,update}) => {
               personnel_name: hotelInfo.personnel_name || '',
               num_day: hotelInfo.num_day || 0,
             }));
-            console.log('Selected Appointment:', {
-              start_date: hotelInfo.start_date,
-              end_date: hotelInfo.end_date,
-            });
           }
           break;
   
@@ -277,8 +272,6 @@ const PendingAppointments = ({ appointments ,update}) => {
             );
             // รวมรายการที่ไม่ได้ถูกลบกับข้อมูลที่ดึงใหม่
             return [...remainingItems, ...uniqueUpdatedItems];
-            
-            
             
           });
         } else {
@@ -356,6 +349,7 @@ const PendingAppointments = ({ appointments ,update}) => {
     }
      //console.log('requestData' , requestData)
     try {
+      setLoadingPay(true); // เริ่มโหลด
       const response = await clinicAPI.post(`/create-invoice/payment`, requestData);
       //console.log("Response:", response.data);
       setAlertMessage("ข้อมูลได้ถูกบันทึกสำเร็จ!");
@@ -375,6 +369,8 @@ const PendingAppointments = ({ appointments ,update}) => {
       setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setAlertSeverity("error");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+    }finally {
+      setLoadingPay(false); // หยุดโหลดไม่ว่าจะสำเร็จหรือเกิดข้อผิดพลาด
     }
   };
   const handleCloseSnackbar = () => {
@@ -781,8 +777,11 @@ const handleCloseReceiptDialog = () => {
           <Button onClick={handleCloseConfirmDialog} variant="outlined">
             ยกเลิก
           </Button>
-          <Button onClick={handlePay} variant="contained" color="primary">
-            ยืนยันการชำระเงิน
+          <Button onClick={handlePay}
+           variant="contained" color="primary"
+           startIcon={loadingPay && <CircularProgress size={20} />} 
+           >
+            {loadingPay ? 'กำลังชำระเงิน...' : 'ยืนยันการชำระเงิน'}
           </Button>
           
         </DialogActions>

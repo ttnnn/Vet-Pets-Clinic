@@ -72,14 +72,7 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
       
         const diffMilliseconds = appointmentDateTime - currentDateTime; // คำนวณความต่างในมิลลิวินาที
         const diffMinutes = Math.floor(diffMilliseconds / (1000 * 60)); // แปลงเป็นนาที
-      
-        // Debug logs
-        console.log(" DateTime:", appointmentDate);
-        console.log(" Time:", appointmentDate);
-        console.log("Current DateTime:", currentDateTime);
-        console.log("Appointment DateTime:", appointmentDateTime);
-        console.log("Difference in Minutes:", diffMinutes);
-      
+          
         if (diffMinutes < 45) {
           console.log("Condition met: Less than 45 minutes before appointment.");
           setSnackbar({
