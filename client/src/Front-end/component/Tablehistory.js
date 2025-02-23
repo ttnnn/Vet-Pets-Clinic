@@ -153,13 +153,25 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
   const generatePDF = () => {
     const input = document.getElementById('pdf-content');
+    const currentDate = dayjs().format('DD/MM/YYYY');
     html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF();
-      pdf.addImage(imgData, 'PNG', 10, 10, 180, 0);
+      const imgData = canvas.toDataURL('image/png');
+
+      pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
+      pdf.setFontSize(12);
+      pdf.text('654/8 ประชาอุทิศ ทุ่งครุ', 105, 60, { align: 'center' });
+      pdf.text('กรุงเทพมหานคร 10140', 105, 68, { align: 'center' });
+
+      pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
+
+      pdf.setFontSize(10);
+      pdf.text(`วันที่ออกเอกสาร: ${currentDate}`, 200 - 15, 290, { align: 'right' });
+
       pdf.save(`Medical_History_${details.appointmentId}.pdf`);
     });
   };
+
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -269,6 +281,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
             {/* ส่วนข้อมูลทั่วไป */}
             <Typography variant="h6" gutterBottom>ข้อมูลทั่วไป</Typography>
             <Typography variant="body1">ชื่อสัตว์เลี้ยง: {details.pet_name || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body1">เจ้าของสัตว์เลี้ยง : {details.owner_name || '-'}</Typography>
             <Typography variant="body1">เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
             <Typography variant="body1">สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
             <Typography variant="body2" color="textSecondary">

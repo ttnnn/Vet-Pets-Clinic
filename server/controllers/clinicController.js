@@ -1800,7 +1800,8 @@ router.get('/history/medical/:appointmentId', async (req, res) => {
         p.phy_dental,
         pets.pet_name,
         personnel.first_name || ' ' || personnel.last_name AS personnel_name ,
-        owner.owner_id
+        owner.owner_id,
+        owner.first_name || ' ' || owner.last_name AS owner_name
       FROM medicalrecord m
       LEFT JOIN pets ON m.pet_id = pets.pet_id
       LEFT JOIN owner ON pets.owner_id = owner.owner_id 

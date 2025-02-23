@@ -55,7 +55,7 @@ const setupCronJobs = (io) => {
         });
       }
 
-      console.log("Cron job executed successfully");
+      //console.log("Cron job executed successfully");
     } catch (error) {
       console.error("Error in cron job:", error);
     }finally {

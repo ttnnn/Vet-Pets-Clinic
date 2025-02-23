@@ -17,7 +17,6 @@ const sendLineMessage = async (lineUserId, message) => {
         },
       }
     );
-    console.log('Message sent successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error sending LINE message:', error);
