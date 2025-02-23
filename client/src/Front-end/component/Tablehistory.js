@@ -157,7 +157,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     html2canvas(input, { scale: 2 }).then((canvas) => {
       const pdf = new jsPDF();
       const imgData = canvas.toDataURL('image/png');
-
+      pdf.setFont('THSarabunNew', 'normal');
       pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
       pdf.setFontSize(12);
       pdf.text('654/8 ประชาอุทิศ ทุ่งครุ', 105, 60, { align: 'center' });
@@ -279,31 +279,31 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         details ? (
           <Box>
             {/* ส่วนข้อมูลทั่วไป */}
-            <Typography variant="h6" gutterBottom>ข้อมูลทั่วไป</Typography>
-            <Typography variant="body1">ชื่อสัตว์เลี้ยง: {details.pet_name || 'ไม่มีข้อมูล'}</Typography>
-            <Typography variant="body1">เจ้าของสัตว์เลี้ยง : {details.owner_name || '-'}</Typography>
-            <Typography variant="body1">เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
-            <Typography variant="body1">สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="h6" style={{ fontSize: '16px' }} gutterBottom>ข้อมูลทั่วไป</Typography>
+            <Typography variant="body1" style={{ fontSize: '16px' }} >ชื่อสัตว์เลี้ยง: {details.pet_name || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body1"style={{ fontSize: '16px' }} >เจ้าของสัตว์เลี้ยง : {details.owner_name || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '16px' }}>เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
+            <Typography variant="body1"style={{ fontSize: '16px' }} >สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
             <Typography variant="body2" color="textSecondary">
                แก้ไขล่าสุด : {details.rec_time ? dayjs(details.rec_time).format('DD MMMM YYYY HH:mm') : '-'}
             </Typography>
             <Divider sx={{ my: 2 }} />
         
             {/* ส่วนการวินิจฉัย */}
-            <Typography variant="h6" gutterBottom>ข้อมูลการวินิจฉัย</Typography>
-            <Typography variant="body1">CC: {details.diag_cc || '-'}</Typography>
-            <Typography variant="body1">HT: {details.diag_ht || '-'}</Typography>
-            <Typography variant="body1">PE: {details.diag_pe || '-'}</Typography>
-            <Typography variant="body1">ปัญหาหลัก: {details.diag_majorproblem || '-'}</Typography>
-            <Typography variant="body1">Tentative DX: {details.diag_tentative || '-'}</Typography>
-            <Typography variant="body1">Final DX: {details.diag_final || '-'}</Typography>
-            <Typography variant="body1">การรักษา: {details.diag_treatment || '-'}</Typography>
-            <Typography variant="body1">หมายเหตุ: {details.diag_note || '-'}</Typography>
+            <Typography variant="h6" style={{ fontSize: '18px' }} gutterBottom>ข้อมูลการวินิจฉัย</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }} >CC: {details.diag_cc || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }}>HT: {details.diag_ht || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }} >PE: {details.diag_pe || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }} >ปัญหาหลัก: {details.diag_majorproblem || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }}>Tentative DX: {details.diag_tentative || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }} >Final DX: {details.diag_final || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }}>การรักษา: {details.diag_treatment || '-'}</Typography>
+            <Typography variant="body1" style={{ fontSize: '18px' }}>หมายเหตุ: {details.diag_note || '-'}</Typography>
         
             <Divider sx={{ my: 2 }} />
         
               {/* ส่วนการตรวจร่างกาย */}
-            <Typography variant="h6" gutterBottom>ผลการตรวจร่างกาย</Typography>
+            <Typography variant="h6" style={{ fontSize: '18px' }} gutterBottom>ผลการตรวจร่างกาย</Typography>
             {Object.entries(details)
               .filter(
                 ([key, value]) =>
