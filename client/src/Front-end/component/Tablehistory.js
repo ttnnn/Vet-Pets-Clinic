@@ -151,27 +151,41 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
-  const generatePDF = () => {
-    const input = document.getElementById('pdf-content');
-    const currentDate = dayjs().format('DD/MM/YYYY');
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const pdf = new jsPDF();
-      const imgData = canvas.toDataURL('image/png');
-      pdf.setFont('THSarabunNew', 'normal');
-      pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
-      pdf.setFontSize(12);
-      pdf.text('654/8 ประชาอุทิศ ทุ่งครุ', 105, 60, { align: 'center' });
-      pdf.text('กรุงเทพมหานคร 10140', 105, 68, { align: 'center' });
+  // โหลดฟอนต์ THSarabunNew
+const loadFont = async (pdf) => {
+  const response = await fetch('/fonts/THSarabunNew.ttf'); // ดึงไฟล์ฟอนต์จาก public/fonts
+  const fontData = await response.arrayBuffer();
+  pdf.addFileToVFS('THSarabunNew.ttf', fontData);
+  pdf.addFont('THSarabunNew.ttf', 'THSarabunNew', 'normal');
+  pdf.setFont('THSarabunNew');
+};
 
-      pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
+const generatePDF = async () => {
+  const input = document.getElementById('pdf-content');
+  const currentDate = dayjs().format('DD/MM/YYYY');
 
-      pdf.setFontSize(10);
-      pdf.text(`วันที่ออกเอกสาร: ${currentDate}`, 200 - 15, 290, { align: 'right' });
-
-      pdf.save(`Medical_History_${details.appointmentId}.pdf`);
+  html2canvas(input, { scale: 2 }).then(async (canvas) => {
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
     });
-  };
 
+    await loadFont(pdf); 
+
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50);
+
+    pdf.setFontSize(16);
+    pdf.text('654/8 ประชาอุทิศ ทุ่งครุ', 105, 60, { align: 'center' });
+    pdf.text('กรุงเทพมหานคร 10140', 105, 68, { align: 'center' });
+
+    pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
+    pdf.setFontSize(12);
+    pdf.text(`วันที่ออกเอกสาร: ${currentDate}`, 200 - 15, 290, { align: 'right' });
+
+    pdf.save(`Medical_History.pdf`);
+  });
+};
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
