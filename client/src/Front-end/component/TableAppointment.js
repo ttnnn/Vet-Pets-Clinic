@@ -202,7 +202,6 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         return false;
       }
   
-      // กำหนดเวลาเริ่มต้นเป็น 23:59 หากไม่มี appointmentTime
       const timeWithoutOffset = appointmentTime
         ? appointmentTime.split('+')[0] // หากมีค่า appointmentTime
         : "20:00:00"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 23:59:59

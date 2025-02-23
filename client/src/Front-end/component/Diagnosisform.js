@@ -259,8 +259,6 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
     
     // console.log("rec_temperature:", parseFloat(formMedical.rec_temperature));
     // console.log("rec_weight:", parseFloat(formMedical.rec_weight));
-
-    console.log("data:",payload);
     try {
  
       await clinicAPI.post(`/treatment/diagnosis`, payload);
@@ -367,11 +365,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       showAlert("กรุณาบันทึกข้อมูลก่อน", "warning");
       return; // หยุดการทำงานหากยังไม่ได้บันทึก
     }
-    
-    console.log('appointmentId', appointmentId);
-    console.log('petId', petId);
-    console.log('openAdmitDialog', openAdmitDialog);
-    
+  
     setSelectedAppointmentId(appointmentId);
     setSelectedPetId(petId);
     setOpenAdmitDialog(true);

@@ -89,7 +89,7 @@ const Dashboard = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', bgcolor: '#f0f0f0' }}>
         <Box sx={{ bgcolor: 'white', boxShadow: 3, borderRadius: 2, p: 3, width: '100%', maxWidth: '1200px' }}>
-          
+        <Typography variant="h4" gutterBottom> สถิติการใช้บริการ </Typography>
           {/* Dropdown Filters */}
           <Grid container spacing={2} marginBottom={3}>
             <Grid item xs={12} md={4}>

@@ -76,8 +76,22 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
         await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'อนุมัติ' , queue_status: 'admit', reason: 'admit' });
       }
       if (isCustomer) {
+        const today = dayjs();
+        const checkIn = dayjs(checkInDate);
+        const daysUntilCheckIn = checkIn.diff(today, 'day');
+  
+        if (daysUntilCheckIn < 1) {
+          setSnackbarMessage('ลูกค้าสามารถเลื่อนนัดได้ก่อนวันเข้าพักอย่างน้อย 1 วัน');
+          setSnackbarColor('red');
+          setSnackbarOpen(true);
+          return;
+        }
+        console.log('today',today)
+        console.log('checkIn',checkIn)
+        console.log('daysUntilCheckIn',daysUntilCheckIn)
         await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
       }
+  
 
       const response = await clinicAPI.put(`/postpone/hotels/${appointmentId}`, {
         start_date: formatDate(checkInDate),

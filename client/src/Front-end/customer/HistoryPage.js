@@ -112,6 +112,7 @@ const HistoryPage = () => {
             <MenuItem value="ตรวจรักษา">ตรวจรักษา</MenuItem>
             <MenuItem value="วัคซีน">วัคซีน</MenuItem>
             <MenuItem value="อาบน้ำ-ตัดขน">อาบน้ำ-ตัดขน</MenuItem>
+            <MenuItem value="ฝากเลี้ยง">ฝากเลี้ยง</MenuItem>
           </Select>
         </FormControl>
 

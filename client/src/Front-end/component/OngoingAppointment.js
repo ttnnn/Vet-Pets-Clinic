@@ -51,7 +51,7 @@ const formatTime = (timeString) => {
   return `${time[0]}:${time[1]}`;
 };
 const formatDate =(date)=>{
-  return dayjs(date).format('YYYY-MM-DD');
+  return dayjs(date).format('DD/MM/YYYY');
 }
 
 const filterAppointments = (data, category) => {

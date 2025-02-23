@@ -345,23 +345,40 @@ router.get('/history/vaccien/:pet_id', async (req, res) => {
 router.put('/appointment/cancel', async (req, res) => {
   const { appointmentId } = req.body; // รับ appointmentId จาก request body
   try {
-    // อัพเดตสถานะการนัดหมายในฐานข้อมูล
-    const query = 'UPDATE appointment SET queue_status = $1, status = $2 , massage_status = $3 WHERE appointment_id = $4';
-    const values = ['ยกเลิกนัด', 'ยกเลิกนัด','cancle', appointmentId];
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    const result = await pool.query(query, values);
+      // อัปเดตสถานะการนัดหมายในตาราง appointment
+      const appointmentQuery = 'UPDATE appointment SET queue_status = $1, status = $2, massage_status = $3 WHERE appointment_id = $4';
+      const appointmentValues = ['ยกเลิกนัด', 'ยกเลิกนัด', 'cancle', appointmentId];
+      const appointmentResult = await client.query(appointmentQuery, appointmentValues);
 
-    if (result.rowCount > 0) {
-      // ถ้าสำเร็จ ส่งผลลัพธ์กลับไปที่ frontend
-      res.json({ success: true, message: 'การนัดหมายถูกยกเลิกแล้ว' });
-    } else {
-      res.status(404).json({ success: false, message: 'ไม่พบการนัดหมายที่ต้องการยกเลิก' });
+      if (appointmentResult.rowCount > 0) {
+        // อัปเดตสถานะการฝากเลี้ยงในตาราง pethotel ด้วย
+        const hotelQuery = 'UPDATE pethotel SET status = $1 WHERE appointment_id = $2';
+        const hotelValues = ['cancle', appointmentId];
+        await client.query(hotelQuery, hotelValues);
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'การนัดหมายและการฝากเลี้ยงถูกยกเลิกแล้ว' });
+      } else {
+        await client.query('ROLLBACK');
+        res.status(404).json({ success: false, message: 'ไม่พบการนัดหมายที่ต้องการยกเลิก' });
+      }
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error canceling appointment:', error.message);
+      res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการยกเลิกนัด' });
+    } finally {
+      client.release();
     }
   } catch (error) {
-    console.error('Error canceling appointment:', error.message);
-    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการยกเลิกนัด' });
+    console.error('Database connection error:', error.message);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล' });
   }
 });
+
 
 router.put('/pets/:id/image', upload.single('image'), async (req, res) => {
   const { id } = req.params;

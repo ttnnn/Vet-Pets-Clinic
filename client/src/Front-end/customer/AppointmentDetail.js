@@ -23,7 +23,11 @@ const AppointmentDetail = () => {
   const [selectedTypeService, setSelectedTypeService] = useState(null);
   const [openPostponeDialog, setOpenPostponeDialog] = useState(false);
   const [selectedPetId, setSelectedPetId] = useState(null); // State for pet_id
-  
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   // เพิ่ม state สำหรับ Dialog ยืนยันการยกเลิกนัด
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -58,23 +62,63 @@ const AppointmentDetail = () => {
     
 
   // ฟังก์ชันสำหรับยกเลิกนัด
-  const handleCancelAppointment = async () => {
-    try {
-      const response = await customerAPI.put(`/appointment/cancel`, { appointmentId });
-      // console.log('appointmentId',appointmentId)
-      if (response.data.success) {
-        setSnackbarMessage('การนัดหมายถูกยกเลิกแล้ว');
-        setOpenSnackbar(true);
-        setAppointment(null); // ซ่อนการแสดงผลการนัดหมายที่ถูกยกเลิก
-        navigate('/customer/home');
-      } else {
-        console.error(response.data.message);
-      }
-    } catch (error) {
-      console.error('Error canceling appointment:', error.message);
-    }
-  };
+  const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
+const formatTime = (time) => {
+  if (!time) return null;
+  const [startTime] = time.split(' - ');
+  const [hours, minutes] = startTime.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+};
 
+// ตรวจสอบเงื่อนไขการยกเลิกนัด
+const canCancelAppointment = (typeService, appointmentDate, appointmentTime, status) => {
+  const currentDateTime = dayjs();
+  const appointmentDateTime = dayjs(`${formatDate(appointmentDate)}T${formatTime(appointmentTime)}`);
+
+  if (typeService === 'ฝากเลี้ยง') {
+    const oneDayBefore = appointmentDateTime.subtract(1, 'day').endOf('day');
+    return currentDateTime.isBefore(oneDayBefore) && status !== 'check-in';
+  }
+
+  const cancelLimit = appointmentDateTime.subtract(45, 'minute');
+  return currentDateTime.isBefore(cancelLimit);
+};
+
+const handleCancelAppointment = async () => {
+  if (!canCancelAppointment(appointment.type_service, appointment.appointment_date, appointment.appointment_time, appointment.status)) {
+    const errorMessage = appointment.type_service === 'ฝากเลี้ยง' && appointment.status === 'check-in'
+      ? 'ไม่สามารถยกเลิกการฝากเลี้ยงได้ เนื่องจากมีสถานะเป็น check-in'
+      : 'ไม่สามารถยกเลิกการนัดหมายได้ เนื่องจากเลยเวลายกเลิกที่กำหนด';
+
+    setSnackbar({
+      open: true,
+      message: errorMessage,
+      severity: 'error',
+    });
+    return;
+  }
+
+  try {
+    const response = await customerAPI.put(`/appointment/cancel`, { appointmentId: appointment.appointment_id });
+    if (response.data.success) {
+      setSnackbar({
+        open: true,
+        message: 'การนัดหมายถูกยกเลิกแล้ว',
+        severity: 'success',
+      });
+      setAppointment(null);
+      navigate('/customer/home');
+    } else {
+      console.error(response.data.message);
+    }
+  } catch (error) {
+    console.error('Error canceling appointment:', error.message);
+  }
+};
+
+const handleCloseSnackbar = () => {
+  setSnackbar({ ...snackbar, open: false });
+};
   // ฟังก์ชันสำหรับเปิด Dialog
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -131,7 +175,7 @@ const AppointmentDetail = () => {
             <Typography><strong>รหัสการนัดหมาย:</strong>  {appointment.appointment_id}</Typography>
             <Typography><strong>บริการ:</strong> {appointment.type_service}</Typography>
             <Typography><strong>ชื่อสัตว์เลี้ยง:</strong> {appointment.pet_name}</Typography>
-            <Typography><strong>สายพันธุ์:</strong> {appointment.pet_species}</Typography>
+            <Typography><strong>สายพันธุ์:</strong> {appointment.pet_breed}</Typography>
             <Typography><strong>เจ้าของ:</strong> {appointment.first_name} {appointment.last_name}</Typography>
             <Typography><strong>เบอร์ติดต่อ:</strong> {appointment.phone_number}</Typography>
             <Typography>
@@ -214,6 +258,12 @@ const AppointmentDetail = () => {
           />
         )
       )}
+
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Dialog ยืนยันการยกเลิกนัด */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>

@@ -210,6 +210,10 @@ const PendingAppointments = ({ appointments ,update}) => {
               personnel_name: hotelInfo.personnel_name || '',
               num_day: hotelInfo.num_day || 0,
             }));
+            console.log('Selected Appointment:', {
+              start_date: hotelInfo.start_date,
+              end_date: hotelInfo.end_date,
+            });
           }
           break;
   
@@ -524,10 +528,10 @@ const handleCloseReceiptDialog = () => {
                     <strong>
                       {selectedAppointment.type === 'ตรวจรักษา' ? 'วันแอดมิด:' : 'วันเข้าพัก:'}
                     </strong>{' '}
-                    {dayjs(selectedAppointment.start_date).format('DD MMMM YYYY')}
+                    {selectedAppointment.start_date ? dayjs(selectedAppointment.start_date).format('DD MMMM YYYY') : '-'}
                   </Typography>
                   <Typography>
-                    <strong>กำหนดออก:</strong> {dayjs(selectedAppointment.end_date).format('DD MMMM YYYY')}
+                    <strong>กำหนดออก:</strong> {selectedAppointment.end_date ? dayjs(selectedAppointment.end_date).format('DD MMMM YYYY') : '-'}
                   </Typography>
                   {selectedAppointment.days_overdue > 0 && (
                     <Typography>

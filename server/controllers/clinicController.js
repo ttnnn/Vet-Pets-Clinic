@@ -842,7 +842,7 @@ router.put('/appointment/:id', async (req, res) => {
       if (status === 'อนุมัติ') {
         petHotelStatus = 'checkin';
       } else if (status === 'ยกเลิกนัด') {
-        petHotelStatus = 'checkout';
+        petHotelStatus = 'cancle';
       }
 
       if (petHotelStatus) {

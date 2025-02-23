@@ -32,7 +32,7 @@ const Register = () => {
     if (!idToken) {
       console.error("No ID Token found");
       setSnackbar({ open: true, message: 'กรุณาเข้าสู่ระบบอีกครั้ง', severity: 'error' });
-      navigate("/customer/login");
+      navigate("/customer/line-login");
       return;
     }
  

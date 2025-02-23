@@ -67,11 +67,13 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
   const [timePickerKey, setTimePickerKey] = useState(0);
   const [openDialog , setOpenDialog] = useState(false)
   const [loading, setLoading] = useState(false);
-
+  const [isLoadingPets, setIsLoadingPets] = useState(false);
+  
   const location = useLocation();
   const { locationOwnerID ,locationPetID } = location.state || {};
   const navigate = useNavigate();
   const user = JSON.parse(sessionStorage.getItem('user')); 
+  const memoizedPets = useMemo(() => pets, [pets]); // ใช้ useMemo เก็บค่า pets เพื่อลดการโหลดใหม่
 
 
   useEffect(() => {
@@ -123,9 +125,10 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
     }
   }, [isCustomerAppointment, ownerID]);
   
-
   useEffect(() => {
     const fetchPets = async () => {
+      if (!selectedOwnerId || isLoadingPets) return; // ถ้ามีการโหลดอยู่แล้ว ไม่โหลดซ้ำ
+    setIsLoadingPets(true);
       try {
         const response = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
         setPets(response.data);
@@ -133,19 +136,18 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
       } catch (error) {
         console.error("Error fetching pets:", error);
       }
+      setIsLoadingPets(false);
     };
   
-    if (selectedOwnerId) {
-      fetchPets();
-    } else {
-      setPets([]);
-    }
-  }, [selectedOwnerId, locationPetID]);
+    fetchPets();
+  }, [selectedOwnerId, locationPetID]);  // ดึงข้อมูลใหม่เมื่อ ownerId หรือ locationPetID เปลี่ยน
+  
   
 
 
   useEffect(() => {
     const fetchAvailableCages = async () => {
+      if (!checkInDate || !checkOutDate || !petSpecies) return;
       const formattedCheckInDate = checkInDate ? dayjs(checkInDate).format('YYYY-MM-DD') : null;
       const formattedCheckOutDate = checkOutDate ? dayjs(checkOutDate).format('YYYY-MM-DD') : null;
       if (formattedCheckInDate && formattedCheckOutDate) {
@@ -154,7 +156,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
             `/available-cages?start_date=${formattedCheckInDate}&end_date=${formattedCheckOutDate}&pet_species=${petSpecies}`
           );
           setPetCages(response.data); 
-          console.log('cage' , response.data) // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
+          //console.log('cage' , response.data) // ตั้งค่า petCages เป็นข้อมูลที่กรองแล้วจาก Backend
         } catch (error) {
           console.error('Error fetching available cages:', error);
         }
@@ -214,12 +216,15 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
         if (!appointmentDate || (!appointmentTime && !isNoTime)) {
           setAlertSeverity('warning');
           setAlertMessage('กรุณากรอกข้อมูลให้ครบ');
+          setLoading(false);
           return;
         }
+        
       }else {
         if (!checkInDate || !checkOutDate || !petCages  || !isNoTime ) {
           setAlertSeverity('warning');
           setAlertMessage('กรุณากรอกข้อมูลให้ครบ');
+          setLoading(false);
           return;
         }
       }
@@ -374,7 +379,7 @@ const AddAppointment = ({isCustomerAppointment , ownerID}) => {
           />
 
           <Autocomplete
-            options={pets}
+            options={memoizedPets}
             getOptionLabel={(pet) => pet.pet_name}
             isOptionEqualToValue={(option, value) => option.pet_id === value.pet_id}
             onChange= {handlePetChange}

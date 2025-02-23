@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TableSortLabel, Paper, Button, TextField, Box, Typography, Dialog,
-  DialogTitle, DialogContent, DialogActions,Divider
+  DialogTitle, DialogContent, DialogActions,Divider,CircularProgress
 } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
@@ -10,6 +10,9 @@ import FolderIcon from '@mui/icons-material/Folder';
 import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 dayjs.locale('th');
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 
 const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
@@ -82,6 +85,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const [details, setDetails] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(false);
   const handleEdit = (id) => {
     onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
   };
@@ -126,6 +130,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
   const fetchDetails = async (appointmentId) => {
     if (!appointmentId || appointmentId === details?.appointmentId) return;
+    setLoading(true)
   
     try {
       const response = await clinicAPI.get(`/history/medical/${appointmentId}`);
@@ -133,6 +138,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     } catch (error) {
       console.error('Error fetching details:', error);
     }
+    setLoading(false);
   };
   
 
@@ -145,6 +151,16 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDetails(null);
+  };
+
+  const generatePDF = () => {
+    const input = document.getElementById('pdf-content');
+    html2canvas(input, { scale: 2 }).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF();
+      pdf.addImage(imgData, 'PNG', 10, 10, 180, 0);
+      pdf.save(`Medical_History_${details.appointmentId}.pdf`);
+    });
   };
 
   const handleRequestSort = (event, property) => {
@@ -246,7 +262,11 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
       <DialogTitle>รายละเอียดการรักษา</DialogTitle>
       <DialogContent>
-        {details ? (
+      {loading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress size={40} />
+            </Box>) :
+        details ? (
           <Box>
             {/* ส่วนข้อมูลทั่วไป */}
             <Typography variant="h6" gutterBottom>ข้อมูลทั่วไป</Typography>
@@ -290,6 +310,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         )}
       </DialogContent>
       <DialogActions>
+        <Button onClick={generatePDF} color="primary" disabled={loading || !details ||  userRole !== 'สัตวแพทย์'} >ดาวน์โหลด PDF</Button>
         <Button onClick={handleCloseDialog} color="secondary">
           ปิด
         </Button>

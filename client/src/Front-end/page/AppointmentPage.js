@@ -121,7 +121,7 @@ const AppointmentPage = () => {
 
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>ระบบจัดการนัดหมาย</Typography>
+          <Typography variant="h4" gutterBottom>การนัดหมาย</Typography>
           {activeTab === 1 && (<ExportAppointmentsToExcel filteredAppointments={appointments} />)}
           {/* Dropdown */}
           <Box sx={{

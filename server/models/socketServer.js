@@ -20,7 +20,7 @@ const setupSocketServer = (server) => {
       client.query('LISTEN new_appointment'); // ฟังการแจ้งเตือนจาก PostgreSQL
     
       client.on('notification', (msg) => {
-        console.log('Received notification:', msg);
+        //console.log('Received notification:', msg);
         
         // Parsing payload ของ notification (ในกรณีที่ PostgreSQL ส่ง payload มา)
         const payload = JSON.parse(msg.payload); // ต้องแน่ใจว่า PostgreSQL ส่ง payload ในรูปแบบ JSON
