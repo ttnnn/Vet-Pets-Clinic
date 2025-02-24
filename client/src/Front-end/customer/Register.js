@@ -43,7 +43,6 @@ const Register = () => {
         { first_name, last_name, phone_number },
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
-      setLoading(false); // Stop loading
       if (response.data.success) {
         sessionStorage.setItem(
           "user",
@@ -61,8 +60,10 @@ const Register = () => {
       } else {
         // console.error("Error:", error);
         setSnackbar({ open: true, message: 'ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อ-นามสกุล หรือเบอร์โทร', severity: 'error' });
+        setLoading(false); // Stop loading
       }
     }
+    setLoading(false); // Stop loading
   };
 
   const handleCloseSnackbar = () => {

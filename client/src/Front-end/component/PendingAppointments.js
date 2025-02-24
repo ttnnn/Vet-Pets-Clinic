@@ -109,10 +109,6 @@ const PendingAppointments = ({ appointments ,update}) => {
     return selectedItems.reduce((sum, item) => {
       // ตรวจสอบว่ารายการเป็นบริการตรวจรักษาหรือไม่
       if (selectedAppointment.type === "ตรวจรักษา") {
-        // const selectedItemsData = selectedItems.reduce(
-          // (sum, item) => sum + (item.amount || 0) * (item.price_service|| 0),
-          // 0
-        // );
         const selectedItemsTotal = selectedItems.reduce(
           (sum, item) => sum + (item.quantity ||item.amount||  0) * (item.price_service || 0),
           0
@@ -236,7 +232,6 @@ const PendingAppointments = ({ appointments ,update}) => {
               record_medicine: recordMedicineData.map((item) => item.record_medicine) || [],
             }));
           }
-          console.log('recordMedicineData',recordMedicineData)
           break;
   
         default:
@@ -315,9 +310,6 @@ const PendingAppointments = ({ appointments ,update}) => {
     setPage(newPage);
   };
 
-
-  // console.log('filteredAppointments',filteredAppointments)
-
   const filteredCategories = categories.filter(service => 
     (!selectedCategory || service.category_type === selectedCategory) &&
     (!searchTerm || service.category_name.includes(searchTerm))
@@ -360,6 +352,7 @@ const PendingAppointments = ({ appointments ,update}) => {
        // อัปเดตข้อมูลใบเสร็จ
        setReceiptData({
         invoice_id: response.data.invoice_id,
+        payment_id: response.data.payment_id
       });
       handleOpenReceiptDialog()
      

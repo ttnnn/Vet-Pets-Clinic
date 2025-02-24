@@ -63,26 +63,6 @@ const setupCronJobs = (io) => {
   });
   
 
-  // const ApproveAppointmentReminders = async () => {
-    // const query = `
-    // SELECT * FROM appointment
-      // WHERE appointment_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
-      // AND appointment_time >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::TIME
-      // AND status = 'รออนุมัติ';
-  // `;
-  // const { rows } = await pool.query(query);
-  //แจ้งเตือนคิวที่ยังไม่ได้กดส่ง
-  // if (rows.length > 0) {
-    // io.emit("queue-alert", {
-      // message: `มี ${rows.length} นัดหมายใหม่รออนุมัติ`,
-      // queues: rows,
-      // playSound: true, // เพิ่ม property นี้เพื่อบอกฝั่ง Client ให้เล่นเสียง
-    // });
-
-  // }
-  // }
-  // ฟังก์ชันสำหรับส่งการแจ้งเตือนนัดหมาย
-
   const sendAppointmentReminders = async () => {
     const query = `
     SELECT 
@@ -160,32 +140,42 @@ const setupCronJobs = (io) => {
       console.error('Error fetching appointments:', error);
     }
   };
+
   const sendLateArrivalNotification = async () => {
     const query = `
-       SELECT  
-     a.appointment_id,
-     a.appointment_time,
-     p.pet_name, 
-     o.line_id
- FROM 
-     appointment a
- LEFT JOIN 
-     owner o ON a.owner_id = o.owner_id
- LEFT JOIN 
-     pets p ON a.pet_id = p.pet_id
- WHERE 
-     a.queue_status = 'รอรับบริการ'
-     AND a.status = 'อนุมัติ'
-     AND a.appointment_date = (CURRENT_DATE AT TIME ZONE 'Asia/Bangkok')::DATE
-     AND a.appointment_time = (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes')::TIME;
+        SELECT  
+            a.appointment_id,
+            a.appointment_time,
+            p.pet_name, 
+            o.line_id
+        FROM 
+            appointment a
+        LEFT JOIN 
+            owner o ON a.owner_id = o.owner_id
+        LEFT JOIN 
+            pets p ON a.pet_id = p.pet_id
+        WHERE 
+            a.queue_status = 'รอรับบริการ'
+            AND a.status = 'อนุมัติ'
+            AND a.appointment_date = (CURRENT_DATE AT TIME ZONE 'Asia/Bangkok')::DATE
+            AND a.appointment_time <= (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '10 minutes')::TIME
+            AND a.appointment_time > (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes')::TIME;
     `;
+
+    // ใช้ Set เพื่อกันแจ้งเตือนซ้ำ
+    const notifiedAppointments = new Set();
 
     try {
         const { rows } = await pool.query(query);
         rows.forEach(appointment => {
-            const message = `แจ้งเตือน: ${appointment.pet_name} ยังไม่ได้มาตามนัดภายใน 15 นาที กรุณาติดต่อคลินิกเพื่อยืนยันการเข้ารับบริการ`;
-            
-            LineNotification.sendLineNotification(appointment.line_id, message, appointment.appointment_id, false);
+            if (!notifiedAppointments.has(appointment.appointment_id)) {
+                const message = `⏰ แจ้งเตือน: น้อง ${appointment.pet_name} ยังไม่ได้มาตามนัดภายใน 10-15 นาที กรุณาติดต่อคลินิกเพื่อยืนยันการเข้ารับบริการ`;
+
+                LineNotification.sendLineNotification(appointment.line_id, message, appointment.appointment_id, false);
+
+                // เพิ่มเข้า Set เพื่อกันการแจ้งเตือนซ้ำ
+                notifiedAppointments.add(appointment.appointment_id);
+            }
         });
     } catch (error) {
         console.error('Error fetching late appointments:', error);
@@ -196,7 +186,6 @@ const setupCronJobs = (io) => {
   // ตั้งเวลา cron สำหรับการส่งการแจ้งเตือนนัดหมายทุกวันเวลา 09:00 น.
 
     cron.schedule('0 9 * * *', sendAppointmentReminders, { timezone: "Asia/Bangkok" });
-    // cron.schedule('*/1 9-20 * * *', ApproveAppointmentReminders, { timezone: "Asia/Bangkok" });
     cron.schedule('0 9 * * *', sendAlert, { timezone: "Asia/Bangkok" });
     cron.schedule('*/1 9-20 * * *', sendLateArrivalNotification, { timezone: "Asia/Bangkok" });
 
