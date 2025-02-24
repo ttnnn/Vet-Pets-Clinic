@@ -158,8 +158,8 @@ const setupCronJobs = (io) => {
             a.queue_status = 'รอรับบริการ'
             AND a.status = 'อนุมัติ'
             AND a.appointment_date = (CURRENT_DATE AT TIME ZONE 'Asia/Bangkok')::DATE
-            AND a.appointment_time <= (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '10 minutes')::TIME
-            AND a.appointment_time > (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes')::TIME;
+            AND a.appointment_time <= (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '15 minutes')::TIME
+            AND a.appointment_time > (CURRENT_TIME AT TIME ZONE 'Asia/Bangkok' - INTERVAL '16 minutes')::TIME;
     `;
 
     // ใช้ Set เพื่อกันแจ้งเตือนซ้ำ
@@ -169,7 +169,7 @@ const setupCronJobs = (io) => {
         const { rows } = await pool.query(query);
         rows.forEach(appointment => {
             if (!notifiedAppointments.has(appointment.appointment_id)) {
-                const message = `⏰ แจ้งเตือน: น้อง ${appointment.pet_name} ยังไม่ได้มาตามนัดภายใน 10-15 นาที กรุณาติดต่อคลินิกเพื่อยืนยันการเข้ารับบริการ`;
+                const message = `⏰ แจ้งเตือน: น้อง ${appointment.pet_name} ยังไม่ได้มาตามนัดภายใน 15 นาที กรุณาติดต่อคลินิกเพื่อยืนยันการเข้ารับบริการ`;
 
                 LineNotification.sendLineNotification(appointment.line_id, message, appointment.appointment_id, false);
 
@@ -187,7 +187,7 @@ const setupCronJobs = (io) => {
 
     cron.schedule('0 9 * * *', sendAppointmentReminders, { timezone: "Asia/Bangkok" });
     cron.schedule('0 9 * * *', sendAlert, { timezone: "Asia/Bangkok" });
-    cron.schedule('*/1 9-20 * * *', sendLateArrivalNotification, { timezone: "Asia/Bangkok" });
+    cron.schedule('*/5 9-20 * * *', sendLateArrivalNotification, { timezone: "Asia/Bangkok" });
 
 
 };
