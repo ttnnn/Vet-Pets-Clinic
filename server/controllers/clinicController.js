@@ -1748,7 +1748,7 @@ router.post('/create-invoice/payment', async (req, res) => {
 
 
     await client.query('COMMIT'); // ยืนยัน transaction
-    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' , invoice_id: invoiceId });
+    res.status(200).json({ status: 'success', message: 'ข้อมูลถูกบันทึกสำเร็จ' , invoice_id: invoiceId ,payment_id: paymentId});
   } catch (error) {
     await client.query('ROLLBACK'); // ยกเลิก transaction หากเกิดข้อผิดพลาด
     console.error('Error during transaction:', error);
