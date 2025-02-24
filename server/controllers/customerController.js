@@ -213,13 +213,9 @@ router.get('/appointments/history', async (req, res) => {
        FROM appointment
        JOIN pets ON appointment.pet_id = pets.pet_id
        WHERE appointment.owner_id = $1 
-         AND (
-            -- นัดหมายที่ถูกยกเลิกและยังไม่ถึงวัน
-            (appointment.status = 'ยกเลิกนัด' AND appointment.appointment_date >= CURRENT_DATE)
-            OR
-            -- นัดหมายที่ผ่านไปแล้วและไม่ได้ถูกยกเลิก
-            (appointment.status != 'ยกเลิกนัด' AND appointment.appointment_date < CURRENT_DATE)
-         )`,
+        AND (
+     (appointment.status = 'ยกเลิกนัด')OR (appointment.appointment_date < CURRENT_DATE)
+    );`,
       [owner_id]
     );
 
