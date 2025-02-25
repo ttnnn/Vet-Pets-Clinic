@@ -37,12 +37,10 @@ const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
 const formatDateAdmit = (dateTimeString) => {
-  return dayjs.utc(dateTimeString).local().format('DD MMMM YYYY');
+  return dayjs(dateTimeString).format('DD MMMM YYYY');
 };
-console.log('formatDateAdmit',formatDateAdmit)
-console.log('formatAdmit',formatAdmit)
 const formatAdmit = (dateTimeString) => {
-  return dayjs.utc(dateTimeString).local().format('HH:mm');
+  return dayjs(dateTimeString).format('HH:mm');
 };
 
 
@@ -65,7 +63,7 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
+      วันที่บันทึก: {(record.record_time)} เวลา: {(record.record_time)}
     </Typography>
 
   </Box>
