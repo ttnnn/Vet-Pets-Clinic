@@ -39,7 +39,8 @@ const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 const formatDateAdmit = (dateTimeString) => {
   return dayjs.utc(dateTimeString).local().format('DD MMMM YYYY');
 };
-
+console.log('formatDateAdmit',formatDateAdmit)
+console.log('formatAdmit',formatAdmit)
 const formatAdmit = (dateTimeString) => {
   return dayjs.utc(dateTimeString).local().format('HH:mm');
 };
@@ -267,6 +268,8 @@ const RecordMedical = ({
     record_medical:'',
     record_medicine:''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);  
+
   const token = sessionStorage.getItem('token');
 
   useEffect(() => {
@@ -311,7 +314,8 @@ const RecordMedical = ({
 
 
   const handleSubmit = async () => {
-  
+    setIsSubmitting(true);
+
     if (!formMedical.admit_temp ) {
       setAlertMessage("กรุณากรอกอุณหภูมิที่ถูกต้อง");
       setAlertSeverity("warning");  // ประเภทของ Alert
@@ -326,7 +330,7 @@ const RecordMedical = ({
       return;
     }
     const pressureRegex = /^\d{2,3}\/\d{2,3}$/; // รูปแบบต้องเป็น "ตัวเลข/ตัวเลข" เช่น 120/80
-    if (formMedical.rec_pressure && !pressureRegex.test(formMedical.rec_pressure)) {
+    if (formMedical.admit_pressure && !pressureRegex.test(formMedical.admit_pressure)) {
       setAlertMessage("กรุณากรอกค่าความดันโลหิตในรูปแบบที่ถูกต้อง เช่น 120/80");
       setAlertSeverity("warning");
       setOpenSnackbar(true);
@@ -366,7 +370,9 @@ const RecordMedical = ({
       setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setAlertSeverity("error");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
-    }
+    }finally {
+    setIsSubmitting(false); 
+  }
   };
   
 
@@ -579,9 +585,15 @@ const RecordMedical = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="error">ยกเลิก</Button>
-          <Button onClick={handleSubmit} 
-           disabled={ userRole !== 'สัตวแพทย์'}
-           variant="contained" color="primary">บันทึก</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={userRole !== 'สัตวแพทย์' || isSubmitting}
+            variant="contained"
+            color="primary"
+            startIcon={isSubmitting && <CircularProgress size={20} color="inherit" />}
+          >
+            {isSubmitting ? "กำลังบันทึก..." : "บันทึก"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Paper>
