@@ -7,6 +7,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
+import "dayjs/locale/th";
+dayjs.locale("th");
 
 const DialogAddRecordMed = ({ open, onClose, appointment }) => {
   const [time, setTime] = useState(dayjs()); // Default to current time
