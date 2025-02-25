@@ -13,6 +13,9 @@ import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
+
 dayjs.locale('th');
 
 // Utility functions
@@ -34,15 +37,13 @@ const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
 const formatDateAdmit = (dateTimeString) => {
-  const date = dayjs(dateTimeString).format('DD MMMM YYYY');
-  return date;
+  return dayjs.utc(dateTimeString).local().format('DD MMMM YYYY');
 };
 
-// ฟังก์ชัน formatTime สำหรับเวลา
 const formatAdmit = (dateTimeString) => {
-  const time = dayjs(dateTimeString).format('HH:mm');
-  return time;
+  return dayjs.utc(dateTimeString).local().format('HH:mm');
 };
+
 
 // Reusable Button Component
 const AddRecordButton = ({ onClick }) => (
