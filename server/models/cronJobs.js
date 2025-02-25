@@ -31,6 +31,11 @@ const setupCronJobs = (io) => {
           playSound: true,
         });
       }
+      
+      if (currentHour >= 21) {
+        console.log("Cron job stopped after 21:00");
+        return;
+      }
   
       const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
       const currentHour = new Date(bangkokTime).getHours();

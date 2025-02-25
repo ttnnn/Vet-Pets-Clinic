@@ -87,25 +87,17 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
 
   useEffect(() => {
     const fetchRecords = async () => {
-      // if (!appointment.appointment_id) {
-        // console.warn("Appointment ID is missing.");
-        // return;
-      // }
       
       setIsLoading(true);
       try {
         const response = await clinicAPI.get(`/admitrecord?appointment_id=${appointment.appointment_id}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            console.log("No records found for this appointment.");
-            setFilteredRecords([]); // ตั้งค่าว่างสำหรับกรณีไม่มีข้อมูล
-          } else {
-            console.error(`Error fetching records: ${response.statusText}`);
-          }
+        if (response.status === 404) {
+          console.log("No records found for this appointment.");
+          setFilteredRecords([]); // ตั้งค่าว่างสำหรับกรณีไม่มีข้อมูล
           return;
         }
-  
-        const data = await response.json();
+        const data = response.data;
+        
         if (!data.data || data.data.length === 0) {
           console.log("No records found for this appointment.");
           setFilteredRecords([]);
@@ -120,9 +112,8 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
       }
     };
 
-    if (!updatedRecords || updatedRecords.length === 0) {
-      fetchRecords();
-    }
+    fetchRecords();
+    
   }, [appointment.appointment_id, updatedRecords]);
 
   const toggleDetails = () => {
