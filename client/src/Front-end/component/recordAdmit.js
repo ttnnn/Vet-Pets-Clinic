@@ -318,6 +318,7 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกอุณหภูมิที่ถูกต้อง");
       setAlertSeverity("warning");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      setIsSubmitting(false); 
       return;
     }
   
@@ -325,6 +326,7 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกข้อมูลบันทึกอาการ");
       setAlertSeverity("warning");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
+      setIsSubmitting(false); 
       return;
     }
     const pressureRegex = /^\d{2,3}\/\d{2,3}$/; // รูปแบบต้องเป็น "ตัวเลข/ตัวเลข" เช่น 120/80
@@ -332,6 +334,7 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกค่าความดันโลหิตในรูปแบบที่ถูกต้อง เช่น 120/80");
       setAlertSeverity("warning");
       setOpenSnackbar(true);
+      setIsSubmitting(false); 
       return;
     }
 
