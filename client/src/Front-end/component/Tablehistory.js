@@ -151,21 +151,6 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
-  // const generatePDF = () => {
-    // const input = document.getElementById('pdf-content');
-    // html2canvas(input, { scale: 2 }).then((canvas) => {
-      // const pdf = new jsPDF();
-      // const imgData = canvas.toDataURL('image/png');
-
-      // pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
-
-      // pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
-      // pdf.setFontSize(8);
-
-      // pdf.save(`Medical_History_${details.appointmentId}.pdf`);
-    // });
-  // };
-
 
   const generatePDF = () => {
     const pdf = new jsPDF({
