@@ -35,11 +35,6 @@ const setupCronJobs = (io) => {
         });
       }
   
-      if (currentHour >= 21) { // Now this works
-        console.log("Cron job stopped after 21:00");
-        return;
-      }
-  
       if (currentHour >= 20) {
         const updateQuery = `
           UPDATE appointment
