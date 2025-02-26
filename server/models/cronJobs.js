@@ -7,61 +7,7 @@ require('dayjs/locale/th');
 
 
 const setupCronJobs = (io) => {
-  // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส่
-  cron.schedule("*/10 9-21 * * *", async () => {
-    const job = setTimeout(() => {
-      console.log("Job timed out");
-    }, 1000 * 60 * 5); // ตัดงานถ้าเกิน 5 นาที
-  
-    try {
-      
-      const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
-      const currentDateTime = new Date(bangkokTime);
-      const currentHour = currentDateTime.getHours(); // ✅ currentHour ถูกประกาศก่อนใช้งาน
-  
-      const query = `
-        SELECT * FROM appointment
-        WHERE appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
-        AND queue_status NOT IN ('เสร็จสิ้น', 'admit', 'ยกเลิกนัด')
-        AND appointment_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::TIME
-        AND status NOT IN ('รออนุมัติ', 'ยกเลิกนัด');
-      `;
-  
-      const { rows } = await pool.query(query);
-  
-      if (rows.length > 0) {
-        io.emit("queue-alert", {
-          message: `ยังมี ${rows.length} คิวที่ยังไม่ได้กดส่งคิว โปรดจัดการก่อนร้านปิด!`,
-          queues: rows,
-          playSound: true,
-        });
-      }
-
-      if (currentHour >= 20) {
-        const updateQuery = `
-          UPDATE appointment
-          SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด', massage_status = 'cancle'
-          WHERE queue_status = 'รอรับบริการ'
-          AND appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
-          AND appointment_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::TIME;
-        `;
-  
-        await pool.query(updateQuery);
-        console.log('Appointment status updated to "ยกเลิกนัด" after 20:00');
-  
-        io.emit('notification', {
-          message: 'มีคิวที่ถูกยกเลิกเนื่องจากเลยเวลา 20:00 น.',
-          playSound: true,
-        });
-      }  
-
-    } catch (error) {
-      console.error("Error in cron job:", error);
-    } finally {
-      clearTimeout(job);
-    }
-  });
-  
+  // ตั้งเวลา cron สำหรับการแจ้งเตือนคิวที่ยังไม่ได้กดส
   
   
 
