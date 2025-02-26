@@ -152,7 +152,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
   
   const loadFont = async (pdf) => {
-    const response = await fetch("/fronts/THSarabunNew.ttf"); // โหลดฟอนต์จาก public
+    const response = await fetch("/fonts/THSarabunNew.ttf"); // โหลดฟอนต์จาก public
     const fontBuffer = await response.arrayBuffer(); // แปลงเป็น ArrayBuffer
     const fontBase64 = btoa(String.fromCharCode(...new Uint8Array(fontBuffer))); // แปลงเป็น Base64
   
