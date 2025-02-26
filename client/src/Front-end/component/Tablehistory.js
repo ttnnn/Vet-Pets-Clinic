@@ -5,7 +5,6 @@ import {
   DialogTitle, DialogContent, DialogActions,Divider,CircularProgress
 } from '@mui/material';
 import jsPDF from 'jspdf';
-import "jspdf-autotable"; // ใช้สำหรับตาราง
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -182,7 +181,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   
     let y = 50; // ตำแหน่งเริ่มต้นของเนื้อหา
   
-    // ส่วนข้อมูลทั่วไป
+    //ส่วนข้อมูลทั่วไป
     pdf.text("ข้อมูลทั่วไป", 10, y);
     y += 8;
     pdf.text(`ชื่อสัตว์เลี้ยง: ${details.pet_name || "ไม่มีข้อมูล"}`, 10, y);
@@ -203,7 +202,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     pdf.line(10, y, 200, y); // เส้นคั่น
     y += 10;
   
-    // ส่วนการวินิจฉัย
+    //  ส่วนการวินิจฉัย
     pdf.text("ข้อมูลการวินิจฉัย", 10, y);
     y += 8;
     pdf.text(`CC: ${details.diag_cc || "-"}`, 10, y);
@@ -226,21 +225,18 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     pdf.line(10, y, 200, y); // เส้นคั่น
     y += 10;
   
-    // ส่วนการตรวจร่างกาย
+    //  ส่วนการตรวจร่างกาย
     pdf.text("ผลการตรวจร่างกาย", 10, y);
     y += 8;
   
     const phyData = Object.entries(details)
       .filter(([key, value]) => key.startsWith("phy_") && value !== "no exam" && value !== null)
-      .map(([key, value]) => [key.replace("phy_", "").replace(/_/g, " ").toUpperCase(), value]);
+      .map(([key, value]) => `${key.replace("phy_", "").replace(/_/g, " ").toUpperCase()}: ${value}`);
   
     if (phyData.length > 0) {
-      pdf.autoTable({
-        startY: y,
-        head: [["รายการ", "ผลการตรวจ"]],
-        body: phyData,
-        theme: "striped",
-        styles: { font: "THSarabunNew", fontSize: 14 },
+      phyData.forEach((text) => {
+        pdf.text(text, 10, y);
+        y += 7; // เพิ่มระยะห่างระหว่างบรรทัด
       });
     } else {
       pdf.text("ไม่มีข้อมูลการตรวจร่างกาย", 10, y);
@@ -252,6 +248,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   
     pdf.save(fileName);
   };
+  
   
 
   const handleRequestSort = (event, property) => {

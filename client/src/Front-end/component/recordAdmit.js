@@ -64,7 +64,7 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
+      วันที่บันทึก: {formatDate(record.record_time)} เวลา: {formatTime(record.record_time)}
     </Typography>
 
   </Box>
