@@ -5,7 +5,7 @@ import {
   DialogTitle, DialogContent, DialogActions,Divider,CircularProgress
 } from '@mui/material';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import "jspdf-autotable"; // ใช้สำหรับตาราง
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -151,39 +151,99 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
+  
 
-  const generatePDF = () => {
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+
+const generatePDF = (details) => {
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  // โหลดฟอนต์ภาษาไทย
+  pdf.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
+  pdf.setFont("THSarabunNew");
+  pdf.setFontSize(14);
+
+  // เพิ่มโลโก้
+  const logoUrl = "/Logo.jpg"; 
+  const imgWidth = 30;
+  const imgHeight = 30;
+  pdf.addImage(logoUrl, "JPEG", 10, 10, imgWidth, imgHeight);
+
+  let y = 50; // ตำแหน่งเริ่มต้นของเนื้อหา
+
+  // ส่วนข้อมูลทั่วไป
+  pdf.text("ข้อมูลทั่วไป", 10, y);
+  y += 8;
+  pdf.text(`ชื่อสัตว์เลี้ยง: ${details.pet_name || "ไม่มีข้อมูล"}`, 10, y);
+  y += 7;
+  pdf.text(`เจ้าของสัตว์เลี้ยง: ${details.owner_name || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`เลขที่นัดหมาย: ${details.appointment_id || "ไม่มีข้อมูล"}`, 10, y);
+  y += 7;
+  pdf.text(`สัตวแพทย์ที่รับผิดชอบ: ${details.personnel_name || "ไม่มีข้อมูล"}`, 10, y);
+  y += 7;
+  pdf.text(
+    `แก้ไขล่าสุด: ${details.rec_time ? dayjs(details.rec_time).format("DD MMMM YYYY HH:mm") : "-"}`,
+    10,
+    y
+  );
+  y += 10;
+
+  pdf.line(10, y, 200, y); // เส้นคั่น
+  y += 10;
+
+  // ส่วนการวินิจฉัย
+  pdf.text("ข้อมูลการวินิจฉัย", 10, y);
+  y += 8;
+  pdf.text(`CC: ${details.diag_cc || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`HT: ${details.diag_ht || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`PE: ${details.diag_pe || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`ปัญหาหลัก: ${details.diag_majorproblem || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`Tentative DX: ${details.diag_tentative || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`Final DX: ${details.diag_final || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`การรักษา: ${details.diag_treatment || "-"}`, 10, y);
+  y += 7;
+  pdf.text(`หมายเหตุ: ${details.diag_note || "-"}`, 10, y);
+  y += 10;
+
+  pdf.line(10, y, 200, y); // เส้นคั่น
+  y += 10;
+
+  // ส่วนการตรวจร่างกาย
+  pdf.text("ผลการตรวจร่างกาย", 10, y);
+  y += 8;
+
+  const phyData = Object.entries(details)
+    .filter(([key, value]) => key.startsWith("phy_") && value !== "no exam" && value !== null)
+    .map(([key, value]) => [key.replace("phy_", "").replace(/_/g, " ").toUpperCase(), value]);
+
+  if (phyData.length > 0) {
+    pdf.autoTable({
+      startY: y,
+      head: [["รายการ", "ผลการตรวจ"]],
+      body: phyData,
+      theme: "striped",
+      styles: { font: "THSarabunNew", fontSize: 14 },
     });
+  } else {
+    pdf.text("ไม่มีข้อมูลการตรวจร่างกาย", 10, y);
+  }
 
-    const content = document.getElementById('pdf-content');
+  const fileName = `นัดหมาย_${details.appointment_id || " "}.pdf`
+  .replace(/[:\/\\?*<>|"]/g, ""); // ลบอักขระที่ไม่ถูกต้องออก
 
-    // โหลดรูปโลโก้ (ต้องเป็น Base64 หรือ URL)
-    const logoUrl = '/Logo.jpg'; // เปลี่ยนเป็นพาธรูปของคุณ
+ pdf.save(fileName);
 
-    const imgWidth = 30; // กำหนดขนาดโลโก้
-    const imgHeight = 30;
-    const xPos = 10; // ตำแหน่ง X ของโลโก้
-    const yPos = 10; // ตำแหน่ง Y ของโลโก้
 
-    // โหลดรูปภาพก่อนสร้าง PDF
-    const img = new Image();
-    img.src = logoUrl;
-    img.onload = function () {
-        pdf.addImage(img, 'JPEG', xPos, yPos, imgWidth, imgHeight); // เพิ่มรูปภาพใน PDF
-
-        // ดันเนื้อหาลงไปให้ไม่ทับกับโลโก้
-        pdf.html(content, {
-            callback: function (pdf) {
-                pdf.save('document.pdf');
-            },
-            x: 10,
-            y: yPos + imgHeight + 5 // เลื่อนเนื้อหาลงมาต่ำกว่ารูปภาพ
-        });
-    };
 };
 
 
