@@ -51,27 +51,6 @@ const AddRecordButton = ({ onClick }) => (
     เพิ่มบันทึก
   </Button>
 );
-const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-const [recordToDelete, setRecordToDelete] = useState(null);
-const confirmDeleteRecord = (recordId) => {
-  setRecordToDelete(recordId);
-  setOpenConfirmDialog(true);
-};
-const handleConfirmDelete = async () => {
-  try {
-    const response = await clinicAPI.delete(`/admitrecord/${recordToDelete}`);
-    if (response.status === 200) {
-      alert('ลบบันทึกสำเร็จ!');
-      setUpdateRecords((prevRecords) => prevRecords.filter((record) => record.record_id !== recordToDelete));
-    }
-  } catch (error) {
-    console.error('Error deleting record:', error);
-    alert('เกิดข้อผิดพลาดในการลบบันทึก');
-  } finally {
-    setOpenConfirmDialog(false);
-    setRecordToDelete(null);
-  }
-};
 
 const RecordCard = ({ record }) => (
   <Box
@@ -87,14 +66,6 @@ const RecordCard = ({ record }) => (
     <Typography variant="body1" fontWeight="bold">
       วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
     </Typography>
-    <Button
-      variant="contained"
-      color="secondary"
-      size="small"
-      onClick={() => confirmDeleteRecord(record.admit_id)}
-    >
-      ลบบันทึก
-    </Button>
 
   </Box>
 );
@@ -157,6 +128,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
   const handleCloseDetails = () => {
     setSelectedRecord(null); // ล้างข้อมูลการเลือก
   };
+
 
   return (
     <Box display="flex">
