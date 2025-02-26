@@ -13,9 +13,6 @@ import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';
-import utc from 'dayjs/plugin/utc';
-dayjs.extend(utc);
-
 dayjs.locale('th');
 
 // Utility functions
@@ -36,12 +33,8 @@ const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
-const formatDateAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).local().format('DD/MM/YYYY');
-};
-
 const formatAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).local().format('HH:mm:ss');
+  return dayjs(dateTimeString).format('HH:mm:ss');
 };
 
 
@@ -64,7 +57,7 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {formatDate(record.record_time)} เวลา: {formatTime(record.record_time)}
+      วันที่บันทึก: {formatDate(record.record_time)} เวลา: {formatAdmit(record.record_time)}
     </Typography>
 
   </Box>

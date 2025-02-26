@@ -399,7 +399,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={generatePDF} color="primary" disabled={loading || !details ||  userRole !== 'สัตวแพทย์'} >ดาวน์โหลด PDF</Button>
+        <Button onClick={() => generatePDF(details)} color="primary" disabled={loading || !details ||  userRole !== 'สัตวแพทย์'} >ดาวน์โหลด PDF</Button>
         <Button onClick={handleCloseDialog} color="secondary">
           ปิด
         </Button>
