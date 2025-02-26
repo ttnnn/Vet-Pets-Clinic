@@ -13,6 +13,8 @@ import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 import { clinicAPI } from "../../utils/api";
 import 'dayjs/locale/th';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 dayjs.locale('th');
 
@@ -34,8 +36,11 @@ const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
+const formatDateAdmit = (dateTimeString) => {
+  return dayjs(dateTimeString).format('DD MMMM YYYY');
+};
 const formatAdmit = (dateTimeString) => {
-  return dayjs.parseZone(dateTimeString).format('HH:mm:ss'); // ดึงเวลาแบบไม่แปลงเขตเวลา
+  return dayjs(dateTimeString).format('HH:mm');
 };
 
 
@@ -58,7 +63,7 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {formatDate(record.record_time)} เวลา: {formatAdmit(record.record_time)}
+      วันที่บันทึก: {(record.record_time)} เวลา: {(record.record_time)}
     </Typography>
 
   </Box>
@@ -122,7 +127,6 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
   const handleCloseDetails = () => {
     setSelectedRecord(null); // ล้างข้อมูลการเลือก
   };
-
 
   return (
     <Box display="flex">
@@ -212,7 +216,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
                   ข้อมูลการบันทึก
                 </Typography>
                 <Typography variant="body1">
-                  <strong>วันที่บันทึก: </strong>{formatDate(selectedRecord.record_time)}
+                  <strong>วันที่บันทึก: </strong>{formatDateAdmit(selectedRecord.record_time)}
                 </Typography>
                 <Typography variant="body1">
                   <strong>เวลา: </strong>{formatAdmit(selectedRecord.record_time)}
@@ -233,9 +237,7 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
         </Button>
       </Box>
     </Box>
-    
   );
-  
 };
 
 
@@ -316,7 +318,6 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกอุณหภูมิที่ถูกต้อง");
       setAlertSeverity("warning");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
-      setIsSubmitting(false); 
       return;
     }
   
@@ -324,7 +325,6 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกข้อมูลบันทึกอาการ");
       setAlertSeverity("warning");  // ประเภทของ Alert
       setOpenSnackbar(true);  // เปิดการแสดง Snackbar
-      setIsSubmitting(false); 
       return;
     }
     const pressureRegex = /^\d{2,3}\/\d{2,3}$/; // รูปแบบต้องเป็น "ตัวเลข/ตัวเลข" เช่น 120/80
@@ -332,7 +332,6 @@ const RecordMedical = ({
       setAlertMessage("กรุณากรอกค่าความดันโลหิตในรูปแบบที่ถูกต้อง เช่น 120/80");
       setAlertSeverity("warning");
       setOpenSnackbar(true);
-      setIsSubmitting(false); 
       return;
     }
 
@@ -442,7 +441,7 @@ const RecordMedical = ({
               key={index}
               appointment={appointment}
               onOpenDialog={handleOpenDialog}
-              updatedRecords={recordUpdate}
+              updatedRecords={recordUpdate  }
             />
           ))}
         </Box>
