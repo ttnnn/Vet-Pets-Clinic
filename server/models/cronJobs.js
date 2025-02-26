@@ -14,6 +14,9 @@ const setupCronJobs = (io) => {
     }, 1000 * 60 * 5); // ตัดงานถ้าเกิน 5 นาที
   
     try {
+      const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+      const currentHour = new Date(bangkokTime).getHours(); // Move this up
+  
       const query = `
         SELECT * FROM appointment
         WHERE appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
@@ -31,14 +34,11 @@ const setupCronJobs = (io) => {
           playSound: true,
         });
       }
-      
-      if (currentHour >= 21) {
+  
+      if (currentHour >= 21) { // Now this works
         console.log("Cron job stopped after 21:00");
         return;
       }
-  
-      const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
-      const currentHour = new Date(bangkokTime).getHours();
   
       if (currentHour >= 20) {
         const updateQuery = `
@@ -63,6 +63,7 @@ const setupCronJobs = (io) => {
       clearTimeout(job);
     }
   });
+  
   
   
 
