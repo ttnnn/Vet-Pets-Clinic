@@ -1336,6 +1336,23 @@ router.get("/admitrecord", (req, res) => {
   });
 });
 
+router.delete('/admitrecord/:recordId', async (req, res) => {
+  const { recordId } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM admitrecord WHERE admit_id = $1', [recordId]);
+
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Record deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Record not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting record:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 router.get('/admitrecord/update', async (req, res) => { 
   const query = 
     'SELECT * FROM admitrecord'

@@ -225,7 +225,9 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                               >
                                 ปล่อยกลับ
                               </Button>
-                              <Button variant="contained" color="primary"  sx={{ mr: 1 }}  onClick={() => handleToAdmit(appointment)} >
+                              <Button variant="contained" color="primary"  sx={{ mr: 1 }} 
+                               disabled={userRole !== 'สัตวแพทย์'}
+                               onClick={() => handleToAdmit(appointment)} >
                                 ขยายเวลา
                               </Button>
                               
@@ -235,8 +237,6 @@ const AdmitTable = ({ appointments, onMoveToPending}) => {
                               >
                                 บันทึกรักษา
                               </Button>
-                              
-                              
                               
                             </Box>
                           </TableCell>

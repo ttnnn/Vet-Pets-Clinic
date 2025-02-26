@@ -151,20 +151,55 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
+  // const generatePDF = () => {
+    // const input = document.getElementById('pdf-content');
+    // html2canvas(input, { scale: 2 }).then((canvas) => {
+      // const pdf = new jsPDF();
+      // const imgData = canvas.toDataURL('image/png');
+
+      // pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
+
+      // pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
+      // pdf.setFontSize(8);
+
+      // pdf.save(`Medical_History_${details.appointmentId}.pdf`);
+    // });
+  // };
+
+
   const generatePDF = () => {
-    const input = document.getElementById('pdf-content');
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const pdf = new jsPDF();
-      const imgData = canvas.toDataURL('image/png');
-
-      pdf.addImage('/Logo.jpg', 'JPEG', 80, 5, 50, 50); // เพิ่มโลโก้ที่หัว PDF
-
-      pdf.addImage(imgData, 'PNG', 10, 75, 190, 0);
-      pdf.setFontSize(10);
-
-      pdf.save(`Medical_History_${details.appointmentId}.pdf`);
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
     });
-  };
+
+    const content = document.getElementById('pdf-content');
+
+    // โหลดรูปโลโก้ (ต้องเป็น Base64 หรือ URL)
+    const logoUrl = '/Logo.jpg'; // เปลี่ยนเป็นพาธรูปของคุณ
+
+    const imgWidth = 30; // กำหนดขนาดโลโก้
+    const imgHeight = 30;
+    const xPos = 10; // ตำแหน่ง X ของโลโก้
+    const yPos = 10; // ตำแหน่ง Y ของโลโก้
+
+    // โหลดรูปภาพก่อนสร้าง PDF
+    const img = new Image();
+    img.src = logoUrl;
+    img.onload = function () {
+        pdf.addImage(img, 'JPEG', xPos, yPos, imgWidth, imgHeight); // เพิ่มรูปภาพใน PDF
+
+        // ดันเนื้อหาลงไปให้ไม่ทับกับโลโก้
+        pdf.html(content, {
+            callback: function (pdf) {
+                pdf.save('document.pdf');
+            },
+            x: 10,
+            y: yPos + imgHeight + 5 // เลื่อนเนื้อหาลงมาต่ำกว่ารูปภาพ
+        });
+    };
+};
 
 
   const handleRequestSort = (event, property) => {

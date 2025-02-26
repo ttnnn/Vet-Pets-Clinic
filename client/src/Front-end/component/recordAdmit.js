@@ -37,10 +37,11 @@ const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
 const formatDateAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).format('DD MMMM YYYY');
+  return dayjs(dateTimeString).local().format('DD/MM/YYYY');
 };
+
 const formatAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).format('HH:mm');
+  return dayjs(dateTimeString).local().format('HH:mm:ss');
 };
 
 
@@ -50,6 +51,27 @@ const AddRecordButton = ({ onClick }) => (
     เพิ่มบันทึก
   </Button>
 );
+const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+const [recordToDelete, setRecordToDelete] = useState(null);
+const confirmDeleteRecord = (recordId) => {
+  setRecordToDelete(recordId);
+  setOpenConfirmDialog(true);
+};
+const handleConfirmDelete = async () => {
+  try {
+    const response = await clinicAPI.delete(`/admitrecord/${recordToDelete}`);
+    if (response.status === 200) {
+      alert('ลบบันทึกสำเร็จ!');
+      setUpdateRecords((prevRecords) => prevRecords.filter((record) => record.record_id !== recordToDelete));
+    }
+  } catch (error) {
+    console.error('Error deleting record:', error);
+    alert('เกิดข้อผิดพลาดในการลบบันทึก');
+  } finally {
+    setOpenConfirmDialog(false);
+    setRecordToDelete(null);
+  }
+};
 
 const RecordCard = ({ record }) => (
   <Box
@@ -63,8 +85,16 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {(record.record_time)} เวลา: {(record.record_time)}
+      วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
     </Typography>
+    <Button
+      variant="contained"
+      color="secondary"
+      size="small"
+      onClick={() => confirmDeleteRecord(record.admit_id)}
+    >
+      ลบบันทึก
+    </Button>
 
   </Box>
 );
@@ -236,8 +266,26 @@ const CardLayout = ({ appointment, onOpenDialog, updatedRecords }) => {
           {isExpanded ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
         </Button>
       </Box>
+            <Dialog
+        open={openConfirmDialog}
+        onClose={() => setOpenConfirmDialog(false)}
+      >
+        <DialogTitle>ยืนยันการลบบันทึก</DialogTitle>
+        <DialogContent>คุณแน่ใจหรือว่าต้องการลบบันทึกนี้?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenConfirmDialog(false)} color="primary">
+            ยกเลิก
+          </Button>
+          <Button onClick={handleConfirmDelete} color="secondary">
+            ยืนยัน
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
+    
   );
+  
 };
 
 
@@ -441,7 +489,7 @@ const RecordMedical = ({
               key={index}
               appointment={appointment}
               onOpenDialog={handleOpenDialog}
-              updatedRecords={recordUpdate  }
+              updatedRecords={recordUpdate}
             />
           ))}
         </Box>
