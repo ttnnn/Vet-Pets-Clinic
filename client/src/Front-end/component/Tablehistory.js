@@ -5,6 +5,7 @@ import {
   DialogTitle, DialogContent, DialogActions,Divider,CircularProgress
 } from '@mui/material';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -150,106 +151,25 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
+  const generatePDF = () => { 
+    const input = document.getElementById('pdf-content');
+    html2canvas(input, { scale: 2 }).then((canvas) => {
+      const pdf = new jsPDF();
+      const imgData = canvas.toDataURL('image/png');
+      
+      // ปรับขนาดโลโก้
+      pdf.addImage('/Logo.jpg', 'JPEG', 10, 5, 30, 30); // ลดขนาดโลโก้ให้เล็กลง (30x30)
   
-  const loadFont = async (pdf) => {
-    const response = await fetch("/fonts/THSarabunNew.ttf"); // โหลดฟอนต์จาก public
-    const fontBuffer = await response.arrayBuffer(); // แปลงเป็น ArrayBuffer
-    const fontBase64 = btoa(String.fromCharCode(...new Uint8Array(fontBuffer))); // แปลงเป็น Base64
-  
-    // เพิ่มฟอนต์เข้า jsPDF
-    pdf.addFileToVFS("THSarabunNew.ttf", fontBase64);
-    pdf.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
-    pdf.setFont("THSarabunNew");
-    pdf.setFontSize(16);
-  };
-  
-  const generatePDF = async (details) => {
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
+      // ขนาดของภาพที่แปลงจาก canvas
+      pdf.addImage(imgData, 'PNG', 10, 40, 190, 0); // ปรับขนาดภาพเนื้อหาให้เหมาะสม
+      pdf.setFontSize(8); // ปรับขนาดฟอนต์ให้เล็กลง
+      pdf.save(`Medical_History_${details.appointmentId}.pdf`);
     });
-  
-    // โหลดฟอนต์ให้เสร็จก่อน
-    await loadFont(pdf);
-  
-    //เพิ่มโลโก้
-    const logoUrl = "/Logo.jpg";
-    const imgWidth = 30;
-    const imgHeight = 30;
-    pdf.addImage(logoUrl, "JPEG", 10, 10, imgWidth, imgHeight);
-  
-    let y = 50; // ตำแหน่งเริ่มต้นของเนื้อหา
-  
-    //ส่วนข้อมูลทั่วไป
-    pdf.text("ข้อมูลทั่วไป", 10, y);
-    y += 8;
-    pdf.text(`ชื่อสัตว์เลี้ยง: ${details.pet_name || "ไม่มีข้อมูล"}`, 10, y);
-    y += 7;
-    pdf.text(`เจ้าของสัตว์เลี้ยง: ${details.owner_name || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`เลขที่นัดหมาย: ${details.appointment_id || "ไม่มีข้อมูล"}`, 10, y);
-    y += 7;
-    pdf.text(`สัตวแพทย์ที่รับผิดชอบ: ${details.personnel_name || "ไม่มีข้อมูล"}`, 10, y);
-    y += 7;
-    pdf.text(
-      `แก้ไขล่าสุด: ${details.rec_time ? dayjs(details.rec_time).format("DD MMMM YYYY HH:mm") : "-"}`,
-      10,
-      y
-    );
-    y += 10;
-  
-    pdf.line(10, y, 200, y); // เส้นคั่น
-    y += 10;
-  
-    //  ส่วนการวินิจฉัย
-    pdf.text("ข้อมูลการวินิจฉัย", 10, y);
-    y += 8;
-    pdf.text(`CC: ${details.diag_cc || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`HT: ${details.diag_ht || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`PE: ${details.diag_pe || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`ปัญหาหลัก: ${details.diag_majorproblem || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`Tentative DX: ${details.diag_tentative || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`Final DX: ${details.diag_final || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`การรักษา: ${details.diag_treatment || "-"}`, 10, y);
-    y += 7;
-    pdf.text(`หมายเหตุ: ${details.diag_note || "-"}`, 10, y);
-    y += 10;
-  
-    pdf.line(10, y, 200, y); // เส้นคั่น
-    y += 10;
-  
-    //  ส่วนการตรวจร่างกาย
-    pdf.text("ผลการตรวจร่างกาย", 10, y);
-    y += 8;
-  
-    const phyData = Object.entries(details)
-      .filter(([key, value]) => key.startsWith("phy_") && value !== "no exam" && value !== null)
-      .map(([key, value]) => `${key.replace("phy_", "").replace(/_/g, " ").toUpperCase()}: ${value}`);
-  
-    if (phyData.length > 0) {
-      phyData.forEach((text) => {
-        pdf.text(text, 10, y);
-        y += 7; // เพิ่มระยะห่างระหว่างบรรทัด
-      });
-    } else {
-      pdf.text("ไม่มีข้อมูลการตรวจร่างกาย", 10, y);
-    }
-  
-    // ตั้งชื่อไฟล์ PDF อย่างถูกต้อง
-    const fileName = `นัดหมาย_${details.appointment_id || " "}.pdf`
-      .replace(/[:\/\\?*<>|"]/g, ""); // ลบอักขระที่ไม่ถูกต้องออก
-  
-    pdf.save(fileName);
   };
   
-  
+
+
+
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -399,7 +319,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => generatePDF(details)} color="primary" disabled={loading || !details ||  userRole !== 'สัตวแพทย์'} >ดาวน์โหลด PDF</Button>
+        <Button onClick={generatePDF} color="primary" disabled={loading || !details ||  userRole !== 'สัตวแพทย์'} >ดาวน์โหลด PDF</Button>
         <Button onClick={handleCloseDialog} color="secondary">
           ปิด
         </Button>
