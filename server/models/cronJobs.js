@@ -14,8 +14,10 @@ const setupCronJobs = (io) => {
     }, 1000 * 60 * 5); // ตัดงานถ้าเกิน 5 นาที
   
     try {
+      
       const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
-      const currentHour = new Date(bangkokTime).getHours(); // Move this up
+      const currentDateTime = new Date(bangkokTime);
+      const currentHour = currentDateTime.getHours(); // ✅ currentHour ถูกประกาศก่อนใช้งาน
   
       const query = `
         SELECT * FROM appointment
@@ -34,7 +36,7 @@ const setupCronJobs = (io) => {
           playSound: true,
         });
       }
-  
+
       if (currentHour >= 20) {
         const updateQuery = `
           UPDATE appointment
@@ -51,7 +53,8 @@ const setupCronJobs = (io) => {
           message: 'มีคิวที่ถูกยกเลิกเนื่องจากเลยเวลา 20:00 น.',
           playSound: true,
         });
-      }
+      }  
+
     } catch (error) {
       console.error("Error in cron job:", error);
     } finally {
