@@ -37,12 +37,23 @@ const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 // ฟังก์ชัน formatDate สำหรับวันที่
 
 const formatDateAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).format('DD MMMM YYYY');
-};
-const formatAdmit = (dateTimeString) => {
-  return dayjs(dateTimeString).format('HH:mm');
+  const date = new Date(dateTimeString);
+  return date.toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 };
 
+const formatAdmit = (dateTimeString) => {
+  const date = new Date(dateTimeString);
+  return date.toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+};
 
 // Reusable Button Component
 const AddRecordButton = ({ onClick }) => (
@@ -63,7 +74,7 @@ const RecordCard = ({ record }) => (
     flex='1'
   >
     <Typography variant="body1" fontWeight="bold">
-      วันที่บันทึก: {(record.record_time)} เวลา: {(record.record_time)}
+      วันที่บันทึก: {formatDateAdmit(record.record_time)} เวลา: {formatAdmit(record.record_time)}
     </Typography>
 
   </Box>
