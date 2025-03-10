@@ -16,12 +16,10 @@ const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
 const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 
-const formatdateedit = (datetime) => {
-  // ลบค่า +00 ออกก่อน แล้วใช้ dayjs แสดงวันที่และเวลา
-  const cleanedDatetime = datetime.replace(/\+\d{2}$/, '');  // ตัด +00 ออก
-  return dayjs(cleanedDatetime).format('D MMMM YYYY เวลา HH:mm:ss'); // แสดงวันที่และเวลา
-};
+const formattime = (datetime) => {  
+  return datetime.slice(11, 19); // ดึงเฉพาะ HH:mm:ss
 
+};
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) return -1;
   if (b[orderBy] > a[orderBy]) return 1;
@@ -56,9 +54,9 @@ const CardLayout = ({ appointment ,handleOpenDialog }) => (
         </Typography>
       </Box>
 
-      <Typography variant="body2" color="textSecondary">
-    แก้ไขล่าสุด : {appointment.rec_time ? formatdateedit(appointment.rec_time) : '-'}
-  </Typography>
+   <Typography variant="body2" fontWeight="textSecondary">
+      แก้ไขล่าสุด : {formatDate2(record.record_time)} เวลา: {formattime(record.record_time)}
+   </Typography>
      
 </Box>
 </Box>
@@ -172,7 +170,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
       pdf.addImage('/Logo.jpg', 'JPEG', pageWidth - logoWidth - marginRight, marginTop, logoWidth, logoHeight);
   
     // ลดขนาดของภาพเนื้อหาให้เล็กลง
-      const imageWidth = 80; // กำหนดความกว้างใหม่ (ลดลงจาก 100)
+      const imageWidth = 90; // กำหนดความกว้างใหม่ (ลดลงจาก 100)
       const imageHeight = 0; // ตั้งค่าเป็น 0 เพื่อให้รักษาสัดส่วนอัตโนมัติ
       pdf.addImage(imgData, 'PNG', 10, 40, imageWidth, imageHeight);
 
@@ -298,9 +296,9 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
             <Typography variant="body1">เจ้าของสัตว์เลี้ยง : {details.owner_name || '-'}</Typography>
             <Typography variant="body1">เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
             <Typography variant="body1">สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
-            <Typography variant="body2" color="textSecondary">
-              แก้ไขล่าสุด : {details.rec_time ? formatdateedit(details.rec_time) : '-'}
-            </Typography>
+              <Typography variant="body2" fontWeight="textSecondary">
+                 แก้ไขล่าสุด : {formatDate2(record.record_time)} เวลา: {formattime(record.record_time)}
+              </Typography>
             <Divider sx={{ my: 2 }} />
         
             {/* ส่วนการวินิจฉัย */}

@@ -15,6 +15,7 @@ router.use('/public', express.static(path.join(__dirname, '../../client/public')
 const cloudinary = require('../models/cloudinary'); 
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const jwt = require('jsonwebtoken');
+const forgotPasswordRoute = require('../models/sendemail'); 
 const secretKey = 'your_secret_key'; // คีย์ลับสำหรับสร้าง Token
 const tokenExpiry = '1h'; // อายุของ Token
 
@@ -27,6 +28,8 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({ storage });
+// เรียกใช้ API ใหม่
+router.use('/auth', forgotPasswordRoute); // ใช้งาน API ที่ /api/auth/forgot-password
 
 // Upload route
 router.post('/uploads', upload.single('image'), (req, res) => {
