@@ -134,7 +134,7 @@ router.put('/pets/:id', async (req, res) => {
   } = req.body;
 
   try {
-      const result = await pool.query(
+       await pool.query(
         'UPDATE pets SET owner_id = $1, pet_name = $2, pet_color = $3, pet_breed = $4, pet_gender = $5, pet_birthday = $6, spayed_neutered = $7, microchip_number = $8, pet_species = $9 WHERE pet_id = $10',
         [owner_id, pet_name, pet_color, pet_breed, pet_gender, pet_birthday, spayed_neutered, microchip_number, pet_species, id]
       );
@@ -541,7 +541,7 @@ router.post('/pets', async (req, res) => {
   const { 
     owner_id, 
     pet_name,
-    pet_color,
+    pet_color = null,
     pet_breed,
     pet_gender, 
     pet_birthday, 
@@ -565,8 +565,8 @@ router.post('/pets', async (req, res) => {
 `;
 
   try {
-    const result = await pool.query(sql, [
-      owner_id, pet_name, pet_color, pet_breed, pet_gender, 
+   await pool.query(sql, [
+      owner_id, pet_name, pet_color || null, pet_breed, pet_gender, 
       pet_birthday, spayed_neutered, microchip_number, 
       pet_species
     ]);

@@ -167,17 +167,11 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   
       pdf.addImage('/Logo.jpg', 'JPEG', pageWidth - logoWidth - marginRight, marginTop, logoWidth, logoHeight);
   
-      // คำนวณขนาดรูปภาพให้เล็กลง (ลดลง 50% จากต้นฉบับ)
-      const originalWidth = canvas.width;  
-      const originalHeight = canvas.height;
-      const scaleFactor = 0.5; // ปรับอัตราส่วนให้เล็กลง 50%
-  
-      const imageWidth = (originalWidth * scaleFactor) / 2; 
-      const imageHeight = (originalHeight * scaleFactor) / 2;
-  
-      // เพิ่มภาพที่ถูกลดขนาดลงไปใน PDF
+    // ลดขนาดของภาพเนื้อหาให้เล็กลง
+      const imageWidth = 80; // กำหนดความกว้างใหม่ (ลดลงจาก 100)
+      const imageHeight = 0; // ตั้งค่าเป็น 0 เพื่อให้รักษาสัดส่วนอัตโนมัติ
       pdf.addImage(imgData, 'PNG', 10, 40, imageWidth, imageHeight);
-  
+
       // เพิ่มเวลาออกใบสั่งที่มุมขวาล่าง
       const currentDateTime = new Date().toLocaleString();
       pdf.setFontSize(8);
