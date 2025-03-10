@@ -55,7 +55,7 @@ const CardLayout = ({ appointment ,handleOpenDialog }) => (
       </Box>
 
    <Typography variant="body2" fontWeight="textSecondary">
-      แก้ไขล่าสุด : {formatDate2(record.record_time)} เวลา: {formattime(record.record_time)}
+      แก้ไขล่าสุด : {formatDate2(details.record_time)} เวลา: {formattime(details.record_time)}
    </Typography>
      
 </Box>
@@ -297,7 +297,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
             <Typography variant="body1">เลขที่นัดหมาย : {details.appointment_id || 'ไม่มีข้อมูล'}</Typography>
             <Typography variant="body1">สัตวแพทย์ที่รับผิดชอบ : {details.personnel_name || 'ไม่มีข้อมูล'}</Typography>
               <Typography variant="body2" fontWeight="textSecondary">
-                 แก้ไขล่าสุด : {formatDate2(record.record_time)} เวลา: {formattime(record.record_time)}
+                 แก้ไขล่าสุด : {formatDate2(details.record_time)} เวลา: {formattime(details.record_time)}
               </Typography>
             <Divider sx={{ my: 2 }} />
         
