@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt'); 
+const pool = require('../db.js');
 
 // ฟังก์ชันสร้างรหัสผ่านใหม่แบบสุ่ม
 const generateRandomPassword = () => {
