@@ -30,7 +30,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
 
-
+  
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
       calculateAge(newDate);
