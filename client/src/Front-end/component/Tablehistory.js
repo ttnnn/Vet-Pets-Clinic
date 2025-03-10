@@ -151,24 +151,42 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     setDetails(null);
   };
 
-  const generatePDF = () => { 
+  const generatePDF = () => {
     const input = document.getElementById('pdf-content');
+  
     html2canvas(input, { scale: 2 }).then((canvas) => {
       const pdf = new jsPDF();
       const imgData = canvas.toDataURL('image/png');
-      
-      // ปรับขนาดโลโก้
-      pdf.addImage('/Logo.jpg', 'JPEG', 10, 5, 30, 30); // ลดขนาดโลโก้ให้เล็กลง (30x30)
   
-      // ขนาดของภาพที่แปลงจาก canvas
-      pdf.addImage(imgData, 'PNG', 10, 40, 190, 0); // ปรับขนาดภาพเนื้อหาให้เหมาะสม
-      pdf.setFontSize(8); // ปรับขนาดฟอนต์ให้เล็กลง
+      // คำนวณตำแหน่งโลโก้ให้อยู่มุมขวาบน
+      const pageWidth = pdf.internal.pageSize.width; // ความกว้างของหน้า PDF
+      const logoWidth = 30; // กำหนดขนาดโลโก้
+      const logoHeight = 30;
+      const marginRight = 10; // ระยะห่างจากขอบขวา
+      const marginTop = 5; // ระยะห่างจากขอบบน
+  
+      pdf.addImage('/Logo.jpg', 'JPEG', pageWidth - logoWidth - marginRight, marginTop, logoWidth, logoHeight);
+  
+      // คำนวณขนาดรูปภาพให้เล็กลง (ลดลง 50% จากต้นฉบับ)
+      const originalWidth = canvas.width;  
+      const originalHeight = canvas.height;
+      const scaleFactor = 0.5; // ปรับอัตราส่วนให้เล็กลง 50%
+  
+      const imageWidth = (originalWidth * scaleFactor) / 2; 
+      const imageHeight = (originalHeight * scaleFactor) / 2;
+  
+      // เพิ่มภาพที่ถูกลดขนาดลงไปใน PDF
+      pdf.addImage(imgData, 'PNG', 10, 40, imageWidth, imageHeight);
+  
+      // เพิ่มเวลาออกใบสั่งที่มุมขวาล่าง
+      const currentDateTime = new Date().toLocaleString();
+      pdf.setFontSize(8);
+      pdf.text(`Date Issued: ${currentDateTime}`, 150, 290); // ตำแหน่งมุมขวาล่าง
+  
       pdf.save(`Medical_History_${details.appointmentId}.pdf`);
     });
   };
   
-
-
 
 
   const handleRequestSort = (event, property) => {

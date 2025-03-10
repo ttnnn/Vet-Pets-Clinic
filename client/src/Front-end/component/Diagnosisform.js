@@ -255,7 +255,7 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
       diagnosisData: formData,
       physicalData: formphysical,
       
-    };
+    };  
     
     // console.log("rec_temperature:", parseFloat(formMedical.rec_temperature));
     // console.log("rec_weight:", parseFloat(formMedical.rec_weight));

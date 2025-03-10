@@ -312,8 +312,9 @@ const PendingAppointments = ({ appointments ,update}) => {
 
   const filteredCategories = categories.filter(service => 
     (!selectedCategory || service.category_type === selectedCategory) &&
-    (!searchTerm || service.category_name.includes(searchTerm))
-  );
+    (!searchTerm || service.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
+ );
+ 
   const paginatedCategories = filteredCategories.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage

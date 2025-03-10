@@ -44,15 +44,8 @@ const formatDateAdmit = (dateTimeString) => {
     year: 'numeric',
   });
 };
-
-const formatAdmit = (dateTimeString) => {
-  const date = new Date(dateTimeString);
-  return date.toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+const formatAdmit = (datetime) => {
+  return datetime.split(" ")[1]; // แยกเอาเฉพาะส่วนของเวลา
 };
 
 // Reusable Button Component

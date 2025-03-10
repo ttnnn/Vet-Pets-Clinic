@@ -75,7 +75,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     const petData = {
         owner_id: selectedOwnerId,
         pet_name: petName,
-        pet_color: petColor,
+        pet_color: petColor || '',
         pet_breed: petBreed || '',
         pet_gender: gender,
         pet_birthday: birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "",

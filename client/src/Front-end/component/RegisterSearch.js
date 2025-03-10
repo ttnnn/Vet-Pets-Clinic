@@ -92,16 +92,21 @@ const RegisterSearch = () => {
     
     
         {/* Always display TextField for phone number */}
-        <TextField
-          label="เบอร์โทรศัพท์"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId)?.phone_number || '' : ''}
-          InputProps={{
-            readOnly: true, // Make phone number read-only
-          }}
-          sx={{ width: '48%' }}  // Set width to 48% for balance with the autocomplete field
+        <Autocomplete 
+          options={owners || []}
+          getOptionLabel={(owner) => owner.phone_number}
+          onChange={(event, value) => setSelectedOwnerId(value ? value.owner_id : null)}
+          value={selectedOwnerId ? owners.find(owner => owner.owner_id === selectedOwnerId) || null : null}
+          isOptionEqualToValue={(option, value) => option?.owner_id === value?.owner_id}
+          renderInput={(params) => (
+            <TextField {...params} label="ค้นหาด้วยเบอร์โทรศัพท์" variant="outlined" fullWidth margin="normal" />
+          )}
+          sx={{ width: '48%' }}
+          renderOption={(props, option) => (
+            <li {...props} key={option.owner_id}>
+              {option.phone_number}
+            </li>
+          )}
         />
       </Box>
 

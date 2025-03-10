@@ -314,7 +314,7 @@ const RegisterPage = () => {
             {activeTab === 0 ? (
               <Box>
                 <Typography variant="h5" gutterBottom>
-                  ลงทะเบียนสัตว์เลี้ยงใหม่
+                  ลงทะเบียนลูกค้าใหม่
                 </Typography>
                 <Snackbar
                   open={snackbar.open}
