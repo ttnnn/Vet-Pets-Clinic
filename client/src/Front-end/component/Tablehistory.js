@@ -55,7 +55,7 @@ const CardLayout = ({ appointment ,handleOpenDialog }) => (
       </Box>
 
    <Typography variant="body2" fontWeight="textSecondary">
-      แก้ไขล่าสุด : {formatDate2(details.record_time)} เวลา: {formattime(details.record_time)}
+      แก้ไขล่าสุด : {formatDate2(appointment.record_time)} เวลา: {formattime(appointment.record_time)}
    </Typography>
      
 </Box>
