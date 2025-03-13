@@ -75,7 +75,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     const petData = {
         owner_id: selectedOwnerId,
         pet_name: petName,
-        pet_color: petColor || null,
+        pet_color: petColor ? petColor : null,
         pet_breed: petBreed || '',
         pet_gender: gender,
         pet_birthday: birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "",
@@ -83,6 +83,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         microchip_number: petMicrochip,
         pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
     };
+    console.log('petData',petData)
     setLoading(true);
     try {
         const response = await clinicAPI.post(`/pets`, petData, {
