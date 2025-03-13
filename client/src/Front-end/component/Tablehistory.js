@@ -16,10 +16,8 @@ const formatDate2 = (dateString) => dayjs(dateString).format('DD MMMM YYYY');
 const formatDate = (dateString) => dayjs(dateString).format('DD/MM/YYYY');
 const formatTime = (timeString) => timeString?.split(':').slice(0, 2).join(':');
 
-const formattime = (datetime) => {  
-  return datetime.slice(11, 19); // ดึงเฉพาะ HH:mm:ss
+const formattime = (datetime) => datetime?.slice(11, 19) || '';
 
-};
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) return -1;
   if (b[orderBy] > a[orderBy]) return 1;
