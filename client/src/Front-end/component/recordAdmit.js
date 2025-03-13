@@ -46,9 +46,10 @@ const formatDateAdmit = (dateTimeString) => {
 };
 
 const formatAdmit = (datetime) => {  
-  return datetime.slice(11, 19); // ดึงเฉพาะ HH:mm:ss
+  return datetime.slice(11, 19) || ''; // ดึงเฉพาะ HH:mm:ss
 
 };
+
 
 // Reusable Button Component
 const AddRecordButton = ({ onClick }) => (
