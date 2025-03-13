@@ -75,7 +75,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     const petData = {
         owner_id: selectedOwnerId,
         pet_name: petName,
-        pet_color: petColor || '',
+        pet_color: petColor || null,
         pet_breed: petBreed || '',
         pet_gender: gender,
         pet_birthday: birthDate ? dayjs(birthDate).format("YYYY-MM-DD") : "",
@@ -208,7 +208,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
 
       <TextField
         label="สี/ตำหนิ"
-        value={petColor || ''}
+        value={petColor || null}
         fullWidth
         onChange={(e) => setPetColor(e.target.value)}
         sx={{ mb: 2 , mt:2}}
