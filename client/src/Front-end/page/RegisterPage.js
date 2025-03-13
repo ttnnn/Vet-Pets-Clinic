@@ -100,7 +100,7 @@ const RegisterPage = () => {
     
     const finalPetBreed = petSpecies === "อื่นๆ" ? otherPetSpecies : petBreed;
 
-    if (!petName || !petColor || !petBreed || !gender || !birthDate ) {
+    if (!petName || !petBreed || !gender || !birthDate ) {
       handleSnackbarOpen('กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึก!', 'error');
       return;
     }
@@ -602,11 +602,9 @@ const RegisterPage = () => {
                 options={petSpecies === "แมว" ? CatBreed : petSpecies === "สุนัข" ? DogBreed : []}
                 value={petBreed}
                 onChange={(event, newValue) => {
-                  console.log("เลือกพันธุ์:", newValue); // Debugging
                   setPetBreed(newValue);
                 }}
                 onInputChange={(event, newInputValue) => {
-                  console.log("พิมพ์พันธุ์เอง:", newInputValue);
                   setPetBreed(newInputValue);
                 }}
                 renderInput={(params) => (
