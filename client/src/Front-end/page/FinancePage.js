@@ -72,7 +72,6 @@ const FinancePage = () => {
       setDataFinance(response.data);
     } catch (error) {
       console.error('Error fetching DataFinance:', error);
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการโหลดข้อมูล', severity: 'error' });
     } finally {
       setLoading(false);
     }
