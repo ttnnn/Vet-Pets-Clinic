@@ -118,10 +118,15 @@ const TimeSlotPicker = ({ TypeService, selectedDate, onTimeSelect }) => {
   };
 
   const isBooked = (time) => {
-    const startTime = time.split(' - ')[0]; // ดึงเฉพาะเวลาเริ่มต้น
-    return bookedSlots.some(slot => slot.startsWith(startTime)); // เปรียบเทียบเฉพาะ "HH:MM"
+    if (!time || typeof time !== 'string') return false; // ตรวจสอบว่า time เป็น string หรือไม่
+
+    const startTime = time.split(' - ')[0] || ''; // ดึงเฉพาะเวลาเริ่มต้น
+
+    if (!Array.isArray(bookedSlots) || bookedSlots.length === 0) return false; // ตรวจสอบ bookedSlots
+
+    return bookedSlots.some(slot => typeof slot === 'string' && slot.startsWith(startTime));
   };
-  
+
   
 
   return (
