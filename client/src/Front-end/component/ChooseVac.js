@@ -174,6 +174,9 @@ const ChooseVac = ({
                 <Typography>
                   ประเภทบริการ: {appointmentDetails.type_service}
                 </Typography>
+                <Typography>
+                    หมายเหตุ: {appointmentDetails.reason}
+                </Typography>
                 <Typography variant="h6" mt={2}>
                   ข้อมูลสัตว์เลี้ยง
                 </Typography>

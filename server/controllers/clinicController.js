@@ -321,34 +321,38 @@ router.post('/appointments/:appointmentId/vaccines', async (req, res) => {
       throw new Error('Appointment not found');
     }
 
-    // 2. ตรวจสอบการมีอยู่ของ vaccine
-    const vaccineRes = await client.query(
-      'SELECT * FROM servicecategory WHERE category_id = $1 and active = true' ,
-      [vaccine_id]
-    );
-    if (vaccineRes.rows.length === 0) {
-      throw new Error('Vaccine not found');
+    // 2. ตรวจสอบการมีอยู่ของวัคซีนหลายตัว
+    for (const vaccineId of vaccine_id) {
+      const vaccineRes = await client.query(
+        'SELECT * FROM servicecategory WHERE category_id = $1 AND active = true',
+        [vaccineId]
+      );
+      if (vaccineRes.rows.length === 0) {
+        throw new Error(`Vaccine with id ${vaccineId} not found or inactive`);
+      }
     }
 
-    // 3. เพิ่มข้อมูลลงใน history_vac_id
-    await client.query(
-      'INSERT INTO historyvaccine (appointment_id, category_id, pet_id, notes) VALUES ($1, $2, $3, $4)',
-      [appointmentId, vaccine_id, pet_id, notes]
+    // 3. เพิ่มข้อมูลลงใน history_vac_id สำหรับวัคซีนแต่ละตัว
+    const vaccineInsertPromises = vaccine_id.map(vaccineId => 
+      client.query(
+        'INSERT INTO historyvaccine (appointment_id, category_id, pet_id, notes) VALUES ($1, $2, $3, $4)',
+        [appointmentId, vaccineId, pet_id, notes]
+      )
     );
+
+    await Promise.all(vaccineInsertPromises); // ใช้ Promise.all เพื่อรอให้ insert ทุกตัวเสร็จ
 
     await client.query('COMMIT'); // ยืนยัน transaction
 
-    res.status(200).json({ message: 'Vaccine added to appointment successfully' });
+    res.status(200).json({ message: 'Vaccines added to appointment successfully' });
   } catch (error) {
     await client.query('ROLLBACK'); // ยกเลิก transaction ในกรณีที่มีข้อผิดพลาด
-    console.error('Error while saving vaccine to appointment:', error.message);
+    console.error('Error while saving vaccines to appointment:', error.message);
     res.status(500).json({ error: error.message });
   } finally {
     client.release(); // ปล่อย client
   }
 });
-
-
 
 // API Endpoint สำหรับสร้าง Service ID
 router.post('/servicecategory', async (req, res) => {
