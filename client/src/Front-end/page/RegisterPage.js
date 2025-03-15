@@ -100,7 +100,7 @@ const RegisterPage = () => {
     
     const finalPetBreed = petSpecies === "อื่นๆ" ? otherPetSpecies : petBreed;
 
-    if (!petName || !petBreed || !gender || !birthDate ) {
+    if (!petName || !petBreed ) {
       handleSnackbarOpen('กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึก!', 'error');
       return;
     }

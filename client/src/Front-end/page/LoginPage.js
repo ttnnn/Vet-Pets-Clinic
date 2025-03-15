@@ -33,6 +33,13 @@ const LoginPage = ({ onLogin }) => {
     setForgotEmail(email);
     setEmailError(email && !validateEmail(email)); // ถ้ากรอกผิดให้แสดง error
   };
+  const handleCloseForgotDialog = () => {
+    setForgotDialogOpen(false);
+    setForgotEmail('');
+    setForgotUsername('');
+    setEmailError(false);
+  };
+  
 
   const handleLogin = async () => {
     setUsernameError(false);
@@ -178,7 +185,7 @@ const LoginPage = ({ onLogin }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setForgotDialogOpen(false)}>ยกเลิก</Button>
+           <Button onClick={handleCloseForgotDialog}>ยกเลิก</Button>
           <Button onClick={handleForgotPassword} color="primary" variant="contained" disabled={forgotLoading}>
             {forgotLoading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'ส่งคำขอ'}
           </Button>
