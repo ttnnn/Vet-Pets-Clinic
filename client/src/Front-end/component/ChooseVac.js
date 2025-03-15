@@ -31,7 +31,7 @@ const ChooseVac = ({
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [vaccineList, setVaccineList] = useState([]);
-  const [selectedVaccine, setSelectedVaccine] = useState("");
+  const [selectedVaccines, setSelectedVaccines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [petDetails, setPetDetails] = useState(null);
@@ -75,21 +75,21 @@ const ChooseVac = ({
         setSnackbarOpen(true);
       }
     };
-    if (appointmentId && petId) {
+    if (open && appointmentId && petId) {
       fetchAppointmentAndPetDetails();
     }
-  }, [appointmentId, petId]);
+  }, [open, appointmentId, petId]);
 
   
   const handleCloseDialog = () => {
     handleClose();
-    setSelectedVaccine("");
+    setSelectedVaccines([]);
     setAlertMessage("");
     setNote("");
   };
 
   const saveVaccineSelection = async () => {
-    if (!selectedVaccine) {
+    if (selectedVaccines.length === 0) {
       setAlertMessage("กรุณาเลือกวัคซีนก่อนบันทึก");
       return;
     }
@@ -99,7 +99,7 @@ const ChooseVac = ({
         `/appointments/${appointmentId}/vaccines`,
         {
           pet_id: petId,
-          vaccine_id: selectedVaccine,
+          vaccine_id: selectedVaccines,
           notes: note,
         }
       );
@@ -142,12 +142,14 @@ const ChooseVac = ({
             {TypeService === "วัคซีน" && (
               <Box sx={{ flex: "1", maxWidth: "400px" }}>
                 <Autocomplete
+                  multiple
                   disablePortal
                   options={vaccineList}
                   getOptionLabel={(option) => option.category_name}
                   onChange={(event, newValue) =>
-                    setSelectedVaccine(newValue?.category_id || "")
+                    setSelectedVaccines(newValue.map(vaccine => vaccine.category_id))
                   }
+                  value={vaccineList.filter(vaccine => selectedVaccines.includes(vaccine.category_id))}
                   sx={{ width: "100%" }}
                   renderInput={(params) => (
                     <TextField
@@ -177,23 +179,25 @@ const ChooseVac = ({
                 </Typography>
                 <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name}</Typography>
                 <Typography>ประเภทสัตว์: {petDetails.pet_species}</Typography>
-                {selectedVaccine ? (
-                  <Box mt={2}>
-                    <Typography variant="subtitle1" color="blue">
-                      คุณเลือกวัคซีน:{" "}
-                      {
-                        vaccineList.find((vaccine) => vaccine.category_id === selectedVaccine)
-                          ?.category_name || "ยังไม่ได้เลือกวัคซีน"
-                      }
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box mt={2}>
-                    <Typography variant="subtitle1" color="gray">
-                      คุณยังไม่ได้เลือกวัคซีน
-                    </Typography>
-                  </Box>
-                )}
+                {
+                  selectedVaccines.length > 0 ? (
+                    <Box mt={2}>
+                      <Typography variant="subtitle1" color="blue">
+                        คุณเลือกวัคซีน: {vaccineList
+                          .filter((vaccine) => selectedVaccines.includes(vaccine.category_id))
+                          .map((vaccine) => vaccine.category_name)
+                          .join(", ")}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box mt={2}>
+                      <Typography variant="subtitle1" color="gray">
+                        คุณยังไม่ได้เลือกวัคซีน
+                      </Typography>
+                    </Box>
+                  )
+                }
+
                    <Box mt={2}>
                 <TextField
                   label="หมายเหตุ"

@@ -110,7 +110,7 @@ const RegisterPage = () => {
       pet_color: petColor,
       pet_breed: finalPetBreed,
       pet_gender: gender,
-      pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : '',
+      pet_birthday: birthDate ? dayjs(birthDate).format('YYYY-MM-DD') : null,
       spayed_neutered: petSpayed ,
       microchip_number: petMicrochip,
       pet_species: petSpecies === "อื่นๆ" ? otherPetSpecies : petSpecies,
