@@ -16,11 +16,22 @@ const LoginPage = ({ onLogin }) => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotUsername, setForgotUsername] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [emailError, setEmailError] = useState(false)
   
   const navigate = useNavigate();
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
+  };
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setForgotEmail(email);
+    setEmailError(email && !validateEmail(email)); // ถ้ากรอกผิดให้แสดง error
   };
 
   const handleLogin = async () => {
@@ -158,9 +169,12 @@ const LoginPage = ({ onLogin }) => {
             label="อีเมล"
             variant="outlined"
             fullWidth
+            type="email"
             margin="normal"
             value={forgotEmail}
-            onChange={(e) => setForgotEmail(e.target.value)}
+            onChange={handleEmailChange}
+            error={emailError}
+            helperText={emailError ? "กรุณากรอกอีเมลให้ถูกต้อง" : ""}
           />
         </DialogContent>
         <DialogActions>
