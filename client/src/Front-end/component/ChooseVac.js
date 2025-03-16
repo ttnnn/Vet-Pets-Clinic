@@ -9,7 +9,8 @@ import {
   Typography,
   Snackbar,
   Autocomplete,
-  TextField,CircularProgress
+  TextField,
+  CircularProgress,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -17,7 +18,6 @@ import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { clinicAPI } from "../../utils/api";
 dayjs.locale("th");
-
 
 const ChooseVac = ({
   open,
@@ -37,7 +37,6 @@ const ChooseVac = ({
   const [petDetails, setPetDetails] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [note, setNote] = useState("");
-  
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -60,32 +59,38 @@ const ChooseVac = ({
     };
     fetchVaccines(); // Ensure the function is called
   }, [TypeService]);
-  
+
   useEffect(() => {
     const fetchAppointmentAndPetDetails = async () => {
+      if (!appointmentId || !petId) return;
+      setLoading(true);
       try {
-        const appointmentResponse = await clinicAPI.get(
-          `/appointments/${appointmentId}`
-        );
-        const petResponse = await clinicAPI.get(`/pets/${petId}`);
+        const [appointmentResponse, petResponse] = await Promise.all([
+          clinicAPI.get(`/appointments/${appointmentId}`),
+          clinicAPI.get(`/pets/${petId}`),
+        ]);
         setAppointmentDetails(appointmentResponse.data);
         setPetDetails(petResponse.data);
       } catch (error) {
-        console.error("Error fetching appointment or pet details:", error);
+        console.error("Error fetching details:", error);
         setSnackbarOpen(true);
+      } finally {
+        setLoading(false);
       }
     };
-    if (appointmentId && petId) {
+
+    if (open) {
       fetchAppointmentAndPetDetails();
     }
-  }, [appointmentId, petId]);
+  }, [open, appointmentId, petId]);
 
-  
   const handleCloseDialog = () => {
     handleClose();
     setSelectedVaccines([]);
     setAlertMessage("");
     setNote("");
+    setAppointmentDetails(null);
+    setPetDetails(null);
   };
 
   const saveVaccineSelection = async () => {
@@ -93,7 +98,7 @@ const ChooseVac = ({
       setAlertMessage("กรุณาเลือกวัคซีนก่อนบันทึก");
       return;
     }
-    setLoading(true); 
+    setLoading(true);
     try {
       const response = await clinicAPI.post(
         `/appointments/${appointmentId}/vaccines`,
@@ -113,8 +118,9 @@ const ChooseVac = ({
     } catch (error) {
       console.error("Error saving vaccine:", error);
       setAlertMessage("การบันทึกมีข้อผิดพลาด โปรดลองอีกครั้ง");
-    }finally {
-      setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConfirmSave = () => {
@@ -127,7 +133,13 @@ const ChooseVac = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth  BackdropProps={{ sx: { backgroundColor: "transparent" } }} >
+      <Dialog
+        open={open}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        BackdropProps={{ sx: { backgroundColor: "transparent" } }}
+      >
         <DialogTitle>เลือกวัคซีน</DialogTitle>
 
         <DialogContent>
@@ -179,13 +191,13 @@ const ChooseVac = ({
                   <Typography>
                     หมายเหตุ: {appointmentDetails.reason || "-"}
                   </Typography>
-                    
+
                   <Typography variant="h6" mt={2}>
                     ข้อมูลสัตว์เลี้ยง
                   </Typography>
                   <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name || "-"}</Typography>
                   <Typography>ประเภทสัตว์: {petDetails.pet_species || "-"}</Typography>
-                    
+
                   {selectedVaccines?.length > 0 ? (
                     <Box mt={2}>
                       <Typography variant="subtitle1" color="blue">
@@ -241,7 +253,6 @@ const ChooseVac = ({
         open={confirmationOpen}
         onClose={handleConfirmClose}
         BackdropProps={{ sx: { backgroundColor: "transparent" } }}
-
       >
         <DialogTitle>ยืนยันการบันทึก</DialogTitle>
         <DialogContent>
@@ -252,11 +263,10 @@ const ChooseVac = ({
           <Button
             onClick={saveVaccineSelection}
             color="primary"
-            disabled={loading}  // Disable the button while loading
+            disabled={loading} // Disable the button while loading
           >
-            {loading ? <CircularProgress size={24} /> : 'บันทึก'}
+            {loading ? <CircularProgress size={24} /> : "บันทึก"}
           </Button>
-
         </DialogActions>
       </Dialog>
 
