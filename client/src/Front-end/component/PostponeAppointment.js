@@ -42,7 +42,6 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
   };
 
   const validateAndOpenDialog = () => {
-    console.log('validateAndOpenDialog')
 
     if (!appointmentDate || (!appointmentTime && !isNoTime)) {
       setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบ', severity: 'error' });
@@ -59,7 +58,6 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         if (!time) return null;
         const [startTime] = time.split(' - ');
         const [hours, minutes] = startTime.split(':');
-        console.log(`${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`)
         return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       }
 
@@ -87,8 +85,9 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
 
 
       const date_format = formatDate(appointmentDate) ;
-
-      let time_format = null; // Use let instead of const
+      let time_format = isNoTime ? null : formatTime(appointmentTime);
+      
+      // Use let instead of const
       if (isNoTime === false) {
         // console.log('appointmentTime', appointmentTime);
         time_format = formatTime(appointmentTime);

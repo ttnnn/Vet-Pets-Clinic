@@ -211,7 +211,6 @@ const PendingAppointments = ({ appointments ,update}) => {
         case 'ตรวจรักษา':
           // ดึงข้อมูล invoice
           selectedItems = await fetchData(`/medical/invoice/${appointment.appointment_id}`);
-          console.log('Fetched items medical:', selectedItems); 
           if (selectedItems) {
             selectedItems = selectedItems.map((item) => ({
               ...item,

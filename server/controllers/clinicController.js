@@ -897,7 +897,7 @@ router.put('/postpone/appointment/:id', async (req, res) => {
   const { id } = req.params;
   const { appointment_date, appointment_time } = req.body;
   
-  if (!appointment_date || !appointment_time) {
+  if (!appointment_date) {
     return res.status(400).send({ message: 'appointment_date and appointment_time are required' });
   }
 
@@ -908,7 +908,7 @@ router.put('/postpone/appointment/:id', async (req, res) => {
   `;
 
   try {
-    const result = await pool.query(query, [appointment_date, appointment_time, id]);
+    const result = await pool.query(query, [appointment_date, appointment_time || null, id]);
 
     if (result.rowCount === 0) {
       return res.status(404).send({ message: 'Appointment not found' });
