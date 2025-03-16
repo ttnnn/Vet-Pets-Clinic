@@ -127,69 +127,73 @@ const ChooseVac = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth  BackdropProps={{ sx: { backgroundColor: "transparent" } }} >
         <DialogTitle>เลือกวัคซีน</DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 2,
-              height: "350px",
-            }}
-          >
-            {TypeService === "วัคซีน" && (
-              <Box sx={{ flex: "1", maxWidth: "400px" }}>
-                <Autocomplete
-                  multiple
-                  disablePortal
-                  options={vaccineList}
-                  getOptionLabel={(option) => option.category_name}
-                  onChange={(event, newValue) =>
-                    setSelectedVaccines(newValue.map(vaccine => vaccine.category_id))
-                  }
-                  value={vaccineList.filter(vaccine => selectedVaccines.includes(vaccine.category_id))}
-                  sx={{ width: "100%" }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="เลือกวัคซีน"
-                      disabled={loading}
-                    />
-                  )}
-                />
-              </Box>
-            )}
 
-            {appointmentDetails && petDetails && (
-              <Box sx={{ flex: "1", maxWidth: "400px" }}>
-                <Typography variant="h6">ข้อมูลนัดหมาย</Typography>
-                <Typography>
-                  วันที่นัดหมาย:{" "}
-                  {dayjs(appointmentDetails.appointment_date).format(
-                    "DD MMMM YYYY"
-                  )}
-                </Typography>
-                <Typography>
-                  ประเภทบริการ: {appointmentDetails.type_service}
-                </Typography>
-                <Typography>
-                    หมายเหตุ: {appointmentDetails.reason}
-                </Typography>
-                <Typography variant="h6" mt={2}>
-                  ข้อมูลสัตว์เลี้ยง
-                </Typography>
-                <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name}</Typography>
-                <Typography>ประเภทสัตว์: {petDetails.pet_species}</Typography>
-                {
-                  selectedVaccines.length > 0 ? (
+        <DialogContent>
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 2,
+                height: "350px",
+              }}
+            >
+              {TypeService === "วัคซีน" && vaccineList?.length > 0 && (
+                <Box sx={{ flex: "1", maxWidth: "400px" }}>
+                  <Autocomplete
+                    multiple
+                    disablePortal
+                    options={vaccineList}
+                    getOptionLabel={(option) => option.category_name}
+                    onChange={(event, newValue) =>
+                      setSelectedVaccines(newValue.map(vaccine => vaccine.category_id))
+                    }
+                    value={vaccineList.filter(vaccine => (selectedVaccines || []).includes(vaccine.category_id))}
+                    sx={{ width: "100%" }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="เลือกวัคซีน" disabled={loading} />
+                    )}
+                  />
+                </Box>
+              )}
+
+              {appointmentDetails && petDetails && (
+                <Box sx={{ flex: "1", maxWidth: "400px" }}>
+                  <Typography variant="h6">ข้อมูลนัดหมาย</Typography>
+                  <Typography>
+                    วันที่นัดหมาย:{" "}
+                    {appointmentDetails.appointment_date
+                      ? dayjs(appointmentDetails.appointment_date).format("DD MMMM YYYY")
+                      : "-"}
+                  </Typography>
+                  <Typography>
+                    ประเภทบริการ: {appointmentDetails.type_service || "-"}
+                  </Typography>
+                  <Typography>
+                    หมายเหตุ: {appointmentDetails.reason || "-"}
+                  </Typography>
+                    
+                  <Typography variant="h6" mt={2}>
+                    ข้อมูลสัตว์เลี้ยง
+                  </Typography>
+                  <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name || "-"}</Typography>
+                  <Typography>ประเภทสัตว์: {petDetails.pet_species || "-"}</Typography>
+                    
+                  {selectedVaccines?.length > 0 ? (
                     <Box mt={2}>
                       <Typography variant="subtitle1" color="blue">
-                        คุณเลือกวัคซีน: {vaccineList
-                          .filter((vaccine) => selectedVaccines.includes(vaccine.category_id))
+                        คุณเลือกวัคซีน:{" "}
+                        {vaccineList
+                          ?.filter((vaccine) => selectedVaccines.includes(vaccine.category_id))
                           .map((vaccine) => vaccine.category_name)
-                          .join(", ")}
+                          .join(", ") || "-"}
                       </Typography>
                     </Box>
                   ) : (
@@ -198,25 +202,24 @@ const ChooseVac = ({
                         คุณยังไม่ได้เลือกวัคซีน
                       </Typography>
                     </Box>
-                  )
-                }
+                  )}
 
-                   <Box mt={2}>
-                <TextField
-                  label="หมายเหตุ"
-                  fullWidth
-                  multiline
-                  rows={3}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)} // อัปเดตสถานะเมื่อผู้ใช้กรอกข้อความ
-                  placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)"
-                />
-              </Box>     
-              </Box>
-            )}
-           
-           
-          </Box>
+                  <Box mt={2}>
+                    <TextField
+                      label="หมายเหตุ"
+                      fullWidth
+                      multiline
+                      rows={3}
+                      value={note || ""}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)"
+                    />
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+
           {alertMessage && (
             <Box mt={2}>
               <Typography variant="subtitle1" color="error">
@@ -225,6 +228,7 @@ const ChooseVac = ({
             </Box>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleCloseDialog}>ยกเลิก</Button>
           <Button onClick={handleConfirmSave} color="primary">
