@@ -75,10 +75,10 @@ const ChooseVac = ({
         setSnackbarOpen(true);
       }
     };
-    if (open && appointmentId && petId) {
+    if (appointmentId && petId) {
       fetchAppointmentAndPetDetails();
     }
-  }, [open, appointmentId, petId]);
+  }, [appointmentId, petId]);
 
   
   const handleCloseDialog = () => {
@@ -236,6 +236,7 @@ const ChooseVac = ({
       <Dialog
         open={confirmationOpen}
         onClose={handleConfirmClose}
+        BackdropProps={{ sx: { backgroundColor: "transparent" } }}
 
       >
         <DialogTitle>ยืนยันการบันทึก</DialogTitle>
