@@ -57,7 +57,7 @@ const ChooseVac = ({
         }
       }
     };
-    fetchVaccines(); // Ensure the function is called
+    fetchVaccines();
   }, [TypeService]);
 
   useEffect(() => {
@@ -110,9 +110,9 @@ const ChooseVac = ({
       );
       if (response.status === 200) {
         setSnackbarOpen(true);
-        setConfirmationOpen(false); // Close the confirmation dialog
-        handleClose(); // Close the main dialog
-        updateAppointments(); // Update appointments
+        setConfirmationOpen(false);
+        handleClose();
+        updateAppointments();
         onMoveToPending(appointmentId);
       }
     } catch (error) {
@@ -138,7 +138,12 @@ const ChooseVac = ({
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
-        BackdropProps={{ sx: { backgroundColor: "transparent" } }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: "transparent",  // ทำให้พื้นหลังโปร่งใส
+            boxShadow: "none",  // เอาเงาออก
+          },
+        }}
       >
         <DialogTitle>เลือกวัคซีน</DialogTitle>
 
@@ -165,9 +170,11 @@ const ChooseVac = ({
                     options={vaccineList}
                     getOptionLabel={(option) => option.category_name}
                     onChange={(event, newValue) =>
-                      setSelectedVaccines(newValue.map(vaccine => vaccine.category_id))
+                      setSelectedVaccines(newValue.map((vaccine) => vaccine.category_id))
                     }
-                    value={vaccineList.filter(vaccine => (selectedVaccines || []).includes(vaccine.category_id))}
+                    value={vaccineList.filter((vaccine) =>
+                      (selectedVaccines || []).includes(vaccine.category_id)
+                    )}
                     sx={{ width: "100%" }}
                     renderInput={(params) => (
                       <TextField {...params} label="เลือกวัคซีน" disabled={loading} />
@@ -263,7 +270,7 @@ const ChooseVac = ({
           <Button
             onClick={saveVaccineSelection}
             color="primary"
-            disabled={loading} // Disable the button while loading
+            disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : "บันทึก"}
           </Button>

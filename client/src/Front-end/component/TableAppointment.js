@@ -195,8 +195,13 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setOrderBy(property);
   };
   //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
-  const isAppointmentInPast = (appointmentDate, appointmentTime) => {
+  const isAppointmentInPast = (appointmentDate, appointmentTime,status) => {
     try {
+      if (status === 'เสร็จสิ้น') {
+        // ถ้านัดหมายเสร็จสิ้นแล้ว ไม่สามารถเลื่อนได้
+        return true;
+      }
+
       if (!appointmentDate) {
         console.error("Invalid appointment date: Date is null or undefined.");
         return false;
@@ -360,7 +365,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
               )}      
           <TableCell>
 
-          {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+          {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
           <Button
             variant="outlined"
             color="primary"
@@ -370,12 +375,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
             อนุมัติ
           </Button>
         )}
-        {appointment.status !== 'อนุมัติ' && appointment.status !== 'ยกเลิกนัด'  && isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+        {appointment.status !== 'อนุมัติ' && appointment.status !== 'ยกเลิกนัด'  && isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
            <Box sx={{ backgroundColor: 'red', color: 'white', padding: '5px', borderRadius: '4px' }}>
              เลยเวลานัดหมาย
            </Box>
         )}
-            {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time) && (
+            {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
@@ -390,7 +395,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
                   color="secondary"
                   sx={{ width: '100px' }}
                   onClick={() =>
-                    handlePostponeClick(appointment.appointment_id, appointment.type_service, appointment.pet_id)
+                    handlePostponeClick(appointment.appointment_id, appointment.type_service, appointment.pet_id,appointment.status)
                   }
                 >
                   เลื่อนนัด

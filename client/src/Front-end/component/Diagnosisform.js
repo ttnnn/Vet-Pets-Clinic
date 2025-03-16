@@ -405,13 +405,10 @@ const DiagnosisForm = ({petId , appointmentId , ownerId}) => {
         amount: item.quantity,
         price_service: item.price_service,
       }));
-      
-      console.log('selectedItemsData',selectedItemsData)
       const paymentData = {
         total_payment: calculateTotalPrice(selectedItems), // คำนวณราคา
         payment_date: new Date(),
       };
-      console.log('paymentData',paymentData)
       // 2. เรียก API เพื่อบันทึกข้อมูลทั้งหมด (ใบเสร็จ, การชำระเงิน, รายการสินค้า)
       const response = await clinicAPI.post(`/create-invoice`, {
         appointmentId,
