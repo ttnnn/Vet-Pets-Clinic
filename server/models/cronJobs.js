@@ -94,7 +94,7 @@ const setupCronJobs = (io) => {
         if (appointment.type_service === 'ฝากเลี้ยง') {
           message += `\nวันที่ ${formatDate}`;
         } else {
-          const formattedTime = appointment.appointment_time.split('+')[0];
+          const formattedTime = appointment.appointment_time ? appointment.appointment_time.split('+')[0] : 'ไม่ระบุเวลา';
           message += `\nวันที่ ${formatDate} เวลา ${formattedTime} น.`;
         }
   

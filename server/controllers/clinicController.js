@@ -1713,7 +1713,7 @@ router.post('/create-invoice/payment', async (req, res) => {
       const paymentResult = await client.query(paymentQuery, [invoiceId]);
       paymentId = paymentResult.rows[0].payment_id;
 
-      const updatePaymentQuery = 'UPDATE payment SET total_payment = $1, payment_date = $2 status_pay = $3  WHERE payment_id = $4';
+      const updatePaymentQuery = 'UPDATE payment SET total_payment = $1, payment_date = $2 , status_pay = $3  WHERE payment_id = $4';
       await client.query(updatePaymentQuery, [totalAmount, new Date(),'Paid',paymentId]);
     } else {
       // ไม่มีข้อมูล -> สร้างใหม่
