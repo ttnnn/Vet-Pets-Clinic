@@ -9,8 +9,7 @@ import {
   Typography,
   Snackbar,
   Autocomplete,
-  TextField,
-  CircularProgress,
+  TextField,CircularProgress
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -18,6 +17,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { clinicAPI } from "../../utils/api";
 dayjs.locale("th");
+
 
 const ChooseVac = ({
   open,
@@ -37,6 +37,7 @@ const ChooseVac = ({
   const [petDetails, setPetDetails] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [note, setNote] = useState("");
+  
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -57,40 +58,34 @@ const ChooseVac = ({
         }
       }
     };
-    fetchVaccines();
+    fetchVaccines(); // Ensure the function is called
   }, [TypeService]);
-
+  
   useEffect(() => {
     const fetchAppointmentAndPetDetails = async () => {
-      if (!appointmentId || !petId) return;
-      setLoading(true);
       try {
-        const [appointmentResponse, petResponse] = await Promise.all([
-          clinicAPI.get(`/appointments/${appointmentId}`),
-          clinicAPI.get(`/pets/${petId}`),
-        ]);
+        const appointmentResponse = await clinicAPI.get(
+          `/appointments/${appointmentId}`
+        );
+        const petResponse = await clinicAPI.get(`/pets/${petId}`);
         setAppointmentDetails(appointmentResponse.data);
         setPetDetails(petResponse.data);
       } catch (error) {
-        console.error("Error fetching details:", error);
+        console.error("Error fetching appointment or pet details:", error);
         setSnackbarOpen(true);
-      } finally {
-        setLoading(false);
       }
     };
-
-    if (open) {
+    if (appointmentId && petId) {
       fetchAppointmentAndPetDetails();
     }
-  }, [open, appointmentId, petId]);
+  }, [appointmentId, petId]);
 
+  
   const handleCloseDialog = () => {
     handleClose();
     setSelectedVaccines([]);
     setAlertMessage("");
     setNote("");
-    setAppointmentDetails(null);
-    setPetDetails(null);
   };
 
   const saveVaccineSelection = async () => {
@@ -98,7 +93,7 @@ const ChooseVac = ({
       setAlertMessage("กรุณาเลือกวัคซีนก่อนบันทึก");
       return;
     }
-    setLoading(true);
+    setLoading(true); 
     try {
       const response = await clinicAPI.post(
         `/appointments/${appointmentId}/vaccines`,
@@ -110,17 +105,16 @@ const ChooseVac = ({
       );
       if (response.status === 200) {
         setSnackbarOpen(true);
-        setConfirmationOpen(false);
-        handleClose();
-        updateAppointments();
+        setConfirmationOpen(false); // Close the confirmation dialog
+        handleClose(); // Close the main dialog
+        updateAppointments(); // Update appointments
         onMoveToPending(appointmentId);
       }
     } catch (error) {
       console.error("Error saving vaccine:", error);
       setAlertMessage("การบันทึกมีข้อผิดพลาด โปรดลองอีกครั้ง");
-    } finally {
-      setLoading(false);
-    }
+    }finally {
+      setLoading(false); }
   };
 
   const handleConfirmSave = () => {
@@ -133,86 +127,69 @@ const ChooseVac = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog
-        open={open}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-        BackdropProps={{
-          sx: {
-            backgroundColor: "transparent",  // ทำให้พื้นหลังโปร่งใส
-            boxShadow: "none",  // เอาเงาออก
-          },
-        }}
-      >
+      <Dialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth  BackdropProps={{ sx: { backgroundColor: "transparent" } }}>
         <DialogTitle>เลือกวัคซีน</DialogTitle>
-
         <DialogContent>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 2,
-                height: "350px",
-              }}
-            >
-              {TypeService === "วัคซีน" && vaccineList?.length > 0 && (
-                <Box sx={{ flex: "1", maxWidth: "400px" }}>
-                  <Autocomplete
-                    multiple
-                    disablePortal
-                    options={vaccineList}
-                    getOptionLabel={(option) => option.category_name}
-                    onChange={(event, newValue) =>
-                      setSelectedVaccines(newValue.map((vaccine) => vaccine.category_id))
-                    }
-                    value={vaccineList.filter((vaccine) =>
-                      (selectedVaccines || []).includes(vaccine.category_id)
-                    )}
-                    sx={{ width: "100%" }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="เลือกวัคซีน" disabled={loading} />
-                    )}
-                  />
-                </Box>
-              )}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 2,
+              height: "350px",
+            }}
+          >
+            {TypeService === "วัคซีน" && (
+              <Box sx={{ flex: "1", maxWidth: "400px" }}>
+                <Autocomplete
+                  multiple
+                  disablePortal
+                  options={vaccineList}
+                  getOptionLabel={(option) => option.category_name}
+                  onChange={(event, newValue) =>
+                    setSelectedVaccines(newValue.map(vaccine => vaccine.category_id))
+                  }
+                  value={vaccineList.filter(vaccine => selectedVaccines.includes(vaccine.category_id))}
+                  sx={{ width: "100%" }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="เลือกวัคซีน"
+                      disabled={loading}
+                    />
+                  )}
+                />
+              </Box>
+            )}
 
-              {appointmentDetails && petDetails && (
-                <Box sx={{ flex: "1", maxWidth: "400px" }}>
-                  <Typography variant="h6">ข้อมูลนัดหมาย</Typography>
-                  <Typography>
-                    วันที่นัดหมาย:{" "}
-                    {appointmentDetails.appointment_date
-                      ? dayjs(appointmentDetails.appointment_date).format("DD MMMM YYYY")
-                      : "-"}
-                  </Typography>
-                  <Typography>
-                    ประเภทบริการ: {appointmentDetails.type_service || "-"}
-                  </Typography>
-                  <Typography>
-                    หมายเหตุ: {appointmentDetails.reason || "-"}
-                  </Typography>
-
-                  <Typography variant="h6" mt={2}>
-                    ข้อมูลสัตว์เลี้ยง
-                  </Typography>
-                  <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name || "-"}</Typography>
-                  <Typography>ประเภทสัตว์: {petDetails.pet_species || "-"}</Typography>
-
-                  {selectedVaccines?.length > 0 ? (
+            {appointmentDetails && petDetails && (
+              <Box sx={{ flex: "1", maxWidth: "400px" }}>
+                <Typography variant="h6">ข้อมูลนัดหมาย</Typography>
+                <Typography>
+                  วันที่นัดหมาย:{" "}
+                  {dayjs(appointmentDetails.appointment_date).format(
+                    "DD MMMM YYYY"
+                  )}
+                </Typography>
+                <Typography>
+                  ประเภทบริการ: {appointmentDetails.type_service}
+                </Typography>
+                <Typography>
+                    หมายเหตุ: {appointmentDetails.reason}
+                </Typography>
+                <Typography variant="h6" mt={2}>
+                  ข้อมูลสัตว์เลี้ยง
+                </Typography>
+                <Typography>ชื่อสัตว์เลี้ยง: {petDetails.pet_name}</Typography>
+                <Typography>ประเภทสัตว์: {petDetails.pet_species}</Typography>
+                {
+                  selectedVaccines.length > 0 ? (
                     <Box mt={2}>
                       <Typography variant="subtitle1" color="blue">
-                        คุณเลือกวัคซีน:{" "}
-                        {vaccineList
-                          ?.filter((vaccine) => selectedVaccines.includes(vaccine.category_id))
+                        คุณเลือกวัคซีน: {vaccineList
+                          .filter((vaccine) => selectedVaccines.includes(vaccine.category_id))
                           .map((vaccine) => vaccine.category_name)
-                          .join(", ") || "-"}
+                          .join(", ")}
                       </Typography>
                     </Box>
                   ) : (
@@ -221,24 +198,25 @@ const ChooseVac = ({
                         คุณยังไม่ได้เลือกวัคซีน
                       </Typography>
                     </Box>
-                  )}
+                  )
+                }
 
-                  <Box mt={2}>
-                    <TextField
-                      label="หมายเหตุ"
-                      fullWidth
-                      multiline
-                      rows={3}
-                      value={note || ""}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)"
-                    />
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          )}
-
+                   <Box mt={2}>
+                <TextField
+                  label="หมายเหตุ"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)} // อัปเดตสถานะเมื่อผู้ใช้กรอกข้อความ
+                  placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)"
+                />
+              </Box>     
+              </Box>
+            )}
+           
+           
+          </Box>
           {alertMessage && (
             <Box mt={2}>
               <Typography variant="subtitle1" color="error">
@@ -247,7 +225,6 @@ const ChooseVac = ({
             </Box>
           )}
         </DialogContent>
-
         <DialogActions>
           <Button onClick={handleCloseDialog}>ยกเลิก</Button>
           <Button onClick={handleConfirmSave} color="primary">
@@ -259,7 +236,6 @@ const ChooseVac = ({
       <Dialog
         open={confirmationOpen}
         onClose={handleConfirmClose}
-        BackdropProps={{ sx: { backgroundColor: "transparent" } }}
       >
         <DialogTitle>ยืนยันการบันทึก</DialogTitle>
         <DialogContent>
@@ -270,10 +246,11 @@ const ChooseVac = ({
           <Button
             onClick={saveVaccineSelection}
             color="primary"
-            disabled={loading}
+            disabled={loading}  // Disable the button while loading
           >
-            {loading ? <CircularProgress size={24} /> : "บันทึก"}
+            {loading ? <CircularProgress size={24} /> : 'บันทึก'}
           </Button>
+
         </DialogActions>
       </Dialog>
 

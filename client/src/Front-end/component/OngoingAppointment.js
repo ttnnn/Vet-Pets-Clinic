@@ -445,24 +445,6 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                           : 'ส่งคิว'}
                         </Button>
                       )}
-                      <PostponeHotel
-                        open={openPostponeDialog}
-                        handleClose={() => setOpenPostponeDialog(false)}
-                        appointmentId={selectedAppointmentId}
-                        petId={selectedPetId}
-                        updateAppointments={fetchAppointments}
-                        isExtendBooking={true} 
-                      />
-                      
-                      <ChooseVac
-                       open={openVaccineDialog}
-                       handleClose={() => setOpenVaccineDialog(false)}
-                       appointmentId={selectedAppointmentId}
-                       petId={selectedPetId}
-                       TypeService={"วัคซีน"}
-                       updateAppointments={fetchAppointments}
-                       onMoveToPending={onMoveToPending} // ส่งฟังก์ชันนี้ไปเป็น prop
-                      />                  
                     </Box>
                   </TableCell>
                   </TableRow>
@@ -473,6 +455,24 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
         )}
       </TableContainer>
         {/* Confirm Dialog */}
+        <PostponeHotel
+          open={openPostponeDialog}
+          handleClose={() => setOpenPostponeDialog(false)}
+          appointmentId={selectedAppointmentId}
+          petId={selectedPetId}
+          updateAppointments={fetchAppointments}
+          isExtendBooking={true} 
+        />
+       
+        <ChooseVac
+          open={openVaccineDialog}
+          handleClose={() => setOpenVaccineDialog(false)}
+          appointmentId={selectedAppointmentId}
+          petId={selectedPetId}
+          TypeService={"วัคซีน"}
+          updateAppointments={fetchAppointments}
+          onMoveToPending={onMoveToPending} // ส่งฟังก์ชันนี้ไปเป็น prop
+        />                  
         <Dialog
         open={openConfirmDialog}
         onClose={handleCloseConfirmDialog}
