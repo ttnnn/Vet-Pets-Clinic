@@ -76,7 +76,7 @@ router.post("/owner/check-owner", async (req, res) => {
     return res.status(401).json({ success: false, message: 'Token is required' });
   }
 
-  if (!first_name || !last_name || !phone_number) {
+  if (!first_name  || !phone_number) {
     return res
       .status(400)
       .json({ success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
