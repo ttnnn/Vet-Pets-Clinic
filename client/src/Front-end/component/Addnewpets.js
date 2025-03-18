@@ -26,10 +26,17 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   const [alertSeverity, setAlertSeverity] = useState('success');
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Populate the form fields with existing pet data when editing
   // const Images = `http://localhost:8080${petData.ImageUrl}
+  const handleSnackbarOpen = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+};
 
+const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+};
   
   const handleBirthDateChange = (newDate) => {
       setBirthDate(newDate);
@@ -52,23 +59,10 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
       setAge({ years, months, days });
   };
 
-  const clearPetForm = () => {
-      setPetName('');
-      setPetColor('');
-      setPetBreed('');
-      setGender('male');
-      setBirthDate(null);
-      setAge({ years: '', months: '', days: '' });
-      setPetSpayed(false);
-      setMicrochip('');
-      setPetSpecies('');
-  };
 
   const handleSavePet = async () => {
-    if (!petName || !petSpecies || (petSpecies !== "อื่นๆ" && !petBreed) || !birthDate) {
-        setAlertSeverity("error");
-        setAlertMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
-        setTimeout(() => setAlertMessage(""), 2000);
+    if (!petName || !petSpecies || (petSpecies !== "อื่นๆ" && !petBreed)) {
+        handleSnackbarOpen("กรุณากรอกข้อมูลให้ครบถ้วน", "error");
         return;
     }
 
@@ -85,36 +79,30 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     };
     setLoading(true);
     try {
-        const response = await clinicAPI.post(`/pets`, petData, {
-            headers: { "Content-Type": "application/json" },
-        });
-
-        if (response.status === 200) {
-            //  ดึงข้อมูลสัตว์เลี้ยงใหม่และอัปเดตทันที
-            const petsResponse = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
-            setPets(petsResponse.data);
-            
-            setAlertSeverity("success");
-            setAlertMessage("ลงทะเบียนสำเร็จ");
-
-            setTimeout(() => {
-                setAlertMessage("");
-                onClose(); // ปิด Dialog หลังอัปเดตเสร็จ
-            }, 1000);
-
-            clearPetForm();
-        } else {
-            alert("เพิ่มสัตว์เลี้ยงล้มเหลว");
-        }
-    } catch (error) {
-        console.error("Error saving pet data:", error);
-        setAlertSeverity("error");
-        setAlertMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-        setTimeout(() => setAlertMessage(""), 2000);
+        await clinicAPI.post(`/pets`, petData);
+        //  ดึงข้อมูลสัตว์เลี้ยงใหม่และอัปเดตทันที
+        const petsResponse = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
+        setPets(petsResponse.data);
+        handleSnackbarOpen("ลงทะเบียนสำเร็จ", "success");
+        setTimeout(() => onClose(), 1000);                                                   
+        clearPetForm();
+    } catch (error) { 
+      handleSnackbarOpen("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "error");
     }
     setLoading(false);
 };
 
+const clearPetForm = () => {
+  setPetName('');
+  setPetColor('');
+  setPetBreed('');
+  setGender('male');
+  setBirthDate(null);
+  setAge({ years: '', months: '', days: '' });
+  setPetSpayed(false);
+  setMicrochip('');
+  setPetSpecies('');
+};
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>  
@@ -260,15 +248,37 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
         fullWidth
         sx={{ mt: 3 }}
       >
-        <ToggleButton value="male"  >
+
+        <ToggleButton
+          value="male"
+          sx={{
+            "&.Mui-selected": {
+              backgroundColor: "#2196f3", // สีที่ต้องการเมื่อถูกเลือก
+              color: "#fff",             // สีตัวอักษร
+              "&:hover": {
+                backgroundColor: "#1976d2", // สีเมื่อ hover ขณะเลือก
+              },
+            },
+          }}
+        >
           <Typography>♂ male</Typography>
         </ToggleButton>
-
-        <ToggleButton value="female">
+        <ToggleButton
+          value="female"
+          sx={{
+            "&.Mui-selected": {
+              backgroundColor: "#f06292", // สีที่ต้องการเมื่อถูกเลือก
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "#e91e63", // สีเมื่อ hover ขณะเลือก
+              },
+            },
+          }}
+        >
           <Typography>♀ female</Typography>
         </ToggleButton>
-
       </ToggleButtonGroup>
+        
 
       <TextField
         label="MicrochipNumber"
@@ -289,25 +299,7 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
     }}>
       ยกเลิก
     </Button>
-    <Button
-      variant="contained"
-      onClick={async () => {
-        setLoading(true);  // Set loading to true when the button is clicked
-        try {
-          await handleSavePet(); // ฟังก์ชันบันทึกข้อมูล
-          onClose();  // ฟังก์ชันปิด Dialog
-          clearPetForm(); // Clear form data
-        } catch (error) {
-          console.error('Error saving pet:', error);
-        } finally {
-          setLoading(false);  // Set loading to false once the process is complete
-        }
-      }}
-      className="submit-button"
-      disabled={loading}  // Disable the button while loading
-    >
-      {loading ? <CircularProgress size={24} /> : 'บันทึก'}
-    </Button>
+    <Button variant="contained" onClick={handleSavePet} disabled={loading}>{loading ? <CircularProgress size={24} /> : "บันทึก"}</Button>
 
       </DialogActions>
     </Dialog>
