@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, TextField, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions,  ToggleButtonGroup, ToggleButton, MenuItem
-    , Autocomplete,Checkbox,FormControlLabel,CircularProgress
+    , Autocomplete,Checkbox,FormControlLabel,CircularProgress,Snackbar
    } from '@mui/material';
 import { DogBreed, CatBreed } from './Breeds';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -22,8 +22,6 @@ const PetDialog = ({ open, onClose , selectedOwnerId, setPets}) => {
   const [birthDate, setBirthDate] = useState('');
   const [age, setAge] = useState({});
   const [gender, setGender] = useState('male');
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertSeverity, setAlertSeverity] = useState('success');
   const[otherPetSpecies,setOtherPetSpecies] = useState('')
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -114,11 +112,7 @@ const clearPetForm = () => {
     >
     <DialogTitle>เพิ่มสัตว์เลี้ยง</DialogTitle>
       <DialogContent dividers>
-      {alertMessage && (
-            <Typography color={alertSeverity === "error" ? "error" : "success"} variant="subtitle1" sx={{ mb: 2 }}>
-              {alertMessage}
-            </Typography>
-            )}
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleSnackbarClose} message={snackbar.message} severity={snackbar.severity} />
     <Box
       component="form"
       sx={{

@@ -51,7 +51,7 @@ const Home = () => {
     try {
       const { first_name, last_name, phone_number } = user;
   
-      if (!first_name || !last_name || !phone_number) {
+      if (!first_name || !phone_number) {
         console.error('Incomplete user data for fetching appointments');
         setAppointments([]); // กรณีข้อมูลผู้ใช้ไม่ครบ
         return;
