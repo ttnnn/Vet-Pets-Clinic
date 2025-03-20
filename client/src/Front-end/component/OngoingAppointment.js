@@ -415,7 +415,6 @@ const OngoingAppointments = ({ appointments, onMoveToPending, onRevertToPending 
                         variant="contained"
                         color="secondary"
                         onClick={() => handleButtonAction(appointment)}
-                        // disabled={userRole !== 'สัตวแพทย์'}
                         disabled={
                           appointment.type_service === 'ตรวจรักษา' &&
                           userRole !== 'สัตวแพทย์'

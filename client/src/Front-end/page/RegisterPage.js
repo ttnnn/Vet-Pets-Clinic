@@ -97,14 +97,11 @@ const RegisterPage = () => {
   
     
   const handleSavePet = () => {
-    
     const finalPetBreed = petSpecies === "อื่นๆ" ? otherPetSpecies : petBreed;
-
     if (!petName || !petBreed ) {
       handleSnackbarOpen('กรุณากรอกข้อมูลให้ครบถ้วนก่อนบันทึก!', 'error');
       return;
     }
-
     const petData = {
       pet_name: petName,
       pet_color: petColor,
@@ -138,7 +135,10 @@ const RegisterPage = () => {
     setPetBreed(pet.pet_breed);
     setGender(pet.pet_gender);
     setBirthDate(pet.pet_birthday ? dayjs(pet.pet_birthday).toDate() : null);
-    setAge({ years: age.years, months: age.months, days: age.days }); // แก้ไขได้ถ้าคำนวณอายุในรูปแบบนี้
+    const birthDate = pet.pet_birthday ? dayjs(pet.pet_birthday).toDate() : null;
+    setBirthDate(birthDate);
+    calculateAge(birthDate); // คำนวณและตั้งค่าอายุทันที
+    
     setPetSpayed(pet.spayed_neutered);
     setMicrochip(pet.microchip_number);
     setPetSpecies(pet.pet_species);
@@ -187,15 +187,19 @@ const RegisterPage = () => {
   };
 
   const calculateAge = (date) => {
-    if (!date || !(date instanceof Date)) return;
+    if (!date || !(date instanceof Date)) {
+        setAge({ years: '', months: '', days: '' });
+        return;
+    }
     const today = dayjs();
     const birthDay = dayjs(date);
     const years = today.diff(birthDay, 'year');
     const months = today.diff(birthDay.add(years, 'year'), 'month');
     const days = today.diff(birthDay.add(years, 'year').add(months, 'month'), 'day');
+
     setAge({ years, months, days });
-  };
-  
+};
+
 
   const resetForm = () => {
     setFirstName('');
@@ -653,6 +657,7 @@ const RegisterPage = () => {
                 maxDate={new Date()}
                 renderInput={(params) => <TextField {...params} fullWidth />}
                 views={['year', 'month', 'day']}
+                format="dd/MM/yyyy"
                 sx={{ mt: 2 }}
               />
 

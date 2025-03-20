@@ -53,9 +53,12 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
  
 
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      otherPetSpecies: e.target.value,
+      pet_breed: e.target.value, // อัปเดต pet_breed ด้วย
+    }));
   };
 
   const handleSave = async () => {
@@ -132,6 +135,9 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
             value={formData.pet_breed}
             onChange={(event, newValue) => {
               setFormData((prev) => ({ ...prev, pet_breed: newValue }));
+            }}
+            onInputChange={(event, newInputValue) => {
+              setFormData((prev) => ({ ...prev, pet_breed: newInputValue }));
             }}
             renderInput={(params) => (
               <TextField 

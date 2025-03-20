@@ -86,9 +86,6 @@ const PostponeHotel = ({ open, handleClose , appointmentId, petId , updateAppoin
           setSnackbarOpen(true);
           return;
         }
-        console.log('today',today)
-        console.log('checkIn',checkIn)
-        console.log('daysUntilCheckIn',daysUntilCheckIn)
         await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
       }
   

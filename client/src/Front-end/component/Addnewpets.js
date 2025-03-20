@@ -82,7 +82,7 @@ const handleSnackbarClose = () => {
         const petsResponse = await clinicAPI.get(`/pets?owner_id=${selectedOwnerId}`);
         setPets(petsResponse.data);
         handleSnackbarOpen("ลงทะเบียนสำเร็จ", "success");
-        setTimeout(() => onClose(), 1000);                                                   
+        onClose();                                                  
         clearPetForm();
     } catch (error) { 
       handleSnackbarOpen("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "error");
@@ -212,6 +212,7 @@ const clearPetForm = () => {
         maxDate={new Date()}
         renderInput={(params) => <TextField {...params} fullWidth />}
         views={['year', 'month', 'day']}
+        format="dd/MM/yyyy"
         sx={{ mt: 2 }}
       />
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>

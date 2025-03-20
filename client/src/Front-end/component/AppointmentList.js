@@ -90,7 +90,6 @@ const AppointmentList = ({ appointments, onMoveToOngoing, onCancelAppointment })
       });
     };
  
-
     const handleSaveMedical = async (appointmentId) => {
       try {
         if(selectedAppointment.type_service !== 'ตรวจรักษา'){
