@@ -40,7 +40,11 @@ const Register = () => {
       setLoading(true);
       const response = await customerAPI.post(
         `/owner/check-owner`,
-        { first_name, last_name, phone_number },
+        { 
+          first_name, 
+          last_name: last_name.trim() === "" ? null : last_name, // ส่งค่า null ถ้าเว้นว่าง
+          phone_number 
+        },
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
       if (response.data.success) {

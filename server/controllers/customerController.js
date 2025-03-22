@@ -67,7 +67,6 @@ const verifyLineToken = async (idToken) => {
   }
 };
 
-
 router.post("/owner/check-owner", async (req, res) => {
   const { first_name, last_name, phone_number } = req.body;
   const token = req.headers.authorization?.split(' ')[1]; // รับ Token จาก Header
@@ -76,46 +75,58 @@ router.post("/owner/check-owner", async (req, res) => {
     return res.status(401).json({ success: false, message: 'Token is required' });
   }
 
-  if (!first_name  || !phone_number) {
+  if (!first_name || !phone_number) {
     return res
       .status(400)
       .json({ success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
   }
 
   try {
-   
     const userId = await verifyLineToken(token);
-    const checkQuery = `
+
+    // ตรวจสอบว่า last_name ถูกส่งมาหรือไม่
+    let checkQuery = `
       SELECT * 
       FROM owner
       WHERE TRIM(first_name) ILIKE $1 
-        AND TRIM(last_name) ILIKE $2 
-        AND TRIM(phone_number) ILIKE $3;
+        AND TRIM(phone_number) ILIKE $2
     `;
-    const checkValues = [first_name, last_name, phone_number];
+    let checkValues = [first_name, phone_number];
+
+    if (last_name) {
+      checkQuery += ` AND (TRIM(last_name) ILIKE $3 OR last_name IS NULL)`;
+      checkValues.push(last_name);
+    } else {
+      checkQuery += ` AND last_name IS NULL`; // ค้นหาเฉพาะที่ last_name เป็น NULL
+    }
+
     const result = await pool.query(checkQuery, checkValues);
 
     if (result.rows.length > 0) {
-
-       const existingOwner = result.rows[0];
+      const existingOwner = result.rows[0];
 
       if (existingOwner.line_id) {
-        // ถ้ามี userId อยู่แล้ว ไม่ต้องทำอะไร
         return res.status(200).json({
           success: true,
           message: "มีข้อมูล userId อยู่ในระบบแล้ว",
-          data:  existingOwner           
+          data: existingOwner,
         });
       } else {
-        // ถ้ายังไม่มี userId ให้เพิ่มข้อมูล
         const updateQuery = `
           UPDATE owner 
           SET line_id = $1 
           WHERE TRIM(first_name) ILIKE $2 
-            AND TRIM(last_name) ILIKE $3 
-            AND TRIM(phone_number) ILIKE $4;
+            AND TRIM(phone_number) ILIKE $3
         `;
-        const updateValues = [userId, first_name, last_name, phone_number];
+        const updateValues = [userId, first_name, phone_number];
+
+        if (last_name) {
+          updateQuery += ` AND (TRIM(last_name) ILIKE $4 OR last_name IS NULL)`;
+          updateValues.push(last_name);
+        } else {
+          updateQuery += ` AND last_name IS NULL`;
+        }
+
         await pool.query(updateQuery, updateValues);
 
         return res.status(200).json({
@@ -125,10 +136,9 @@ router.post("/owner/check-owner", async (req, res) => {
         });
       }
     } else {
-      // ถ้าไม่พบข้อมูลในระบบ ให้แจ้งว่าข้อมูลไม่ตรง
       return res.status(404).json({
         success: false,
-        message: "ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อ-นามสกุล หรือเบอร์โทร",
+        message: "ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อหรือเบอร์โทร",
       });
     }
   } catch (error) {
@@ -139,6 +149,7 @@ router.post("/owner/check-owner", async (req, res) => {
     });
   }
 });
+
 
 router.get('/appointments', async (req, res) => { 
   const { first_name, last_name, phone_number } = req.query;
