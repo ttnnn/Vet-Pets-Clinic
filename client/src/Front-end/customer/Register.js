@@ -17,7 +17,7 @@ const Register = () => {
     event.preventDefault();
 
     // ตรวจสอบว่าข้อมูลครบถ้วนหรือไม่
-    if (!first_name || !last_name || !phone_number) {
+    if (!first_name || !phone_number) {
       setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบถ้วน', severity: 'error' });
       return;
     }
