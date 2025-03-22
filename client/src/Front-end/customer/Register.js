@@ -17,7 +17,7 @@ const Register = () => {
     event.preventDefault();
 
     // ตรวจสอบว่าข้อมูลครบถ้วนหรือไม่
-    if (!first_name || !phone_number) {
+    if (!first_name  || !phone_number) {
       setSnackbar({ open: true, message: 'กรุณากรอกข้อมูลให้ครบถ้วน', severity: 'error' });
       return;
     }
@@ -40,11 +40,7 @@ const Register = () => {
       setLoading(true);
       const response = await customerAPI.post(
         `/owner/check-owner`,
-        { 
-          first_name, 
-          last_name: last_name.trim() === "" ? null : last_name, // ส่งค่า null ถ้าเว้นว่าง
-          phone_number 
-        },
+        { first_name, last_name, phone_number },
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
       if (response.data.success) {
