@@ -89,7 +89,10 @@ router.post("/owner/check-owner", async (req, res) => {
       SELECT * 
       FROM owner
       WHERE TRIM(first_name) ILIKE $1 
-        AND (TRIM(last_name) ILIKE $2 OR $2 IS NULL OR $2 = '')
+        AND (
+          last_name IS NULL OR last_name = '' OR TRIM(last_name) ILIKE $2 
+          OR $2 IS NULL OR $2 = ''
+        )
         AND TRIM(phone_number) ILIKE $3;
     `;
     const checkValues = [first_name, last_name || null, phone_number];
@@ -112,7 +115,10 @@ router.post("/owner/check-owner", async (req, res) => {
           UPDATE owner 
           SET line_id = $1 
           WHERE TRIM(first_name) ILIKE $2 
-            AND TRIM(last_name) ILIKE $3 
+            AND (
+              last_name IS NULL OR last_name = '' OR TRIM(last_name) ILIKE $3 
+              OR $3 IS NULL OR $3 = ''
+            ) 
             AND TRIM(phone_number) ILIKE $4;
         `;
         const updateValues = [userId, first_name, last_name, phone_number];
@@ -149,7 +155,10 @@ router.get('/appointments', async (req, res) => {
       `SELECT owner_id
         FROM owner
         WHERE TRIM(first_name) ILIKE $1 
-          AND (TRIM(last_name) ILIKE $2 OR $2 IS NULL OR $2 = '') 
+         AND (
+          (last_name IS NULL OR last_name = '' OR TRIM(last_name) ILIKE $2) 
+          OR ($2 IS NULL OR $2 = '')
+        )
           AND TRIM(phone_number) ILIKE $3;`,
         [first_name, last_name || null, phone_number]
     );
@@ -195,9 +204,12 @@ router.get('/appointments/history', async (req, res) => {
     const owner = await pool.query(
       `SELECT owner_id FROM owner
        WHERE TRIM(first_name) ILIKE $1 
-         AND TRIM(last_name) ILIKE $2 
+          AND (
+           (last_name IS NULL OR last_name = '' OR TRIM(last_name) ILIKE $2) 
+             OR ($2 IS NULL OR $2 = '')
+            ) 
          AND TRIM(phone_number) ILIKE $3;`,
-      [first_name, last_name, phone_number]
+      [first_name, last_name || null, phone_number]
     );
 
     if (owner.rows.length === 0) {
@@ -272,9 +284,12 @@ router.get('/pets', async (req, res) => {
       `SELECT owner_id
         FROM owner
         WHERE TRIM(first_name) ILIKE $1 
-          AND TRIM(last_name) ILIKE $2 
+           AND (
+          last_name IS NULL OR last_name = '' OR TRIM(last_name) ILIKE $2 
+          OR $2 IS NULL OR $2 = ''
+        ) 
           AND TRIM(phone_number) ILIKE $3;`,
-      [first_name, last_name, phone_number]
+      [first_name, last_name || null, phone_number]
     );
    
     if (owner.rows.length === 0) {
