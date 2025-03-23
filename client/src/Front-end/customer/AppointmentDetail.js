@@ -195,9 +195,10 @@ const handleCloseSnackbar = () => {
             </Typography>
             <Typography><strong>เหตุผล:</strong> {appointment.reason || 'ไม่ระบุ'}</Typography>
             <Typography><strong>สถานะ:</strong> {appointment.status}</Typography>
+            <Typography><strong>สถานะคิว:</strong> {appointment.queue_status}</Typography>
 
             <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
-              {location.state?.from !== 'history' && (
+              {location.state?.from !== 'history' && appointment.queue_status !== 'เสร็จสิ้น' &&(
                 <>
                   <Button 
                     variant="contained" 
