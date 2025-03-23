@@ -51,7 +51,6 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
   };
 
   const handlePostpone = async () => {
-
     try {
       const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
       const formatTime = (time) => {
@@ -60,14 +59,10 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         const [hours, minutes] = startTime.split(':');
         return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       }
-
        // ตรวจสอบเวลาปัจจุบันกับเวลานัดหมายเดิม (เฉพาะ customer)
-
        if (isCustomer) {
         const currentDateTime = new Date(); // เวลาปัจจุบัน
         const appointmentDateTime = new Date(`${formatDate(appointmentDates)}T${formatTime(appointmentTimes)}`); // เวลานัดหมาย
-
-      
         const diffMilliseconds = appointmentDateTime - currentDateTime; // คำนวณความต่างในมิลลิวินาที
         const diffMinutes = Math.floor(diffMilliseconds / (1000 * 60)); // แปลงเป็นนาที
           
@@ -82,30 +77,20 @@ const Postpone = ({ open, handleClose, TypeService, appointmentId, updateAppoint
         }
       }
       
-
-
       const date_format = formatDate(appointmentDate) ;
       let time_format = isNoTime ? null : formatTime(appointmentTime);
-      
-      // Use let instead of const
       if (isNoTime === false) {
-        // console.log('appointmentTime', appointmentTime);
         time_format = formatTime(appointmentTime);
       }
-
-
-      // console.log("format",date_format, " ",time_format)
-
       const response = await clinicAPI.put(`/postpone/appointment/${appointmentId}`, {
         appointment_date: date_format,
         appointment_time: time_format,
       });
 
-      if (isCustomer) {
-        await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
-      }
-
       if (response.status === 200) {
+        if (isCustomer) {
+          await clinicAPI.put(`/appointment/${appointmentId}`, { status: 'รออนุมัติ', queue_status: 'รอรับบริการ' });
+        }
         setSnackbar({ open: true, message: 'เลื่อนนัดสำเร็จ!', severity: 'success' });
         updateAppointments();
         resetFields();
