@@ -27,9 +27,6 @@ const generateTimeSlots = (startHour, endHour, stepMinutes, isToday, typeService
       current = next;
     }
   }
-  
-  
-
   return slots;
 };
 

@@ -116,7 +116,7 @@ const AppointmentPage = () => {
 
 
   return (
-    <Box display="flex" sx={{height: '100%', width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}}>
+    <Box display="flex" sx={{flexGrow: 1, width: '100%', minHeight: '100vh', backgroundColor: '#e0e0e0'}}>
       <Sidebar appointments={appointments} />
 
       <Box sx={{ flexGrow: 1, p: 3 }}>

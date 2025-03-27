@@ -1629,7 +1629,7 @@ router.get('/medical/invoice/:appointment_id', async (req, res) => {
    
     FROM appointment
     INNER JOIN invoice ON appointment.appointment_id = invoice.appointment_id
-    LEFT JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
+    INNER JOIN serviceinvoice ON invoice.invoice_id = serviceinvoice.invoice_id
     LEFT JOIN servicecategory ON serviceinvoice.category_id = servicecategory.category_id 
     LEFT JOIN petshotel ON appointment.appointment_id = petshotel.appointment_id
    

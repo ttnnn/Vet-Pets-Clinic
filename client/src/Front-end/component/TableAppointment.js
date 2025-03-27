@@ -296,7 +296,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
         <Button variant="contained" color="primary">ค้นหา</Button>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ overflowX: 'auto', maxWidth: '100%' }}>
         <Table>
           <TableHead>
             <TableRow>
