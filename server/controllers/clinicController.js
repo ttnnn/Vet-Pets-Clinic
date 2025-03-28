@@ -1414,7 +1414,10 @@ router.post('/personnel', async (req, res) => {
   let client; // Declare client outside the try block
 
   try {
-    // เข้ารหัสรหัสผ่าน
+
+    client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
+    await client.query('BEGIN'); // เริ่มต้น Transaction
+    
      // ตรวจสอบว่ามี user_name ซ้ำในฐานข้อมูลหรือไม่
      const existingUser = await client.query('SELECT * FROM personnel WHERE user_name = $1', [user_name]);
 
@@ -1424,9 +1427,6 @@ router.post('/personnel', async (req, res) => {
      }
 
     const hashedPassword = await bcrypt.hash(password_encrip, 10); // ตรวจสอบว่า 10 ตรงกันในทุกการเข้ารหัส
-
-    client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
-    await client.query('BEGIN'); // เริ่มต้น Transaction
 
     // บันทึกข้อมูลในตาราง personnel
     const result = await client.query(
