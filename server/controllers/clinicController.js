@@ -1415,6 +1415,14 @@ router.post('/personnel', async (req, res) => {
 
   try {
     // เข้ารหัสรหัสผ่าน
+     // ตรวจสอบว่ามี user_name ซ้ำในฐานข้อมูลหรือไม่
+     const existingUser = await client.query('SELECT * FROM personnel WHERE user_name = $1', [user_name]);
+
+     if (existingUser.rows.length > 0) {
+       await client.query('ROLLBACK'); // ยกเลิก Transaction
+       return res.status(400).json({ error: 'ชื่อผู้ใช้นี้มีอยู่แล้วในระบบ' });
+     }
+
     const hashedPassword = await bcrypt.hash(password_encrip, 10); // ตรวจสอบว่า 10 ตรงกันในทุกการเข้ารหัส
 
     client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล

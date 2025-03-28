@@ -193,8 +193,11 @@ const ManageRoles = () => {
       setSnackbar({ open: true, message: 'เพิ่มผู้ดูแลสำเร็จ!', severity: 'success' });
       handleDialogClose();
     } catch (error) {
-      console.error('Error adding admin:', error);
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มผู้ดูแล', severity: 'error' });
+      if (error.response && error.response.status === 400) {
+        setSnackbar({ open: true, message: error.response.data.error, severity: 'error' });
+      } else {
+        setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มผู้ดูแล', severity: 'error' });
+      }
     }
   };
 
@@ -425,6 +428,7 @@ const ManageRoles = () => {
           helperText={emailError}
           fullWidth
           margin="dense"
+          required
         />
         <TextField
             label="ชื่อผู้ใช้"
