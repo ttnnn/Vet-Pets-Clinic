@@ -807,7 +807,7 @@ router.get('/pets/:pet_id', async (req, res) => {
 
 // Get personnel details
 router.get('/personnel', async (req, res) => {
-  const query = `SELECT personnel_id, first_name, last_name, role,user_name FROM personnel where active = 'true'`;
+  const query = `SELECT personnel_id, first_name, last_name, role,user_name ,email FROM personnel where active = 'true'`;
 
   try {
     const result = await pool.query(query);
@@ -1410,7 +1410,7 @@ router.put('/personnel/change-password', async (req, res) => {
 
 router.post('/personnel', async (req, res) => {
   
-  const { first_name, last_name, user_name, password_encrip, role } = req.body;
+  const { first_name, last_name, user_name, password_encrip, role , email } = req.body;
   let client; // Declare client outside the try block
 
   try {
@@ -1422,8 +1422,8 @@ router.post('/personnel', async (req, res) => {
 
     // บันทึกข้อมูลในตาราง personnel
     const result = await client.query(
-      'INSERT INTO personnel (first_name, last_name, user_name, password_encrip, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [first_name, last_name, user_name, hashedPassword, role]
+      'INSERT INTO personnel (first_name, last_name, user_name, password_encrip, role,email) VALUES ($1, $2, $3, $4, $5 ,$6) RETURNING *',
+      [first_name, last_name, user_name, hashedPassword, role , email]
     );
 
     await client.query('COMMIT'); // Commit transaction
@@ -1492,12 +1492,12 @@ router.delete('/personnel/:id', async (req, res) => {
 
 router.put('/personnel/:id', async (req, res) => {
   const { id } = req.params;
-  const { first_name, last_name, user_name,role  } = req.body;
+  const { first_name, last_name, user_name,role,email  } = req.body;
 
   try {
     const result = await pool.query(
-      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, role = $4 WHERE personnel_id = $5',
-      [first_name, last_name, user_name,  role, id]
+      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, role = $4 , email =$5 WHERE personnel_id = $6',
+      [first_name, last_name, user_name,  role,email, id]
     );
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Updated successfully' });

@@ -32,17 +32,24 @@ const sendResetEmail = async (email, newPassword) => {
 
 // API รีเซตรหัสผ่านโดยไม่ต้องตรวจสอบฐานข้อมูล
 router.post('/forgot-password', async (req, res) => {
-    const { email,username } = req.body;
+    const { email, username } = req.body;
 
     if (!email || !username) {
         return res.status(400).json({ success: false, message: "กรุณากรอกอีเมล หรือ username ให้ถูกต้อง" });
     }
 
     try {
-        const newPassword = generateRandomPassword();
-        const hashedPassword = await bcrypt.hash(newPassword, 10); // เข้ารหัสรหัสผ่านใหม่
+        // ค้นหาว่ามี username และ email ตรงกันหรือไม่
+        const userResult = await pool.query("SELECT * FROM personnel WHERE user_name = $1 AND email = $2", [username, email]);
 
-        // อัปเดตรหัสผ่านในฐานข้อมูล
+        if (userResult.rowCount === 0) {
+            return res.status(404).json({ success: false, message: "ไม่พบบัญชีที่ตรงกับอีเมลและชื่อผู้ใช้ที่ระบุ" });
+        }
+
+        const newPassword = generateRandomPassword();
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // อัปเดตรหัสผ่านใหม่
         await pool.query("UPDATE personnel SET password_encrip = $1 WHERE user_name = $2", [hashedPassword, username]);
 
         // ส่งอีเมลแจ้งรหัสผ่านใหม่
@@ -54,6 +61,5 @@ router.post('/forgot-password', async (req, res) => {
         res.status(500).json({ success: false, message: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง" });
     }
 });
-
 
 module.exports = router;

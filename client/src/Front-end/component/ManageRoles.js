@@ -31,6 +31,7 @@ const ManageRoles = () => {
   const [newAdmin, setNewAdmin] = useState({
     first_name: '',
     last_name: '',
+    email: '',
     password_encrip: '',
     user_name: '',
     role: '',
@@ -41,6 +42,7 @@ const ManageRoles = () => {
     severity: 'success',
   });
 
+  const [emailError, setEmailError] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -140,6 +142,7 @@ const ManageRoles = () => {
       setNewAdmin({
         first_name: '',
         last_name: '',
+        email: '',
         user_name: '',
         password_encrip: '',
         role: '',
@@ -150,13 +153,19 @@ const ManageRoles = () => {
         personnel_id: admin.personnel_id,
         first_name: admin.first_name,
         last_name: admin.last_name,
+        email: admin.email,
         user_name: admin.user_name,
         role: admin.role,
-        // password_encrip: '', 
       });
     }
   };
-  
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setNewAdmin({ ...newAdmin, email });
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailError(emailPattern.test(email) ? '' : 'รูปแบบอีเมลไม่ถูกต้อง');
+  };
+
   const handleDialogClose = () => {
     setDialogOpen(false);
     setNewAdmin({  
@@ -406,6 +415,16 @@ const ManageRoles = () => {
             fullWidth
             margin="normal"
             required
+        />
+         <TextField 
+          label="อีเมล"
+          name="email"
+          value={newAdmin.email}
+          onChange={handleEmailChange}
+          error={!!emailError}
+          helperText={emailError}
+          fullWidth
+          margin="dense"
         />
         <TextField
             label="ชื่อผู้ใช้"
