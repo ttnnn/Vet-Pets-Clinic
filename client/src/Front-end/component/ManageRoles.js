@@ -194,7 +194,7 @@ const ManageRoles = () => {
       handleDialogClose();
     } catch (error) {
       if (error.response && error.response.status === 400) {
-        setSnackbar({ open: true, message: error.response.data.error, severity: 'error' });
+        setSnackbar({ open: true, message: error.response.data.message, severity: 'error' });
       } else {
         setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มผู้ดูแล', severity: 'error' });
       }
@@ -219,7 +219,7 @@ const ManageRoles = () => {
     } catch (error) {
       console.error('Error updating admin:', error);
       if (error.response && error.response.status === 400) {
-        setSnackbar({ open: true, message: error.response.data.error, severity: 'error' });
+        setSnackbar({ open: true, message: error.response.data.message, severity: 'error' });
       } else {
         setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มผู้ดูแล', severity: 'error' });
       }
