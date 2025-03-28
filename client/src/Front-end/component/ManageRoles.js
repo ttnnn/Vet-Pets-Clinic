@@ -218,7 +218,11 @@ const ManageRoles = () => {
       }
     } catch (error) {
       console.error('Error updating admin:', error);
-      setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการแก้ไขผู้ดูแล', severity: 'error' });
+      if (error.response && error.response.status === 400) {
+        setSnackbar({ open: true, message: error.response.data.error, severity: 'error' });
+      } else {
+        setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการเพิ่มผู้ดูแล', severity: 'error' });
+      }
     }
   };
   

@@ -1417,7 +1417,7 @@ router.post('/personnel', async (req, res) => {
 
     client = await pool.connect(); // เชื่อมต่อกับฐานข้อมูล
     await client.query('BEGIN'); // เริ่มต้น Transaction
-    
+
      // ตรวจสอบว่ามี user_name ซ้ำในฐานข้อมูลหรือไม่
      const existingUser = await client.query('SELECT * FROM personnel WHERE user_name = $1', [user_name]);
 
@@ -1500,23 +1500,41 @@ router.delete('/personnel/:id', async (req, res) => {
 
 router.put('/personnel/:id', async (req, res) => {
   const { id } = req.params;
-  const { first_name, last_name, user_name,role,email  } = req.body;
+  const { first_name, last_name, user_name, role, email } = req.body;
 
   try {
-    const result = await pool.query(
-      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, role = $4 , email =$5 WHERE personnel_id = $6',
-      [first_name, last_name, user_name,  role,email, id]
+    const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
+
+    //  ตรวจสอบว่า user_name ซ้ำหรือไม่ (ยกเว้นตัวเอง)
+    const existingUser = await client.query(
+      'SELECT * FROM personnel WHERE user_name = $1 AND personnel_id <> $2',
+      [user_name, id]
     );
+
+    if (existingUser.rows.length > 0) {
+      client.release();
+      return res.status(400).json({ message: 'ชื่อผู้ใช้นี้มีอยู่แล้วในระบบ' });
+    }
+
+    // อัปเดตข้อมูล personnel
+    const result = await client.query(
+      'UPDATE personnel SET first_name = $1, last_name = $2, user_name = $3, role = $4, email = $5 WHERE personnel_id = $6',
+      [first_name, last_name, user_name, role, email, id]
+    );
+
+    client.release(); // ปล่อยการเชื่อมต่อ
+
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'Updated successfully' });
     } else {
-      res.status(404).json({ message: 'Category not found' });
+      res.status(404).json({ message: 'Personnel not found' });
     }
   } catch (error) {
-    console.error('Error updating category:', error);
+    console.error('Error updating personnel:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 router.get('/history/vaccine/:appointment_id', async (req, res) => {
   const appointment_id = req.params.appointment_id; // Get pet_id from req.params
