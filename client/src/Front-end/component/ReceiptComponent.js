@@ -138,7 +138,7 @@ const ReceiptComponent = ({ receiptData , isPending }) => {
         style={{
         padding: '20px',
         margin: '20px auto',
-        width: '400px',
+        width: '600px',
         backgroundColor: '#fff',
         boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
         }}

@@ -22,7 +22,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
       setOriginalData(owner); // เก็บค่าต้นฉบับ
       setFormData(owner); // ตั้งค่าฟอร์มให้เป็นค่าปัจจุบัน
     }
-  }, [open, petData]);
+  }, [open, owner]);
   useEffect(() => {
     const fetchOwnerData = async () => {
       try {

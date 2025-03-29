@@ -26,7 +26,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
       setOriginalData(pet); // เก็บค่าต้นฉบับ
       setFormData(pet); // ตั้งค่าฟอร์มให้เป็นค่าปัจจุบัน
     }
-  }, [open, petData]);
+  }, [open, pet]);
   
 
   useEffect(() => {
