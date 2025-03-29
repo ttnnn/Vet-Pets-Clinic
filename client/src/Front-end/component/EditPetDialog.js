@@ -8,6 +8,7 @@ dayjs.locale('th'); // Set dayjs to use Thai locale
 
 
 const EditPetDialog = ({ open, onClose, pet, onSave }) => {
+  const [originalData, setOriginalData] = useState(null);
   const [formData, setFormData] = useState({
     owner_id: pet?.owner_id || '',
     pet_name: pet?.pet_name || '',
@@ -20,6 +21,13 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     pet_birthday: pet?.pet_birthday ? dayjs(pet.pet_birthday).format('YYYY-MM-DD') : '',
     otherPetSpecies: pet?.pet_species === 'อื่นๆ' ? pet.pet_species : '',
   });
+  useEffect(() => {
+    if (open && pet) {
+      setOriginalData(pet); // เก็บค่าต้นฉบับ
+      setFormData(pet); // ตั้งค่าฟอร์มให้เป็นค่าปัจจุบัน
+    }
+  }, [open, petData]);
+  
 
   useEffect(() => {
     const fetchPetData = async () => {
@@ -51,15 +59,15 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     }
   }, [pet]);
  
-
-
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      otherPetSpecies: e.target.value,
-      pet_breed: e.target.value, // อัปเดต pet_breed ด้วย
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    
+    setFormData(prevState => ({
+      ...prevState,  
+      [name]: value 
     }));
   };
+  
 
   const handleSave = async () => {
     const updatedData = {
@@ -83,7 +91,11 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
     }
   };
   
-
+  const handleCancel = () => {
+    setFormData(originalData); // คืนค่าต้นฉบับกลับไป
+    onClose(); // ปิด dialog
+  };
+  
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>แก้ไขข้อมูลสัตว์เลี้ยง</DialogTitle>
@@ -192,7 +204,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
         <TextField
           label="วันเกิด"
           name="pet_birthday"
-          value={formData.pet_birthday}
+          value={formData.pet_birthday || ''}
           onChange={handleChange}
           fullWidth
           margin="dense"
@@ -201,7 +213,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>ยกเลิก</Button>
+        <Button onClick={handleCancel}>ยกเลิก</Button>
         <Button onClick={handleSave} color="primary">
           บันทึก
         </Button>

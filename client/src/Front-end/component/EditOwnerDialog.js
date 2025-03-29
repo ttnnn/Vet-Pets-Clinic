@@ -4,7 +4,8 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } 
 import { clinicAPI } from "../../utils/api";
 
 const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
-
+  
+  const [originalData, setOriginalData] = useState(null);
   const [formData, setFormData] = useState({
     owner_id: owner?.owner_id || '',
     first_name: owner?.first_name || '',
@@ -16,7 +17,12 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
     postal_code: owner?.postal_code || '',
   });
 
-
+  useEffect(() => {
+    if (open && owner) {
+      setOriginalData(owner); // เก็บค่าต้นฉบับ
+      setFormData(owner); // ตั้งค่าฟอร์มให้เป็นค่าปัจจุบัน
+    }
+  }, [open, petData]);
   useEffect(() => {
     const fetchOwnerData = async () => {
       try {
@@ -67,7 +73,11 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
       console.error("Error updating data:", error);
     }
   };
-
+  
+  const handleCancel = () => {
+    setFormData(originalData); // คืนค่าต้นฉบับกลับไป
+    onClose(); // ปิด dialog
+  };
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>แก้ไขข้อมูลเจ้าของ</DialogTitle>
@@ -132,7 +142,7 @@ const EditOwnerDialog = ({ open, onClose, owner, onSave }) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>ยกเลิก</Button>
+        <Button onClick={handleCancel}>ยกเลิก</Button>
         <Button onClick={handleSave} color="primary">บันทึก</Button>
       </DialogActions>
     </Dialog>

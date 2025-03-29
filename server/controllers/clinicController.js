@@ -293,7 +293,7 @@ router.post('/appointment/vaccien', async (req, res) => {
     LEFT JOIN servicecategory ON historyvaccine.category_id = servicecategory.category_id
     WHERE historyvaccine.appointment_id = ANY($1)
   `;
-
+ //any ใช้กับ array
   try {
     const result = await pool.query(query, [ids]);
     res.json(result.rows); // ส่งข้อมูลกลับในรูปแบบ { appointment_id, category_name }  ตอบกลับข้อมูลหลายตัว

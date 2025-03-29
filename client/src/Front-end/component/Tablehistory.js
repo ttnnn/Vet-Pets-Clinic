@@ -105,13 +105,16 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
           const response = await clinicAPI.post(`/appointment/vaccien`, { ids });
           const vaccineDataMap = response.data.reduce((acc, curr) => {
-            acc[curr.appointment_id] = curr.category_name;
+            if (!acc[curr.appointment_id]) {
+              acc[curr.appointment_id] = [];
+            }
+            acc[curr.appointment_id].push(curr.category_name);
             return acc;
           }, {});
-
+          
           const updatedAppointments = appointments.map((appointment) => ({
             ...appointment,
-            category_name: vaccineDataMap[appointment.appointment_id] || 'ไม่มีข้อมูลวัคซีน',
+            category_name: vaccineDataMap[appointment.appointment_id]?.join(", ") || 'ไม่มีข้อมูลวัคซีน',
           }));
 
           setMergedAppointments(updatedAppointments);
@@ -269,7 +272,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                   </TableCell>
                   <TableCell>{appointment.reason || '-'}</TableCell>
                   {activeTabLabel === 'วัคซีน' && (
-                    <TableCell>{appointment.category_name || 'ไม่มีข้อมูลวัคซีน'}</TableCell>
+                   <TableCell style={{ whiteSpace: 'pre-line' }}>{Array.isArray(appointment.category_name) ? appointment.category_name.join("\n") : appointment.category_name || 'ไม่มีข้อมูลวัคซีน'}</TableCell>
                   )}
 
                 </TableRow>
