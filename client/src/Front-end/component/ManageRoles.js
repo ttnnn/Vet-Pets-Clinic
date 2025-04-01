@@ -205,7 +205,16 @@ const ManageRoles = () => {
   const handleUpdateAdmin = async () => {
     try {
       // console.log('Updating admin:', newAdmin); // ดูค่าที่ถูกแก้ไข
-      const response = await clinicAPI.put(`/personnel/${newAdmin.personnel_id}`, newAdmin);
+      const response = await clinicAPI.put(
+        `/personnel/${newAdmin.personnel_id}`, 
+        newAdmin,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`, // หรือที่คุณเก็บ token ไว้
+          },
+        }
+      );
+      
       if (response.status === 200) {
         // รีเฟรชข้อมูลผู้ดูแลจากฐานข้อมูล
         setAdmins((prevAdmins) => 

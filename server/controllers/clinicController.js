@@ -6,7 +6,6 @@ const path = require('path');
 const dayjs = require('dayjs');
 const express = require('express');
 const router = express.Router();
-require('dotenv').config();
 const bcrypt = require('bcrypt'); 
 const crypto = require('crypto');
 const sendLineMessage = require('../models/sendLineApprove.js');
@@ -16,7 +15,8 @@ const cloudinary = require('../models/cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const jwt = require('jsonwebtoken');
 const forgotPasswordRoute = require('../models/sendemail'); 
-const secretKey = process.env.SECRET_KEY || 'your_secret_key' ;
+const secretKey = process.env.SECRET_KEY ;
+require('dotenv').config();
 const tokenExpiry = '1h'; // อายุของ Token
 
 const storage = new CloudinaryStorage({

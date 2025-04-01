@@ -56,7 +56,7 @@ const Dashboard = () => {
     setLoading(true);
     clinicAPI
       .get('dashboard', {
-        params: { petType, timeFilter, year: timeFilter === 'year' ? year : undefined },
+        params: { petType: petType.trim(), timeFilter, year: timeFilter === 'year' ? Number(year) : undefined },
       })
       .then((response) => {
         //console.log("API Response:", response.data);
