@@ -95,7 +95,13 @@ const LoginPage = ({ onLogin }) => {
         setSnackbarSeverity('error');
       }
     } catch (error) {
-      setSnackbarMessage('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      let errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      // ตรวจสอบว่ามี response จากแบ็กเอนด์หรือไม่
+      if (error.response && error.response.data && error.response.data.msg) {
+        errorMessage = error.response.data.msg; // ดึงข้อความ error จากแบ็กเอนด์
+      }
+    
+      setSnackbarMessage(errorMessage);
       setSnackbarSeverity('error');
     }
     setSnackbarOpen(true);

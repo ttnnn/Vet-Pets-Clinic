@@ -64,14 +64,39 @@ const PendingAppointments = ({ appointments ,update}) => {
   const [showReceipt, setShowReceipt] = useState(false); // สถานะควบคุมการแสดงใบเสร็จ
   const [isReceiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [loadingPay, setLoadingPay] = useState(false); // เพิ่ม state
-
-
+  const username = sessionStorage.getItem('username') ;
+  const [userRole, setUserRole] = useState(null);
   const resetPage = () => setPage(0);
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
     resetPage();
   };
 
+  const fetchUserRole = useCallback(async () => {
+    try {
+      const response = await clinicAPI.get(`/personnel/${username}`);
+      if (response.data.length > 0) {
+        setUserRole(response.data[0].role);
+        // console.log("response.data[0].role", response.data[0].role);
+      } else {
+        console.warn("User not found");
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+    }
+  }, [username]); // Add username as a dependency
+    
+  useEffect(() => {
+    fetchUserRole();
+  }, [fetchUserRole]); // Now it's safely included
+    
+  useEffect(() => {
+    if (sessionStorage.getItem("forceRoleUpdate") === "true") {
+      fetchUserRole();
+      sessionStorage.removeItem("forceRoleUpdate");
+    }
+  }, [fetchUserRole]); // Now it's safely included
+  
   
   const handleSelectItem = (item) => {
     setSelectedItems((prevItems) => {
@@ -773,6 +798,9 @@ const handleCloseReceiptDialog = () => {
           <Button onClick={handlePay}
            variant="contained" color="primary"
            startIcon={loadingPay && <CircularProgress size={20} />} 
+           disabled={
+            userRole !== 'เจ้าหน้าที่คลินิก'
+          }
            >
             {loadingPay ? 'กำลังชำระเงิน...' : 'ยืนยันการชำระเงิน'}
           </Button>

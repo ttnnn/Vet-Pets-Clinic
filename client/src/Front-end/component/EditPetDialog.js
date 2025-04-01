@@ -23,8 +23,19 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
   });
   useEffect(() => {
     if (open && pet) {
-      setOriginalData(pet); // เก็บค่าต้นฉบับ
-      setFormData(pet); // ตั้งค่าฟอร์มให้เป็นค่าปัจจุบัน
+      setOriginalData(pet);
+      setFormData({
+        owner_id: pet.owner_id || '',
+        pet_name: pet.pet_name || '',
+        pet_gender: pet.pet_gender || '',
+        pet_species: pet.pet_species || '',
+        pet_color: pet.pet_color || '',
+        pet_breed: pet.pet_breed || '',
+        spayed_neutered: pet.spayed_neutered || false,
+        microchip_number: pet.microchip_number || '',
+        pet_birthday: pet.pet_birthday ? dayjs(pet.pet_birthday).format('YYYY-MM-DD') : '', 
+        otherPetSpecies: pet.pet_species === 'อื่นๆ' ? pet.pet_species : '',
+      });
     }
   }, [open, pet]);
   
@@ -44,7 +55,7 @@ const EditPetDialog = ({ open, onClose, pet, onSave }) => {
             pet_breed: data.pet_breed,
             spayed_neutered: data.spayed_neutered,
             microchip_number: data.microchip_number,
-            pet_birthday: dayjs(data.pet_birthday).format('YYYY-MM-DD'),
+            pet_birthday: data.pet_birthday ? dayjs(data.pet_birthday).format('YYYY-MM-DD') : '',
             otherPetSpecies: data.pet_species === 'อื่นๆ' ? data.pet_species : '',
           });
         } else {

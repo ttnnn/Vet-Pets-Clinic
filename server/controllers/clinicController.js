@@ -16,7 +16,7 @@ const cloudinary = require('../models/cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const jwt = require('jsonwebtoken');
 const forgotPasswordRoute = require('../models/sendemail'); 
-const secretKey = 'your_secret_key'; // คีย์ลับสำหรับสร้าง Token
+const secretKey = process.env.SECRET_KEY || 'your_secret_key' ;
 const tokenExpiry = '1h'; // อายุของ Token
 
 const storage = new CloudinaryStorage({
@@ -26,7 +26,16 @@ const storage = new CloudinaryStorage({
       allowed_formats: ['jpg', 'jpeg', 'png'], // Allowed file formats
   },
 });
+const authenticateUser = (req) => {
+  const token = req.headers.authorization?.split(' ')[1]; 
+  if (!token) return null;
 
+  try {
+    return jwt.verify(token, secretKey);
+  } catch {
+    return null;
+  }
+};
 const upload = multer({ storage });
 // เรียกใช้ API ใหม่
 router.use('/auth', forgotPasswordRoute); // ใช้งาน API ที่ /api/auth/forgot-password
@@ -1502,6 +1511,13 @@ router.put('/personnel/:id', async (req, res) => {
   const { id } = req.params;
   const { first_name, last_name, user_name, role, email } = req.body;
 
+  const user = authenticateUser(req); // ตรวจสอบ Token
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+  if (user.user_id !== parseInt(id)) {
+    return res.status(403).json({ error: 'ไม่มีสิทธิ์ในการแก้ไขข้อมูล' });
+  }
+
   try {
     const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
 
@@ -1958,10 +1974,10 @@ router.get('/dashboard', async (req, res) => {
     
     if (petType !== 'all') {
       if (petType === 'other') {
-        petTypeCondition = `AND p.pet_species NOT IN ($${queryParams.length + 1}, $${queryParams.length + 2})`;
+        petTypeCondition = `AND p.pet_species NOT IN ($1, $2)`;
         queryParams.push('สุนัข', 'แมว');
       } else {
-        petTypeCondition = `AND p.pet_species = $${queryParams.length + 1}`;
+        petTypeCondition = `AND p.pet_species = $1`;
         queryParams.push(petType);
       }
     }

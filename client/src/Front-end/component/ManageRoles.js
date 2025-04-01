@@ -173,6 +173,7 @@ const ManageRoles = () => {
       last_name: '',
       user_name: '',
       password_encrip: '',
+      email:'',
       role: '', });
   };
 
@@ -268,6 +269,7 @@ const ManageRoles = () => {
       last_name: admin.last_name,
       user_name: admin.user_name,
       role: admin.role,
+      email:admin.email
       // password_encrip: admin.password_encrip,
     });
     setDialogOpen(true);
