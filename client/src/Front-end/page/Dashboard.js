@@ -56,7 +56,7 @@ const Dashboard = () => {
     setLoading(true);
     clinicAPI
       .get('dashboard', {
-        params: { petType, timeFilter, year: timeFilter === 'year' ? Number(year) : undefined },
+        params: { petType: petType.trim(), timeFilter, year: timeFilter === 'year' ? Number(year) : undefined },
       })
       .then((response) => {
         //console.log("API Response:", response.data);
@@ -96,10 +96,10 @@ const Dashboard = () => {
               <FormControl fullWidth>
                 <InputLabel>ประเภทสัตว์เลี้ยง</InputLabel>
                 <Select value={petType} onChange={(e) => setPetType(e.target.value)}>
-                  <MenuItem value={0}>ทั้งหมด</MenuItem>    
-                  <MenuItem value={1}>สุนัข</MenuItem>   
-                  <MenuItem value={2}>แมว</MenuItem>     
-                  <MenuItem value={3}>อื่นๆ</MenuItem>    
+                  <MenuItem value="all">ทั้งหมด</MenuItem>
+                  <MenuItem value="สุนัข">สุนัข</MenuItem>
+                  <MenuItem value="แมว">แมว</MenuItem>
+                  <MenuItem value="other">อื่นๆ</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
