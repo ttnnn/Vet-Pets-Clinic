@@ -546,7 +546,9 @@ const handleCloseReceiptDialog = () => {
                   </Typography>
                   <Typography>
                     <strong>กำหนดออก:</strong> {selectedAppointment.end_date ? dayjs(selectedAppointment.end_date).format('DD MMMM YYYY') : '-'}
-                    <strong>รวมเข้าพัก:</strong> {(selectedAppointment?.num_day ?? 0)} วัน
+                  </Typography>
+                  <Typography>
+                  <strong>รวมเข้าพัก:</strong> {(selectedAppointment?.num_day ?? 0)} วัน
                   </Typography>
                   {selectedAppointment.days_overdue > 0 && (
                     <Typography>

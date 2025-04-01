@@ -1512,10 +1512,10 @@ router.put('/personnel/:id', async (req, res) => {
   const { first_name, last_name, user_name, role, email } = req.body;
 
   const user = authenticateUser(req); // ตรวจสอบ Token
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   if (user.user_id !== parseInt(id)) {
-    return res.status(403).json({ error: 'ไม่มีสิทธิ์ในการแก้ไขข้อมูล' });
+    return res.status(403).json({ message: 'ไม่มีสิทธิ์ในการแก้ไขข้อมูล' });
   }
 
   try {
@@ -1963,7 +1963,7 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
 
 router.get('/dashboard', async (req, res) => {  
   try {
-    let { petType = 'all', timeFilter = 'year', year } = req.query; 
+    let { petType = 0, timeFilter = 'year', year } = req.query; 
 
     if (!year) {
       year = new Date().getFullYear().toString();
@@ -1972,14 +1972,22 @@ router.get('/dashboard', async (req, res) => {
     let petTypeCondition = '';
     let queryParams = [];
     
-    if (petType !== 'all') {
-      if (petType === 'other') {
+    switch (parseInt(petType, 10)) {
+      case 1: // 1 คือ สุนัข
+        petTypeCondition = `AND p.pet_species = $1`;
+        queryParams.push('สุนัข');
+        break;
+      case 2: // 2 คือ แมว
+        petTypeCondition = `AND p.pet_species = $1`;
+        queryParams.push('แมว');
+        break;
+      case 3: // 3 คือ อื่นๆ
         petTypeCondition = `AND p.pet_species NOT IN ($1, $2)`;
         queryParams.push('สุนัข', 'แมว');
-      } else {
-        petTypeCondition = `AND p.pet_species = $1`;
-        queryParams.push(petType);
-      }
+        break;
+      default: // 0 คือ ทั้งหมด
+        petTypeCondition = '';
+        break;
     }
 
     let timeCondition = '1=1';
