@@ -1968,24 +1968,23 @@ router.get('/dashboard', async (req, res) => {
     if (!year) {
       year = new Date().getFullYear().toString();
     }
-    
-    let petTypeCondition = '';
-    let queryParams = [];
-    
+    const petTypeNum = parseInt(petType, 10); // ✅ แปลงค่าให้เป็นตัวเลขก่อน
     const petTypeMap = {
       1: ["สุนัข"],
       2: ["แมว"],
-      3: ["สุนัข", "แมว"], // 'อื่นๆ' หมายถึงสัตว์ที่ไม่ใช่สุนัขและแมว
+      3: ["สุนัข", "แมว"],
     };
     
-    // ตรวจสอบว่า petType มีใน Map หรือไม่
-    if (petTypeMap[petType]) {
-      if (petTypeMap[petType].length === 1) {
+    let petTypeCondition = "";
+    let queryParams = [];
+    
+    if (petTypeMap[petTypeNum]) { // ✅ ใช้ petTypeNum ที่เป็นตัวเลข
+      if (petTypeMap[petTypeNum].length === 1) {
         petTypeCondition = `AND p.pet_species = $1`;
-        queryParams.push(petTypeMap[petType][0]);
+        queryParams.push(petTypeMap[petTypeNum][0]);
       } else {
         petTypeCondition = `AND p.pet_species NOT IN ($1, $2)`;
-        queryParams.push(...petTypeMap[petType]);
+        queryParams.push(...petTypeMap[petTypeNum]);
       }
     }
     
