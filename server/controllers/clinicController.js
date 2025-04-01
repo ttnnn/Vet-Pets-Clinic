@@ -1960,18 +1960,19 @@ router.get('/product/receipt/:invoice_Id', async (req, res) => {
     client.release(); // ปล่อย connection กลับสู่ pool
   }
 });
+
 router.get('/dashboard', async (req, res) => {  
   try {
-    let { petType = '0', timeFilter = 'year', year } = req.query;  // แก้ไขให้เป็น string
+    let { petType = '0', timeFilter = 'year', year } = req.query; 
 
     if (!year) {
-      year = new Date().getFullYear().toString();  // Ensure it's a string
+      year = new Date().getFullYear().toString();
     }
     
     let petTypeCondition = '';
     let queryParams = [];
     
-    switch (parseInt(petType, 10)) {  // Ensure petType is treated as an integer
+    switch (parseInt(petType, 10)) {
       case 1: // 1 คือ สุนัข
         petTypeCondition = `AND p.pet_species = $1`;
         queryParams.push('สุนัข');
@@ -2003,21 +2004,22 @@ router.get('/dashboard', async (req, res) => {
 
     const statusCondition = "AND COALESCE(a.status, '') = 'อนุมัติ' AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'";
 
-    // Query for service types
-    const resultServices = await pool.query(
-      `SELECT type_service AS type, COUNT(*) AS count 
+    //console.log('Query Params Before Query:', queryParams);
+
+    // ดึงข้อมูลประเภทบริการ
+    const resultServices = await pool.query(`
+      SELECT type_service AS type, COUNT(*) AS count 
       FROM appointment a
       LEFT JOIN pets p ON a.pet_id = p.pet_id  
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
-      GROUP BY type_service`,
-      queryParams
-    );
+      GROUP BY type_service
+    `, queryParams);
 
     const services = resultServices.rows;
 
-    // Query for pets per period
-    const resultPetsPerPeriod = await pool.query(
-      `SELECT 
+    //  ดึงจำนวนสัตว์เข้าใช้บริการในแต่ละเดือน/วัน
+    const resultPetsPerPeriod = await pool.query(`
+      SELECT 
         ${timeFilter === 'month' 
           ? 'EXTRACT(DAY FROM appointment_date) AS period' 
           : 'EXTRACT(MONTH FROM appointment_date) AS period'},
@@ -2026,15 +2028,15 @@ router.get('/dashboard', async (req, res) => {
       LEFT JOIN pets p ON a.pet_id = p.pet_id 
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY period
-      ORDER BY period`,
-      queryParams
-    );
+      ORDER BY period
+    `, queryParams);
     
     const petsPerPeriod = resultPetsPerPeriod.rows; 
 
-    // Query for revenue
-    const resultRevenue = await pool.query(
-      `SELECT 
+    // ดึงรายได้ตามช่วงเวลา
+    
+    const resultRevenue = await pool.query(`
+      SELECT 
         EXTRACT(MONTH FROM pay.payment_date) AS period,
         SUM(pay.total_payment) AS amount
       FROM appointment a
@@ -2044,9 +2046,8 @@ router.get('/dashboard', async (req, res) => {
       WHERE EXTRACT(YEAR FROM pay.payment_date) = $1 
       ${petTypeCondition} ${statusCondition}
       GROUP BY period
-      ORDER BY period`,
-      [parsedYear, ...queryParams]  // Ensure all parameters are included
-    );
+      ORDER BY period
+    `, [parsedYear]);
     
     const revenue = resultRevenue.rows;
     
@@ -2056,8 +2057,7 @@ router.get('/dashboard', async (req, res) => {
     console.error(error);
     res.status(500).send('Error retrieving dashboard data');
   }
-});
-
+});  
 
 router.get('/available-years', async (req, res) => {
   try {
