@@ -97,8 +97,8 @@ const LoginPage = ({ onLogin }) => {
     } catch (error) {
       let errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
       // ตรวจสอบว่ามี response จากแบ็กเอนด์หรือไม่
-      if (error.response && error.response.data && error.response.data.msg) {
-        errorMessage = error.response.data.msg; // ดึงข้อความ error จากแบ็กเอนด์
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message; // ดึงข้อความ error จากแบ็กเอนด์
       }
     
       setSnackbarMessage(errorMessage);
