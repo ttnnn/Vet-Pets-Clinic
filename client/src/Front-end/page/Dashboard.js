@@ -54,10 +54,15 @@ const Dashboard = () => {
 
   useEffect(() => {
     setLoading(true);
+    const params = {
+      petType,
+      timeFilter,
+      year: timeFilter === 'year' ? String(year) : undefined,
+    };
+    
+    console.log('Params:', params);
     clinicAPI
-      .get('dashboard', {
-        params: { petType, timeFilter, year: timeFilter === 'year' ? Number(year) : undefined },
-      })
+      .get('dashboard', {params})
       .then((response) => {
         //console.log("API Response:", response.data);
         setData(response.data);

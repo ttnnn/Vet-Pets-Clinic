@@ -343,7 +343,9 @@ const handleEditClick = (id) => {
                 <Typography variant="body1">พันธุ์: {pet.pet_breed}</Typography>
                 <Typography variant="body1">ข้อมูลอื่นๆ: {spayedNeuteredStatus}</Typography>
                 <Typography variant="body1">MicrochipNumber: {pet.microchip_number}</Typography>
-                <Typography variant="body1">วันเกิด: {formatDate(pet.pet_birthday)}</Typography>
+                <Typography variant="body1">
+                  วันเกิด: {pet.pet_birthday ? formatDate(pet.pet_birthday) : 'ไม่ระบุ'}
+                </Typography>
                 <Typography variant="body1">อายุ: {age.years} ปี {age.months} เดือน {age.days} วัน</Typography>
               </CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', padding: 1 }}>

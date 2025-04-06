@@ -195,9 +195,9 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
     setOrderBy(property);
   };
   //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
-  const isAppointmentInPast = (appointmentDate, appointmentTime,status) => {
+  const isAppointmentInPast = (appointmentDate, appointmentTime,status ,queue_status) => {
     try {
-      if (status === 'เสร็จสิ้น') {
+      if (status === 'เสร็จสิ้น' || queue_status === 'กำลังให้บริการ') {
         // ถ้านัดหมายเสร็จสิ้นแล้ว ไม่สามารถเลื่อนได้
         return true;
       }
@@ -209,7 +209,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   
       const timeWithoutOffset = appointmentTime
         ? appointmentTime.split('+')[0] // หากมีค่า appointmentTime
-        : "20:00:00"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 23:59:59
+        : "20:00:00"; // หากไม่มีค่า ให้ใช้เวลาเริ่มต้นเป็น 
   
       // แปลงวันที่ให้อยู่ในรูปแบบ 'YYYY-MM-DD'
       const appointmentDateOnly = dayjs(appointmentDate).format('YYYY-MM-DD');
@@ -365,7 +365,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
               )}      
           <TableCell>
 
-          {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
+          {appointment.status === 'รออนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status, appointment.queue_status) && (
           <Button
             variant="outlined"
             color="primary"
@@ -375,12 +375,12 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
             อนุมัติ
           </Button>
         )}
-        {appointment.status !== 'อนุมัติ' && appointment.status !== 'ยกเลิกนัด'  && isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
+        {appointment.status !== 'อนุมัติ' && appointment.status !== 'ยกเลิกนัด'  && isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status,appointment.queue_status) && (
            <Box sx={{ backgroundColor: 'red', color: 'white', padding: '5px', borderRadius: '4px' }}>
              เลยเวลานัดหมาย
            </Box>
         )}
-            {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status) && (
+            {appointment.status === 'อนุมัติ' && !isAppointmentInPast(appointment.appointment_date, appointment.appointment_time,appointment.status,appointment.queue_status) && (
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
