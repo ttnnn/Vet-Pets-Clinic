@@ -263,6 +263,7 @@ const Home = () => {
                         เวลา: {formattedTime(appt.appointment_time) || 'ไม่ระบุเวลา'}
                       </Typography>
                       <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>สถานะ: {appt.status}</Typography>
+                      <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>สถานะคิว: {appt.queue_status}</Typography>
                     </Grid>
                   </Grid>
                   <Button

@@ -55,7 +55,8 @@ const AppointmentPage = () => {
   }, [locationActiveTab]);
   
  
-  
+  const waitingApprovalCount = appointments.filter(a => a.status === 'รออนุมัติ').length;
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     updateAppointments(); // Fetch new data on tab change
@@ -154,7 +155,32 @@ const AppointmentPage = () => {
             variant="fullWidth"
             aria-label="full width tabs example"
           >
-            <StyledTab label="นัดหมายใหม่(รออนุมัติ)" />
+            <StyledTab
+              label={
+                <Box display="flex" alignItems="center" gap={1}>
+                  นัดหมายใหม่(รออนุมัติ)
+                  {waitingApprovalCount > 0 && (
+                    <Box
+                      sx={{
+                        backgroundColor: '#9c27b0', // สีม่วง
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {waitingApprovalCount}
+                    </Box>
+                  )}
+                </Box>
+              }
+            />
+
             <StyledTab label="สมุดนัดหมาย" />
             <StyledTab label="เพิ่มการนัดหมาย" />
           </StyledTabs>

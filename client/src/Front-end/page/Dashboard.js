@@ -138,10 +138,20 @@ const Dashboard = () => {
           <Grid container spacing={3} marginBottom={3}>
             {serviceTypes.map((type) => {
               const service = data?.services?.find((service) => service.type === type);
-
+              const typeColors = {
+                'อาบน้ำ-ตัดขน': '#e1bee7',
+                'ตรวจรักษา': '#d1c4e9' ,
+                'วัคซีน': '#c5cae9' ,
+                'ฝากเลี้ยง': '#d0d9ff',
+              };
               return (
                 <Grid item xs={12} sm={4} key={type}>
-                  <Card sx={{ height: '150px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <Card sx={{
+                     height: '100px',
+                     display: 'flex', 
+                     flexDirection: 'column', 
+                     justifyContent: 'space-between' ,
+                     backgroundColor: typeColors[type] || 'white'}}>
                     <CardContent>
                       <Typography variant="h5">{type}</Typography>
                       {loading ? (
@@ -173,8 +183,8 @@ const Dashboard = () => {
                         datasets: [{
                           label: 'จำนวนสัตว์เลี้ยง',
                           data: data?.petsPerPeriod?.map((item) => item.count) || [],
-                          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                          borderColor: 'rgba(54, 162, 235, 1)',
+                          backgroundColor: 'rgba(171, 116, 188, 0.6)',
+                          borderColor: 'rgb(171, 91, 155)',
                           borderWidth: 1,
                         }]
                       }}
@@ -198,7 +208,7 @@ const Dashboard = () => {
                         datasets: [{
                           label: 'รายได้ (฿)',
                           data: data?.revenue?.map((item) => item.amount) || [],
-                          borderColor: 'rgba(75, 192, 192, 0.6)',
+                          borderColor: 'rgba(171, 116, 188, 0.6)',
                           fill: false,
                         }]
                       }}
