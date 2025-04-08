@@ -72,6 +72,7 @@ const Dashboard = () => {
     clinicAPI
       .get('/dashboard/daily-revenue', { params: { date: thaiDate } })
       .then((response) => {
+        //console.log('Daily Revenue Response:', response.data.revenue);
         setDailyRevenue(response.data.revenue);
       })
       .catch((error) => console.error("Error fetching daily revenue:", error));

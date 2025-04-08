@@ -1965,15 +1965,11 @@ router.get('/dashboard', async (req, res) => {
   try {
     let { petType = 'all', timeFilter = 'year', year } = req.query;
 
-    console.log('🔎 Incoming Query:', req.query);
-
     const parsedYear = parseInt(year, 10) || new Date().getFullYear();
-
     const statusCondition = `
       AND COALESCE(a.status, '') = 'อนุมัติ'
       AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'
     `;
-
     let timeCondition = '';
     if (timeFilter === 'month') {
       timeCondition = `
@@ -1997,7 +1993,6 @@ router.get('/dashboard', async (req, res) => {
     }
 
     const queryParams1 = [parsedYear, ...petTypeParams];
-    console.log('queryParams1', queryParams1)
 
     // ---------------------------
     // ✅ Query 1: Services
@@ -2009,7 +2004,6 @@ router.get('/dashboard', async (req, res) => {
       WHERE ${timeCondition} ${petTypeCondition} ${statusCondition}
       GROUP BY type_service
     `, queryParams1);
-      console.log('resultServices',resultServices)
     // ---------------------------
     // ✅ Query 2: Pets Per Period
     // ---------------------------
@@ -2025,7 +2019,6 @@ router.get('/dashboard', async (req, res) => {
       GROUP BY period
       ORDER BY period
     `, queryParams1);
-       console.log('resultPetsPerPeriod',resultPetsPerPeriod)
     // ---------------------------
     // ✅ Query 3: Revenue
     // ---------------------------
@@ -2048,9 +2041,6 @@ router.get('/dashboard', async (req, res) => {
       revenueQueryParams = [parsedYear];
     }
 
-
-    console.log('💰 Revenue Query Params:', revenueQueryParams);
-
     const resultRevenue = await pool.query(`
       SELECT 
         EXTRACT(MONTH FROM pay.payment_date) AS period,
@@ -2065,9 +2055,8 @@ router.get('/dashboard', async (req, res) => {
       ORDER BY period
     `, revenueQueryParams);
 
-    // ---------------------------
     // ✅ Return result
-    // ---------------------------
+
     res.json({
       services: resultServices.rows,
       petsPerPeriod: resultPetsPerPeriod.rows,
@@ -2080,7 +2069,38 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-  
+router.get('/dashboard/daily-revenue', async (req, res) => {
+  try {
+    const { date } = req.query;
+    console.log('date',date)
+    if (!date) {
+      return res.status(400).json({ error: 'Missing date parameter' });
+    }
+
+    const result = await pool.query(`
+      SELECT 
+        COALESCE(SUM(pay.total_payment), 0) AS daily_revenue
+      FROM appointment a
+      INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
+      INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
+      WHERE DATE(pay.payment_date AT TIME ZONE 'Asia/Bangkok') = $1
+        AND COALESCE(a.status, '') = 'อนุมัติ'
+        AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'
+    `, [date]);
+
+    const revenue = parseFloat(result.rows[0].daily_revenue);
+    console.log('Query result:', result.rows);
+    console.log('Parsed revenue:', revenue);
+    
+    res.json({
+      date,
+      revenue,
+    });
+  } catch (error) {
+    console.error('Daily Revenue Error:', error);
+    res.status(500).send('Error retrieving daily revenue');
+  }
+});
 
 router.get('/available-years', async (req, res) => {
   try {

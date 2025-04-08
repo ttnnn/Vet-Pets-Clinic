@@ -41,7 +41,8 @@ const LoginPage = ({ onLogin }) => {
   };
   
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setUsernameError(false);
     setPasswordError(false);
 
@@ -126,40 +127,42 @@ const LoginPage = ({ onLogin }) => {
               <img src="/Logo.jpg" alt="Logo" style={{ width: '150px', marginBottom: '20px' }} />
               <Typography variant="h5" gutterBottom>เข้าสู่ระบบ</Typography>
               <Box sx={{ width: '75%', maxWidth: '400px' }}>
-                <TextField
-                  label="username"
-                  variant="outlined"
-                  fullWidth
-                  margin="normal"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  error={usernameError}
-                  helperText={usernameError ? 'กรุณากรอกชื่อผู้ใช้งาน' : ''}
-                  sx={{ marginBottom: 2 }}
-                />
-                <TextField
-                  label="password"
-                  variant="outlined"
-                  type="password"
-                  fullWidth
-                  margin="normal"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  error={passwordError}
-                  helperText={passwordError ? 'กรุณากรอกรหัสผ่าน' : ''}
-                  sx={{ marginBottom: 2 }}
-                />
-                <Link
-                  component="button"
-                  variant="body2"
-                  sx={{ display: 'block', color: 'blue', cursor: 'pointer', textAlign: 'right', marginBottom: 2 }}
-                  onClick={() => setForgotDialogOpen(true)}
-                >
-                  ลืมรหัสผ่าน?
-                </Link>
-                <Button variant="contained" color="primary" fullWidth onClick={handleLogin} sx={{ marginTop: 2 }} disabled={loading}>
-                  {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'เข้าสู่ระบบ'}
-                </Button>
+              <form onSubmit={handleLogin}>  {/* เพิ่ม form รอบการกรอกข้อมูล */}
+                  <TextField
+                    label="username"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    error={usernameError}
+                    helperText={usernameError ? 'กรุณากรอกชื่อผู้ใช้งาน' : ''}
+                    sx={{ marginBottom: 2 }}
+                  />
+                  <TextField
+                    label="password"
+                    variant="outlined"
+                    type="password"
+                    fullWidth
+                    margin="normal"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    error={passwordError}
+                    helperText={passwordError ? 'กรุณากรอกรหัสผ่าน' : ''}
+                    sx={{ marginBottom: 2 }}
+                  />
+                  <Link
+                    component="button"
+                    variant="body2"
+                    sx={{ display: 'block', color: 'blue', cursor: 'pointer', textAlign: 'right', marginBottom: 2 }}
+                    onClick={() => setForgotDialogOpen(true)}
+                  >
+                    ลืมรหัสผ่าน?
+                  </Link>
+                  <Button variant="contained" color="primary" fullWidth type="submit" sx={{ marginTop: 2 }} disabled={loading}>
+                    {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'เข้าสู่ระบบ'}
+                  </Button>
+                </form>  {/* ปิด tag form */}
               </Box>
             </Box>
           </Grid>
