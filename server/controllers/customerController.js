@@ -248,7 +248,7 @@ router.get('/appointments/detail/:id', async (req, res) => {
     // คำสั่ง SQL สำหรับดึงรายละเอียดการนัดหมาย
     const appointmentDetails = await pool.query(
       `SELECT a.appointment_id, a.appointment_date, a.appointment_time, 
-              a.type_service, a.reason, a.status, 
+              a.type_service, a.reason, a.status, a.queue_status ,
               p.pet_name, p.pet_species, p.pet_breed, 
               o.first_name, o.last_name, o.phone_number
        FROM appointment a

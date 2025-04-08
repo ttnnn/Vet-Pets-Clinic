@@ -25,7 +25,12 @@ import {
   LineElement,
 } from 'chart.js';
 import { clinicAPI } from "../../utils/api";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -36,6 +41,14 @@ ChartJS.register(
   Legend,
   LineElement
 );
+
+
+const today = new Date();
+const thaiDate = new Intl.DateTimeFormat('th-TH', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(today);
 
 const monthNames = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
@@ -51,7 +64,19 @@ const Dashboard = () => {
   const [availableYears, setAvailableYears] = useState([]);
   const serviceTypes = ['อาบน้ำ-ตัดขน', 'ตรวจรักษา', 'วัคซีน', 'ฝากเลี้ยง'];
   const fetchedYearsRef = useRef(false);
+  const [dailyRevenue, setDailyRevenue] = useState(0);
 
+  useEffect(() => {
+    const thaiDate = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
+    //console.log('thaiDate',thaiDate)
+    clinicAPI
+      .get('/dashboard/daily-revenue', { params: { date: thaiDate } })
+      .then((response) => {
+        setDailyRevenue(response.data.revenue);
+      })
+      .catch((error) => console.error("Error fetching daily revenue:", error));
+  }, []);
+  
   useEffect(() => {
     setLoading(true);
     const params = {
@@ -60,7 +85,6 @@ const Dashboard = () => {
       year: timeFilter === 'year' ? String(year) : undefined,
     };
     
-    console.log('Params:', params);
     clinicAPI
       .get('dashboard', {params})
       .then((response) => {
@@ -163,9 +187,40 @@ const Dashboard = () => {
                       )}
                     </CardContent>
                   </Card>
+                  <Grid item xs={12} sm={4}>
+                </Grid>
+                    
+
                 </Grid>
               );
             })}
+             <Grid item xs={12} sm={4}>
+              <Card
+                sx={{
+                  height: '100px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#c8e6c9',
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h5">รายได้วันนี้</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {thaiDate}
+                  </Typography>
+                  {loading || dailyRevenue === null ? (
+                    <Skeleton variant="text" width="50%" height={30} />
+                  ) : (
+                    <Typography variant="h6">
+                      ฿{dailyRevenue !== undefined
+                        ? dailyRevenue.toLocaleString('th-TH')
+                        : '-'}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
 
           {/* ✅ โหลดเฉพาะกราฟทีหลัง */}
