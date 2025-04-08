@@ -197,7 +197,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
   //คิวที่ผ่านมาแล้วจะไม่แสดงปุ่มเลื่อน,ยกเลิก
   const isAppointmentInPast = (appointmentDate, appointmentTime,status ,queue_status) => {
     try {
-      if (status === 'เสร็จสิ้น' || queue_status === 'กำลังให้บริการ') {
+      if (queue_status === 'เสร็จสิ้น' || queue_status === 'กำลังให้บริการ') {
         // ถ้านัดหมายเสร็จสิ้นแล้ว ไม่สามารถเลื่อนได้
         return true;
       }
