@@ -2089,9 +2089,6 @@ router.get('/dashboard/daily-revenue', async (req, res) => {
     `, [date]);
 
     const revenue = parseFloat(result.rows[0].daily_revenue);
-    console.log('Query result:', result.rows);
-    console.log('Parsed revenue:', revenue);
-    
     res.json({
       date,
       revenue,

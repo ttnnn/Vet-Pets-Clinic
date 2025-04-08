@@ -17,12 +17,16 @@ const setupCronJobs = (io) => {
       const bangkokTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
       const currentDateTime = new Date(bangkokTime);
       const currentHour = currentDateTime.getHours(); // ✅ currentHour ถูกประกาศก่อนใช้งาน
-  
+      const currentMinute = now.getMinutes();
+      
       const query = `
       SELECT * FROM appointment
-        WHERE appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
-        AND queue_status NOT IN ('เสร็จสิ้น', 'admit', 'ยกเลิกนัด')
-        AND status NOT IN ('รออนุมัติ', 'ยกเลิกนัด');
+      WHERE appointment_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::DATE
+      AND queue_status NOT IN ('เสร็จสิ้น', 'admit', 'ยกเลิกนัด')
+      AND status NOT IN ('รออนุมัติ', 'ยกเลิกนัด')
+      AND NOT (
+        type_service = 'ฝากเลี้ยง'
+        AND queue_status = 'กำลังให้บริการ');
       `;
   
       const { rows } = await pool.query(query);
@@ -35,7 +39,7 @@ const setupCronJobs = (io) => {
         });
       }
 
-      if (currentHour >= 20) {
+      if (currentHour >= 20 && currentMinute <= 1) {
         const updateQuery = `
           UPDATE appointment
           SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด', massage_status = 'cancle'
