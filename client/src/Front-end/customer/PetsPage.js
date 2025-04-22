@@ -122,7 +122,7 @@ const PetsPage = () => {
                     )}
                     {/* แสดงข้อมูลสัตว์เลี้ยง */}
                     <Grid item xs={7}>
-                      <Typography variant="h6">{pet.pet_name}</Typography>
+                      <Typography variant="h6">ชื่อ: {pet.pet_name}</Typography>
                       <Typography color="textSecondary">สายพันธุ์: {pet.pet_breed}</Typography>
                       <Typography color="textSecondary">ประเภท: {pet.pet_species}</Typography>
                     </Grid>
