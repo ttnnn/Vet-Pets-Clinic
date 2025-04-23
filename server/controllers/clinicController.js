@@ -2083,7 +2083,7 @@ router.get('/dashboard/daily-revenue', async (req, res) => {
       FROM appointment a
       INNER JOIN invoice ON a.appointment_id = invoice.appointment_id
       INNER JOIN payment pay ON pay.payment_id = invoice.payment_id
-      WHERE DATE(pay.payment_date AT TIME ZONE 'Asia/Bangkok') = $1
+      WHERE DATE(pay.payment_date) = $1
         AND COALESCE(a.status, '') = 'อนุมัติ'
         AND COALESCE(a.queue_status, '') = 'เสร็จสิ้น'
     `, [date]);
