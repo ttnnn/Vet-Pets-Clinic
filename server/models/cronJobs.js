@@ -39,7 +39,7 @@ const setupCronJobs = (io) => {
         });
       }
 
-      if (currentHour >= 20 ) {
+      if (currentHour >= 20 && currentMinute <= 1) {
         const updateQuery = `
           UPDATE appointment
           SET status = 'ยกเลิกนัด', queue_status = 'ยกเลิกนัด', massage_status = 'cancle'
