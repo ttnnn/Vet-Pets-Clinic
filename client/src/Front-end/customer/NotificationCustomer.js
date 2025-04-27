@@ -38,6 +38,7 @@ const NotificationCustomer = () => {
     // Cleanup ตอน unmount
     return () => {
       socket.off('notification');
+      socket.off('connect'); 
       socket.disconnect();
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);

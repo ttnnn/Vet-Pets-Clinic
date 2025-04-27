@@ -1891,7 +1891,35 @@ router.get('/history/medical/:appointmentId', async (req, res) => {
   }
 });
 
+router.get('/history/medicine/:appointmentId', async (req, res) => {
+  const { appointmentId } = req.params;
+  const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
 
+  try {
+    const query = `
+    SELECT c.category_name, s.amount
+    FROM servicecategory c
+    left JOIN serviceinvoice s ON s.category_id = c.category_id
+    left JOIN invoice i ON i.invoice_id = s.invoice_id
+    left JOIN appointment a ON a.appointment_id = i.appointment_id 
+    WHERE a.appointment_id = $1
+      AND a.queue_status = 'เสร็จสิ้น'
+      AND c.category_type = 'รายการยา';
+    `;
+    const result = await client.query(query, [appointmentId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No records found for the given appointment ID' });
+    }
+
+    res.status(200).json(result.rows); // ส่งข้อมูลกลับในรูป JSON
+  } catch (error) {
+    console.error('Error fetching treatment details:', error);
+    res.status(500).json({ message: 'Failed to fetch treatment details', error: error.message });
+  } finally {
+    client.release(); // ปล่อย connection กลับสู่ pool
+  }
+});
 router.get('/finance', async (req, res) => {
   const client = await pool.connect(); // เชื่อมต่อฐานข้อมูล
   try {

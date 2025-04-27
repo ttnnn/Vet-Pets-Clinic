@@ -84,6 +84,8 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [medicineList, setMedicineList] = useState([]);
+
   const handleEdit = (id) => {
     onEditClick(id); // เรียกใช้ onEditClick ที่ส่งจาก ProfilePage เพื่อเปลี่ยน activeTab และส่ง appointmentId
   };
@@ -100,7 +102,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
       if (activeTabLabel === 'วัคซีน') {
         try {
           const ids = appointments
-            .filter((appointment) => appointment.type_service === 'วัคซีน')
+            .filter((appointment) => appointment.type_service === 'วัคซีน'&& appointment.queue_status === 'เสร็จสิ้น')
             .map((appointment) => appointment.appointment_id);
 
           const response = await clinicAPI.post(`/appointment/vaccien`, { ids });
@@ -131,14 +133,21 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
 
   const fetchDetails = async (appointmentId) => {
     if (!appointmentId || appointmentId === details?.appointmentId) return;
-    setLoading(true)
+    setLoading(true);
   
     try {
-      const response = await clinicAPI.get(`/history/medical/${appointmentId}`);
-      setDetails({ ...response.data, appointmentId }); // เก็บ appointmentId เพื่อการตรวจสอบ
+      const [medicalResponse, medicineResponse] = await Promise.all([
+        clinicAPI.get(`/history/medical/${appointmentId}`),
+        clinicAPI.get(`/history/medicine/${appointmentId}`)
+      ]);
+  
+      setDetails({ ...medicalResponse.data, appointmentId });
+      setMedicineList(Array.isArray(medicineResponse.data) ? medicineResponse.data : [medicineResponse.data]);
+
     } catch (error) {
       console.error('Error fetching details:', error);
     }
+  
     setLoading(false);
   };
   
@@ -152,6 +161,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDetails(null);
+    setMedicineList([]); 
   };
 
   const generatePDF = () => {
@@ -327,7 +337,21 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
                   {key.replace('phy_', '').replace(/_/g, ' ').toUpperCase()}: {value}
                 </Typography>
               ))}
-    
+
+            <Divider sx={{ my: 2 }} />
+          
+          {/* ส่วนรายการยา */}
+          <Typography variant="h6" gutterBottom>รายการยา</Typography>
+          {medicineList.length > 0 ? (
+            medicineList.map((med, index) => (
+              <Typography key={index} variant="body1">
+                {med.category_name} - จำนวน {med.amount}
+              </Typography>
+            ))
+          ) : (
+            <Typography variant="body2">ไม่มีการจ่ายยา</Typography>
+          )}
+
           </Box>
         ) : (
           <Typography variant="body2" align="center">ไม่พบข้อมูล</Typography>

@@ -148,8 +148,7 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
       if (lineUserId) {
         await sendLineMessage(lineUserId, message);
       }  
-      socket.emit('notification', {
-        room: 'customer', 
+      socket.emit('send-to-customer', {
         message: `นัดหมาย ${type_service} ของสัตว์เลี้ยง ${pet_name} ในวันที่ ${formattedDate} เวลา ${formattedTime} ได้รับการอนุมัติแล้ว!`
       });
     })
