@@ -8,7 +8,7 @@ const categoryCodeMapping = {
   'ผ่าตัด': 'OP',
   'ค่าบริการทางการแพทย์': 'MS',
   'ฝากเลี้ยง': 'PH',
-  'อาบน้ำ-ตัดขน': 'GM',
+  'อาบน้ำตัดขน': 'GM',
   'อาหาร': 'FD',
 };
 
@@ -19,36 +19,41 @@ const generateServiceID = async (db, category_type) => {
   }
 
   const categoryCode = categoryCodeMapping[category_type];
-  const today = new Date();
-  const formattedDate = today.toISOString().slice(0, 10).replace(/-/g, ''); // yyyyMMdd
-
-  const prefix = `${categoryCode}-${formattedDate}`;
-
   const client = await db.connect();
 
   try {
     await client.query('BEGIN');
     await client.query('LOCK TABLE servicecategory IN SHARE ROW EXCLUSIVE MODE');
 
-    // Find latest ID with today’s prefix
     const queryLatestId = `
-      SELECT category_id FROM servicecategory 
-      WHERE category_id LIKE '${prefix}%' 
+      SELECT category_id 
+      FROM servicecategory 
+      WHERE category_id LIKE '${categoryCode}-%' 
       ORDER BY category_id DESC 
       LIMIT 1
     `;
+
     const { rows } = await client.query(queryLatestId);
+    let latestServiceID = rows.length > 0 ? rows[0].category_id : `${categoryCode}-00000`;
 
-    let lastNumber = 0;
-    if (rows.length > 0) {
-      const latestId = rows[0].category_id;
-      const numericPart = latestId.slice(prefix.length); // Get part after prefix
-      lastNumber = parseInt(numericPart, 10);
-    }
-
+    let lastNumber = parseInt(latestServiceID.split('-')[1], 10);
     let nextNumber = lastNumber + 1;
-    const runningNumber = nextNumber.toString().padStart(2, '0');
-    const newServiceID = `${prefix}${runningNumber}`;
+    let newServiceID = `${categoryCode}-${nextNumber.toString().padStart(5, '0')}`;
+
+    // ตรวจสอบว่า newServiceID ซ้ำไหม
+    const checkIfExists = `
+      SELECT 1 
+      FROM servicecategory 
+      WHERE category_id = $1 
+      LIMIT 1
+    `;
+    const existsResult = await client.query(checkIfExists, [newServiceID]);
+
+    if (existsResult.rowCount > 0) {
+      // ถ้ารหัสซ้ำ ให้เพิ่มหมายเลขอีกครั้ง
+      nextNumber++;
+      newServiceID = `${categoryCode}-${nextNumber.toString().padStart(5, '0')}`;
+    }
 
     await client.query('COMMIT');
     return newServiceID;

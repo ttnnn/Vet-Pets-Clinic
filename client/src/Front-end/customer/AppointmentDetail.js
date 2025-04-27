@@ -7,6 +7,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Postpone from '../component/PostponeAppointment';
 import PostponeHotel from '../component/PostponeHotel';
 import { customerAPI  } from "../../utils/api";
+import NotificationCustomer from './NotificationCustomer';
 
 dayjs.locale('th'); // ใช้ locale ภาษาไทย
 
@@ -157,6 +158,7 @@ const handleCloseSnackbar = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Navbar */}
+      <NotificationCustomer />
       <AppBar position="fixed" sx={{ zIndex: 1100, backgroundColor: '#1976d2' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={handleBack} aria-label="back">

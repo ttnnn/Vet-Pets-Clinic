@@ -10,9 +10,8 @@ import Postpone from './PostponeAppointment';
 import PostponeHotel from './PostponeHotel';
 import sendLineMessage from './sendLine'
 import dayjs from 'dayjs';
-
 import { clinicAPI } from "../../utils/api";
-
+import socket from './socket';
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
 dayjs.locale('th'); // ตั้งค่าให้ dayjs ใช้ภาษาไทย
 
@@ -148,9 +147,11 @@ const TableAppointments = ({ appointments, searchQuery, setSearchQuery,setAppoin
 
       if (lineUserId) {
         await sendLineMessage(lineUserId, message);
-      } else {
-       // console.error(`LINE User ID not found for appointment_id: ${approveAppointmentId}`);
-      }
+      }  
+      socket.emit('notification', {
+        room: 'customer', 
+        message: `นัดหมาย ${type_service} ของสัตว์เลี้ยง ${pet_name} ในวันที่ ${formattedDate} เวลา ${formattedTime} ได้รับการอนุมัติแล้ว!`
+      });
     })
     .catch((error) => {
       console.error('Failed to approve appointment:', error);

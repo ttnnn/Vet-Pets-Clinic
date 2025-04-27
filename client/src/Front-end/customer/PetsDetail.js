@@ -9,7 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CircularProgress from '@mui/material/CircularProgress';
 import { customerAPI  } from "../../utils/api";
-
+import NotificationCustomer from './NotificationCustomer';
 
 const PetsDetail = () => {
   const navigate = useNavigate();
@@ -120,7 +120,7 @@ const PetsDetail = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-
+      <NotificationCustomer />
       <Box
         sx={{
           display: 'flex',

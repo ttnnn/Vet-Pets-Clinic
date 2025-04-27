@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Snackbar, Alert,CircularProgress  } from '@mui/material';
 import { customerAPI  } from "../../utils/api";
+import NotificationCustomer from './NotificationCustomer';
 
 const Register = () => {
   const [first_name, setFirstName] = useState('');
@@ -82,6 +83,7 @@ const Register = () => {
         px: 3,
       }}
     >
+      <NotificationCustomer />
       <Typography variant="h5" gutterBottom align="center">
         เข้าสู่ระบบ
       </Typography>

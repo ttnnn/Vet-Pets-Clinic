@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Card, CardContent, Grid, Avatar, Button, AppBar, Toolbar, Box, BottomNavigation, BottomNavigationAction, Select, MenuItem, FormControl } from '@mui/material';
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
 import { customerAPI  } from "../../utils/api";
+import NotificationCustomer from './NotificationCustomer';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 dayjs.locale('th'); // ใช้ภาษาไทย
@@ -96,7 +97,7 @@ const HistoryPage = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-
+      <NotificationCustomer />
       <Container sx={{ flex: 1, paddingTop: '80px', paddingBottom: '70px' }}>
         <Typography variant="h7" sx={{ flexGrow: 1, textAlign: 'left'}}>
             ประเภทบริการ

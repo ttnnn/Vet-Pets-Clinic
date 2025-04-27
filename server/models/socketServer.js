@@ -54,6 +54,10 @@ const setupSocketServer = (server) => {
       io.to('clinic').emit('notification', data); // ส่งไปยังห้อง clinic
     });
 
+    socket.on('send-to-customer', (data) => {
+      io.to('customer').emit('notification', data); // ส่งไปยังห้อง clinic
+    });
+
     socket.on('broadcast-message', (data) => {
       io.emit('notification', data); // ส่งไปยังทุกคน
     });

@@ -4,6 +4,7 @@ import { Button, Container, Typography, Card, CardContent, Grid, Avatar, Box, Bo
 import { Home as HomeIcon, History as HistoryIcon, Pets as PetsIcon } from '@mui/icons-material';
 import dayjs from 'dayjs';
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import NotificationCustomer from './NotificationCustomer';
 import { customerAPI  } from "../../utils/api";
 import liff from "@line/liff";
 import 'dayjs/locale/th';  // นำเข้า locale ภาษาไทย
@@ -146,7 +147,7 @@ const Home = () => {
         </Button>
         </Toolbar>
       </AppBar>
-
+      <NotificationCustomer />
       <Container sx={{ flex: 1, paddingTop: '80px', paddingBottom: '70px' }}>
         {/* Avatar Section */}
         <Grid container alignItems="center" spacing={2} sx={{ marginBottom: '20px' }}>

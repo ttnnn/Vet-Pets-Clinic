@@ -5,7 +5,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import HistoryIcon from '@mui/icons-material/History';
 import PetsIcon from '@mui/icons-material/Pets';
 import { customerAPI  } from "../../utils/api";
-
+import NotificationCustomer from './NotificationCustomer';
 const PetsPage = () => {
   const navigate = useNavigate();
   const [pets, setPets] = useState([]);
@@ -83,7 +83,7 @@ const PetsPage = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-
+      <NotificationCustomer />
       <Box sx={{ paddingTop: '80px', paddingBottom: '20px', flexGrow: 1, paddingX: 2 }}>
         <Typography variant="h6" gutterBottom sx={{ marginBottom: 2 }}>
           รายชื่อสัตว์เลี้ยงของคุณ
