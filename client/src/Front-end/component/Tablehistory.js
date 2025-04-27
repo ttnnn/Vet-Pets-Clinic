@@ -206,6 +206,7 @@ const TableHistory = ({ appointments, searchQuery, setSearchQuery, activeTabLabe
     const matchesPetAndTypeService =
       appointment.pet_id === selectedPetId &&
       appointment.type_service === activeTabLabel &&
+      appointment.queue_status === 'เสร็จสิ้น' && 
       appointment.status !== 'รออนุมัติ' &&  appointment.status !== 'ยกเลิกนัด'
 
 
