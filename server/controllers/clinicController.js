@@ -1869,12 +1869,14 @@ router.get('/history/medical/:appointmentId', async (req, res) => {
         owner.owner_id,
         owner.first_name || ' ' || owner.last_name AS owner_name
       FROM medicalrecord m
+      LEFT JOIN appointment i ON i.appointment_id = m.appointment_id
       LEFT JOIN pets ON m.pet_id = pets.pet_id
       LEFT JOIN owner ON pets.owner_id = owner.owner_id 
       LEFT JOIN personnel ON  m.personnel_id = personnel.personnel_id
       LEFT JOIN diagnosis d ON m.diagnosis_id = d.diagnosis_id
       LEFT JOIN physicalcheckexam p ON m.physical_check_id = p.physical_check_id
-      WHERE m.appointment_id = $1
+      WHERE m.appointment_id = $1 
+      AND i.queue_status = 'เสร็จสิ้น'
     `;
     const result = await client.query(query, [appointmentId]);
 
